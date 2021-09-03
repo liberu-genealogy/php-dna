@@ -42,11 +42,11 @@ class Dna
 
   public function __construct(
     $output_dir = 'output',
-    $resources_dir = 'resources123',
+    $resources_dir = 'resources',
   )
     {
       $this->_output_dir = $output_dir;
       $this->_resources_dir = $resources_dir;
-      $this->_resources = new \Dna\Resources($resources_dir = $resources_dir);
+      $this->_resources = Resources::getInstance();
     }
 }

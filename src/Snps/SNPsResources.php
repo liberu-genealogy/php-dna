@@ -15,12 +15,19 @@
 namespace Dna\Snps;
 
 /**
- * Class Dna.
+ * Class SNPsResources.
  */
-class SNPsResources
+class SNPsResources extends Singleton
 {
+  /**
+   * Stores name / path of resources directory.
+   *
+   * @var string
+   */
+  protected $_resources_dir;
+
   public function __construct($resources_dir = 'resources')
     {
-      print_r($resources_dir);
+      print_r(realpath($_SERVER["DOCUMENT_ROOT"]));
     }
 }
