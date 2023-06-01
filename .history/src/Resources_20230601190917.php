@@ -59,33 +59,3 @@ public function  _load_genetic_map_HapMapII_GRCh37($filename){
   return $genetic_map;
 }
 
-public function _download_file($url, $filename, $compress=False, $timeout=30){
-  if(strpos($url, "ftp://") !== false) {
-      $url=str_replace($url,"ftp://", "http://");
-  } 
-  if ($compress && substr($filename,strlen($filename)-3,strlen($filename)) != ".gz"){
-      $filename = $filename+".gz";
-  }
-  $destination = join($this->resources_dir, $filename);
-
-  if (!mkdir($destination)){
-      return "";
-  }
-  if (file_exists($destination)){            
-      $file_url = $destination;
-      header('Content-Type: application/octet-stream');
-      header('Content-Description: File Transfer');
-      header('Content-Disposition: attachment; filename=' . $filename);
-      header('Expires: 0');
-      header('Cache-Control: must-revalidate');
-      header('Pragma: public');
-      header('Content-Length: ' . filesize($file_url));
-      readfile($file_url);
-
-      // if $compress
-      //     $this->_write_data_to_gzip(f, data)
-      // else
-      //     f.write(data)           
-  }   
-  return $destination;
-}
