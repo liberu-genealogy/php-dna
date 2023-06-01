@@ -57,4 +57,4 @@ public function  _load_genetic_map_HapMapII_GRCh37($filename){
   $genetic_map["X_par1"]=array( );
   $genetic_map["X_par2"]=array( );
   return $genetic_map;
-}
+} }
