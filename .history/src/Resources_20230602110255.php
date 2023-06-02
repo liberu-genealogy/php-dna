@@ -63,18 +63,15 @@ class Resources extends \Dna\Snps\SNPsResources {
         "YRI",
     ];
     
-    // Check if the given genetic map is valid
     if (!in_array($genetic_map, $valid_genetic_maps, true)) {
         error_log("Invalid genetic map");
         return [];
     }
 
-    // If given genetic map is "HapMap2", retrieve the genetic map using another function
     if ($genetic_map === "HapMap2") {
         return $this->get_genetic_map_HapMapII_GRCh37();
     }
-    
-    // If given genetic map is not "HapMap2", retrieve the genetic map using another function
+
     return $this->get_genetic_map_1000G_GRCh37($genetic_map);
   }
 

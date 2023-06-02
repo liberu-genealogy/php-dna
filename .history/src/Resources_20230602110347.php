@@ -74,7 +74,6 @@ class Resources extends \Dna\Snps\SNPsResources {
         return $this->get_genetic_map_HapMapII_GRCh37();
     }
     
-    // If given genetic map is not "HapMap2", retrieve the genetic map using another function
     return $this->get_genetic_map_1000G_GRCh37($genetic_map);
   }
 

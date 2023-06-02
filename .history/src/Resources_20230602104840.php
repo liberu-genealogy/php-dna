@@ -26,77 +26,29 @@ class Resources extends \Dna\Snps\SNPsResources {
   protected $_kgXref_hg19 = [];
 
   public function __construct($resources_dir = 'resources')
-  {
-    parent::__construct($resources_dir = $resources_dir);
-  }
-
-  /**
-   * Function to get a genetic map based on the given map name
-   *
-   * @param string $genetic_map - Name of the genetic map to retrieve
-   * @return array - Returns an array containing the genetic map
-   */
-  public function get_genetic_map(string $genetic_map): array
-  {
-    // Define an array of valid genetic map names
-    $valid_genetic_maps = [
-        "HapMap2",
-        "ACB",
-        "ASW",
-        "CDX",
-        "CEU",
-        "CHB",
-        "CHS",
-        "CLM",
-        "FIN",
-        "GBR",
-        "GIH",
-        "IBS",
-        "JPT",
-        "KHV",
-        "LWK",
-        "MKK",
-        "MXL",
-        "PEL",
-        "PUR",
-        "TSI",
-        "YRI",
-    ];
-    
-    // Check if the given genetic map is valid
-    if (!in_array($genetic_map, $valid_genetic_maps, true)) {
-        error_log("Invalid genetic map");
-        return [];
+    {
+      parent::__construct($resources_dir = $resources_dir);
     }
-
-    // If given genetic map is "HapMap2", retrieve the genetic map using another function
-    if ($genetic_map === "HapMap2") {
-        return $this->get_genetic_map_HapMapII_GRCh37();
-    }
-    
-    // If given genetic map is not "HapMap2", retrieve the genetic map using another function
-    return $this->get_genetic_map_1000G_GRCh37($genetic_map);
-  }
 
   public function _load_genetic_map_HapMapII_GRCh37($filename) 
   {
     $genetic_map = array(  );
     $archive = new PharData($filename);
     foreach($archive as $file) {
-      if (strpos("genetic_map",$file["name"])===true){
-          $df = array(  );
-          if (($handle = fopen($file, "r")) !== FALSE) {
-              while (($data = fgetcsv($handle,"\t")) !== FALSE) {
-                  $df["Position(bp)"]=$data["pos"];
-                  $df["Rate(cM/Mb)"]=$data["rate"];
-                  $df["Map(cM)"]=$data["map"];
-              }
-              fclose($handle);
-          }
-          $start_pos = strpos($file["name"],"chr") + 3;
-          $end_pos = strpos($file["name"],".");
-          $genetic_map[substr($file["name"],$start_pos,$end_pos)] = $df;
-      }
+        if (strpos("genetic_map",$file["name"])===true){
+            $df = array(  );
+            if (($handle = fopen($file, "r")) !== FALSE) {
+                while (($data = fgetcsv($handle,"\t")) !== FALSE) {
+                    $df["Position(bp)"]=$data["pos"];
+                    $df["Rate(cM/Mb)"]=$data["rate"];
+                    $df["Map(cM)"]=$data["map"];
+                }
+                fclose($handle);
+            }
+            $start_pos = strpos($file["name"],"chr") + 3;
+            $end_pos = strpos($file["name"],".");
+            $genetic_map[substr($file["name"],$start_pos,$end_pos)] = $df;
+        }
     }
     $genetic_map["X"] = array_merge(
         $genetic_map["X_par1"], $genetic_map["X"], $genetic_map["X_par2"]
@@ -109,10 +61,10 @@ class Resources extends \Dna\Snps\SNPsResources {
   public function get_genetic_map_1000G_GRCh37(string $pop): array 
   {
     if ($this->_genetic_map_name !== $pop) {
-      $this->_genetic_map = $this->_load_genetic_map_1000G_GRCh37(
-          $this->_get_path_genetic_map_1000G_GRCh37($pop)
-      );
-      $this->_genetic_map_name = $pop;
+        $this->_genetic_map = $this->_load_genetic_map_1000G_GRCh37(
+            $this->_get_path_genetic_map_1000G_GRCh37($pop)
+        );
+        $this->_genetic_map_name = $pop;
     }
 
     return $this->_genetic_map;

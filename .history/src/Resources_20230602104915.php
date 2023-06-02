@@ -30,54 +30,6 @@ class Resources extends \Dna\Snps\SNPsResources {
     parent::__construct($resources_dir = $resources_dir);
   }
 
-  /**
-   * Function to get a genetic map based on the given map name
-   *
-   * @param string $genetic_map - Name of the genetic map to retrieve
-   * @return array - Returns an array containing the genetic map
-   */
-  public function get_genetic_map(string $genetic_map): array
-  {
-    // Define an array of valid genetic map names
-    $valid_genetic_maps = [
-        "HapMap2",
-        "ACB",
-        "ASW",
-        "CDX",
-        "CEU",
-        "CHB",
-        "CHS",
-        "CLM",
-        "FIN",
-        "GBR",
-        "GIH",
-        "IBS",
-        "JPT",
-        "KHV",
-        "LWK",
-        "MKK",
-        "MXL",
-        "PEL",
-        "PUR",
-        "TSI",
-        "YRI",
-    ];
-    
-    // Check if the given genetic map is valid
-    if (!in_array($genetic_map, $valid_genetic_maps, true)) {
-        error_log("Invalid genetic map");
-        return [];
-    }
-
-    // If given genetic map is "HapMap2", retrieve the genetic map using another function
-    if ($genetic_map === "HapMap2") {
-        return $this->get_genetic_map_HapMapII_GRCh37();
-    }
-    
-    // If given genetic map is not "HapMap2", retrieve the genetic map using another function
-    return $this->get_genetic_map_1000G_GRCh37($genetic_map);
-  }
-
   public function _load_genetic_map_HapMapII_GRCh37($filename) 
   {
     $genetic_map = array(  );
