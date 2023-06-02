@@ -121,21 +121,21 @@ class Resources extends \Dna\Snps\SNPsResources {
     }
 
     /**
-     * Returns the cytogenetic banding information for the hg19 reference genome.
-     *
-     * @return array The cytogenetic banding information for hg19.
-     */
-    public function getCytoBandHg19(): array
-    {
-        // Check if the cytogenetic banding information for hg19 is already loaded
-        if (empty($this->_cytoBand_hg19)) {
-            // If not, load the cytogenetic banding information from file
-            $this->_cytoBand_hg19 = $this->_loadCytoBand(path: $this->_getPathCytoBandHg19());
-        }
+ * Returns the cytogenetic banding information for the hg19 reference genome.
+ *
+ * @return array The cytogenetic banding information for hg19.
+ */
+public function getCytoBandHg19(): array
+{
+    // Check if the cytogenetic banding information for hg19 is already loaded
+    if (empty($this->_cytoBand_hg19)) {
+        // If not, load the cytogenetic banding information from file
+        $this->_cytoBand_hg19 = $this->_loadCytoBand(path: $this->_getPathCytoBandHg19());
+    }
 
-        // Return the loaded cytogenetic banding information for hg19
-        return $this->_cytoBand_hg19;
-    }    
+    // Return the loaded cytogenetic banding information for hg19
+    return $this->_cytoBand_hg19;
+}
 
     public function _load_genetic_map_HapMapII_GRCh37($filename) 
     {
