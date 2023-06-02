@@ -159,17 +159,6 @@ class Resources extends \Dna\Snps\SNPsResources {
      *
      * @return array The kgXref_hg19 data.
      */
-    public function get_kgXref_hg19() {
-        // Check if the _kgXref_hg19 property is empty.
-        if ($this->_kgXref_hg19->empty()) {
-            // If it is empty, load the kgXref_hg19 data from the file path.
-            $this->_kgXref_hg19 = $this->_load_kgXref(
-                $this->_get_path_kgXref_hg19()
-            );
-        }
-        // Return the kgXref_hg19 data.
-        return $this->_kgXref_hg19;
-    }    
 
     public function _load_genetic_map_HapMapII_GRCh37($filename) 
     {

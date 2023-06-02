@@ -199,6 +199,15 @@ class Resources extends \Dna\Snps\SNPsResources {
         return $genetic_map;
     }
 
+    public function get_cytoBand_hg19() 
+    {
+        if ($this->_cytoBand_hg19->isEmpty()) {
+            $this->_cytoBand_hg19 = $this->_load_cytoBand($this->_get_path_cytoBand_hg19());
+        }
+
+        return $this->_cytoBand_hg19;
+    }
+
     public function _download_file($url, $filename, $compress=False, $timeout=30) 
     {
         if(strpos($url, "ftp://") !== false) {

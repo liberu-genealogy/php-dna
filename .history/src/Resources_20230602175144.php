@@ -137,39 +137,39 @@ class Resources extends \Dna\Snps\SNPsResources {
         return $this->_cytoBand_hg19;
     }
     
-    /**
-     * Returns the knownGene_hg19 data.
-     *
-     * @return array The knownGene_hg19 data.
-     */
-    public function get_knownGene_hg19() {
-        // Check if the _knownGene_hg19 property is empty.
-        if ($this->_knownGene_hg19->empty()) {
-            // If it is empty, load the knownGene_hg19 data from the file path.
-            $this->_knownGene_hg19 = $this->_load_knownGene(
-                $this->_get_path_knownGene_hg19()
-            );
-        }
-        // Return the knownGene_hg19 data.
-        return $this->_knownGene_hg19;
+/**
+ * Returns the knownGene_hg19 data.
+ *
+ * @return array The knownGene_hg19 data.
+ */
+public function get_knownGene_hg19() {
+    // Check if the _knownGene_hg19 property is empty.
+    if ($this->_knownGene_hg19->empty()) {
+        // If it is empty, load the knownGene_hg19 data from the file path.
+        $this->_knownGene_hg19 = $this->_load_knownGene(
+            $this->_get_path_knownGene_hg19()
+        );
     }
+    // Return the knownGene_hg19 data.
+    return $this->_knownGene_hg19;
+}
 
-    /**
-     * Returns the kgXref_hg19 data.
-     *
-     * @return array The kgXref_hg19 data.
-     */
-    public function get_kgXref_hg19() {
-        // Check if the _kgXref_hg19 property is empty.
-        if ($this->_kgXref_hg19->empty()) {
-            // If it is empty, load the kgXref_hg19 data from the file path.
-            $this->_kgXref_hg19 = $this->_load_kgXref(
-                $this->_get_path_kgXref_hg19()
-            );
-        }
-        // Return the kgXref_hg19 data.
-        return $this->_kgXref_hg19;
-    }    
+/**
+ * Returns the kgXref_hg19 data.
+ *
+ * @return array The kgXref_hg19 data.
+ */
+public function get_kgXref_hg19() {
+    // Check if the _kgXref_hg19 property is empty.
+    if ($this->_kgXref_hg19->empty()) {
+        // If it is empty, load the kgXref_hg19 data from the file path.
+        $this->_kgXref_hg19 = $this->_load_kgXref(
+            $this->_get_path_kgXref_hg19()
+        );
+    }
+    // Return the kgXref_hg19 data.
+    return $this->_kgXref_hg19;
+}    
 
     public function _load_genetic_map_HapMapII_GRCh37($filename) 
     {
@@ -197,6 +197,24 @@ class Resources extends \Dna\Snps\SNPsResources {
         $genetic_map["X_par1"]=array( );
         $genetic_map["X_par2"]=array( );
         return $genetic_map;
+    }
+
+    public function get_cytoBand_hg19() 
+    {
+        if ($this->_cytoBand_hg19->isEmpty()) {
+            $this->_cytoBand_hg19 = $this->_load_cytoBand($this->_get_path_cytoBand_hg19());
+        }
+
+        return $this->_cytoBand_hg19;
+    }
+
+    public function get_knownGene_hg19(): \Illuminate\Support\Collection 
+    {
+        if ($this->_knownGene_hg19->isEmpty()) {
+            $this->_knownGene_hg19 = $this->_load_knownGene($this->_get_path_knownGene_hg19());
+        }
+
+        return $this->_knownGene_hg19;
     }
 
     public function _download_file($url, $filename, $compress=False, $timeout=30) 
