@@ -70,16 +70,6 @@ public function get_genetic_map_1000G_GRCh37(string $pop): array {
     return $this->_genetic_map;
 }
 
-public function get_cytoBand_hg19() {
-    // Get UCSC cytoBand table for Build 37.
-    // Returns cytoBand table if loading was successful, else empty DataFrame
-    if ($this->_cytoBand_hg19->isEmpty()) {
-        $this->_cytoBand_hg19 = $this->_load_cytoBand($this->_get_path_cytoBand_hg19());
-    }
-
-    return $this->_cytoBand_hg19;
-}
-
 public function _download_file($url, $filename, $compress=False, $timeout=30){
   if(strpos($url, "ftp://") !== false) {
       $url=str_replace($url,"ftp://", "http://");
