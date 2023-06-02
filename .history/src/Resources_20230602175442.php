@@ -154,6 +154,8 @@ class Resources extends \Dna\Snps\SNPsResources {
         return $this->_knownGene_hg19;
     }
 
+    
+
     public function _load_genetic_map_HapMapII_GRCh37($filename) 
     {
         $genetic_map = array(  );

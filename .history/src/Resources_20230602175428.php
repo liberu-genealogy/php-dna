@@ -154,6 +154,13 @@ class Resources extends \Dna\Snps\SNPsResources {
         return $this->_knownGene_hg19;
     }
 
+    /**
+     * Returns the kgXref_hg19 data.
+     *
+     * @return array The kgXref_hg19 data.
+     */
+  
+
     public function _load_genetic_map_HapMapII_GRCh37($filename) 
     {
         $genetic_map = array(  );
