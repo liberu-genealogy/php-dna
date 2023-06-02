@@ -70,7 +70,8 @@ public function get_genetic_map_1000G_GRCh37(string $pop): array {
     return $this->_genetic_map;
 }
 
-public function get_cytoBand_hg19() {
+public function get_cytoBand_hg19()
+{
     // Get UCSC cytoBand table for Build 37.
     // Returns cytoBand table if loading was successful, else empty DataFrame
     if ($this->_cytoBand_hg19->isEmpty()) {
@@ -78,17 +79,6 @@ public function get_cytoBand_hg19() {
     }
 
     return $this->_cytoBand_hg19;
-}
-
-public function get_knownGene_hg19(): \Illuminate\Support\Collection
-{
-    // Get UCSC knownGene table for Build 37.
-    // Returns knownGene table if loading was successful, else empty DataFrame
-    if ($this->_knownGene_hg19->isEmpty()) {
-        $this->_knownGene_hg19 = $this->_load_knownGene($this->_get_path_knownGene_hg19());
-    }
-
-    return $this->_knownGene_hg19;
 }
 
 public function _download_file($url, $filename, $compress=False, $timeout=30){
