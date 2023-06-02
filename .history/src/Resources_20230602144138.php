@@ -110,7 +110,7 @@ class Resources extends \Dna\Snps\SNPsResources {
         if ($this->_genetic_map_name !== $pop) {
             // If not, load the genetic map from file
             $this->_genetic_map = $this->_load_genetic_map_1000G_GRCh37(
-                $this->_get_path_genetic_map_1000G_GRCh37(pop: $pop)
+                $this->_get_path_genetic_map_1000G_GRCh37($pop)
             );
             // Update the name of the loaded genetic map
             $this->_genetic_map_name = $pop;

@@ -98,25 +98,15 @@ class Resources extends \Dna\Snps\SNPsResources {
         return $this->_genetic_map;
     }
 
-    /**
-     * Returns the genetic map for a given population in the 1000 Genomes Project GRCh37 reference genome.
-     *
-     * @param string $pop The population code (e.g. "CEU", "YRI", "CHB") for which to retrieve the genetic map.
-     * @return array The genetic map for the specified population.
-     */
-    public function get_genetic_map_1000G_GRCh37(string $pop): array
+    public function get_genetic_map_1000G_GRCh37(string $pop): array 
     {
-        // Check if the requested genetic map is already loaded
         if ($this->_genetic_map_name !== $pop) {
-            // If not, load the genetic map from file
             $this->_genetic_map = $this->_load_genetic_map_1000G_GRCh37(
-                $this->_get_path_genetic_map_1000G_GRCh37(pop: $pop)
+                $this->_get_path_genetic_map_1000G_GRCh37($pop)
             );
-            // Update the name of the loaded genetic map
             $this->_genetic_map_name = $pop;
         }
 
-        // Return the loaded genetic map
         return $this->_genetic_map;
     }
 
