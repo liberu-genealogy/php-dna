@@ -26,9 +26,9 @@ class Resources extends \Dna\Snps\SNPsResources {
   protected $_kgXref_hg19 = [];
 
   public function __construct($resources_dir = 'resources')
-  {
-    parent::__construct($resources_dir = $resources_dir);
-  }
+    {
+      parent::__construct($resources_dir = $resources_dir);
+    }
 
   public function _load_genetic_map_HapMapII_GRCh37($filename) 
   {
