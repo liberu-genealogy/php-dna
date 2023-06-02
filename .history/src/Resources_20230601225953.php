@@ -127,5 +127,3 @@ public function download_example_datasets(){
         ),
     ];
 }
-
-?>
