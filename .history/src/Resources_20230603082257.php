@@ -278,7 +278,7 @@ class Resources extends \Dna\Snps\SNPsResources {
      *
      * @return array KnownGene table (associative array)
      */
-    public static function loadKnownGene(string $filename): array
+    public static function loadKnownGen-e(string $filename): array
     {
         $file = fopen($filename, 'r');
         $headers = [

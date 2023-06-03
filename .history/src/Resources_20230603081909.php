@@ -205,7 +205,7 @@ class Resources extends \Dna\Snps\SNPsResources {
      * @param string $filename The path to the file to load.
      * @return array An associative array of genetic maps, keyed by chromosome.
      */
-    function _load_genetic_map_1000G_GRCh37($filename) {
+    function _loadGeneticMap1000GGRCh37($filename) {
         $genetic_map = []; // Initialize an empty array to hold the genetic maps.
 
         $phar = new PharData($filename); // Create a new PharData object from the file.
@@ -269,43 +269,6 @@ class Resources extends \Dna\Snps\SNPsResources {
         //     f.write(data)           
         }   
         return $destination;
-    }
-    
-    /**
-     * Load UCSC knownGene table.
-     *
-     * @param string $filename Path to knownGene file
-     *
-     * @return array KnownGene table (associative array)
-     */
-    public static function loadKnownGene(string $filename): array
-    {
-        $file = fopen($filename, 'r');
-        $headers = [
-            'name',
-            'chrom',
-            'strand',
-            'txStart',
-            'txEnd',
-            'cdsStart',
-            'cdsEnd',
-            'exonCount',
-            'exonStarts',
-            'exonEnds',
-            'proteinID',
-            'alignID',
-        ];
-        $knownGene = [];
-
-        while (($row = fgetcsv($file, 0, "\t")) !== false) {
-            $rowData = array_combine($headers, $row);
-            $rowData['chrom'] = substr($rowData['chrom'], 3);
-            $knownGene[$rowData['name']] = $rowData;
-        }
-
-        fclose($file);
-
-        return $knownGene;
     }
 
     public function get_all_resources() 

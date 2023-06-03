@@ -270,43 +270,6 @@ class Resources extends \Dna\Snps\SNPsResources {
         }   
         return $destination;
     }
-    
-    /**
-     * Load UCSC knownGene table.
-     *
-     * @param string $filename Path to knownGene file
-     *
-     * @return array KnownGene table (associative array)
-     */
-    public static function loadKnownGene(string $filename): array
-    {
-        $file = fopen($filename, 'r');
-        $headers = [
-            'name',
-            'chrom',
-            'strand',
-            'txStart',
-            'txEnd',
-            'cdsStart',
-            'cdsEnd',
-            'exonCount',
-            'exonStarts',
-            'exonEnds',
-            'proteinID',
-            'alignID',
-        ];
-        $knownGene = [];
-
-        while (($row = fgetcsv($file, 0, "\t")) !== false) {
-            $rowData = array_combine($headers, $row);
-            $rowData['chrom'] = substr($rowData['chrom'], 3);
-            $knownGene[$rowData['name']] = $rowData;
-        }
-
-        fclose($file);
-
-        return $knownGene;
-    }
 
     public function get_all_resources() 
     {
