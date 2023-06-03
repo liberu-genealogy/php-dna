@@ -199,45 +199,7 @@ class Resources extends \Dna\Snps\SNPsResources {
         return $genetic_map;
     }
 
-    /**
-     * Loads a genetic map from a file in the 1000 Genomes Project format (GRCh37).
-     *
-     * @param string $filename The path to the file to load.
-     * @return array An associative array of genetic maps, keyed by chromosome.
-     */
-    function loadGeneticMap1000GGRCh37($filename) {
-        $genetic_map = []; // Initialize an empty array to hold the genetic maps.
-
-        $phar = new PharData($filename); // Create a new PharData object from the file.
-
-        foreach ($phar as $member) { // Loop through each file in the Phar archive.
-            $filepath = $member->getPathname(); // Get the path to the file.
-
-            $file = gzopen($filepath, 'r'); // Open the file for reading.
-            $header = fgetcsv($file, 0, "\t"); // Read the header row of the CSV file.
-
-            $tempFile = []; // Initialize an empty array to hold the data rows.
-            while (($data = fgetcsv($file, 0, "\t")) !== false) { // Loop through each row of the CSV file.
-                if (count($data) == count($header)) { // Check that the row has the same number of columns as the header.
-                    $tempFile[] = array_combine($header, $data); // Combine the header and data rows into an associative array.
-                }
-            }
-
-            $df = []; // Initialize an empty array to hold the genetic map data.
-            foreach ($tempFile as $row) { // Loop through each row of the data.
-                $df[] = [ // Add a new array to the $df array.
-                    "pos" => $row["Position(bp)"], // Add the position to the array.
-                    "rate" => $row["Rate(cM/Mb)"], // Add the rate to the array.
-                    "map" => $row["Map(cM)"], // Add the map to the array.
-                ];
-            }
-
-            $chrom = explode("-", $member->getFilename())[1]; // Get the chromosome number from the filename.
-            $genetic_map[$chrom] = $df; // Add the genetic map data to the $genetic_map array, keyed by chromosome.
-        }
-
-        return $genetic_map; // Return the $genetic_map array.
-    }    
+    
 
     public function _download_file($url, $filename, $compress=False, $timeout=30) 
     {
