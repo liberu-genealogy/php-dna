@@ -405,6 +405,7 @@ class Resources extends \Dna\Snps\SNPsResources {
         );
     }
 
+
     public function get_all_resources() 
     {
         $resources = array( );

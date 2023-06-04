@@ -392,18 +392,19 @@ class Resources extends \Dna\Snps\SNPsResources {
         return $path;
     }
     
-    /**
-     * Get local path to HapMap Phase II genetic map for hg19 / GRCh37 (HapMapII), downloading if necessary
-     *
-     * @return string Path to genetic_map_HapMapII_GRCh37.tar.gz
-     */
-    public function getPathGeneticMapHapMapIIGRCh37(): string
-    {
-        return $this->downloadFile(
-            'ftp://ftp.ncbi.nlm.nih.gov/hapmap/recombination/2011-01_phaseII_B37/genetic_map_HapMapII_GRCh37.tar.gz',
-            'genetic_map_HapMapII_GRCh37.tar.gz'
-        );
-    }
+/**
+ * Get local path to HapMap Phase II genetic map for hg19 / GRCh37 (HapMapII), downloading if necessary
+ *
+ * @return string Path to genetic_map_HapMapII_GRCh37.tar.gz
+ */
+public function getPathGeneticMapHapMapIIGRCh37(): string
+{
+    return $this->downloadFile(
+        'ftp://ftp.ncbi.nlm.nih.gov/hapmap/recombination/2011-01_phaseII_B37/genetic_map_HapMapII_GRCh37.tar.gz',
+        'genetic_map_HapMapII_GRCh37.tar.gz'
+    );
+}
+
 
     public function get_all_resources() 
     {
