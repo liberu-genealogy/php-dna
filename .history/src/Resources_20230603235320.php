@@ -308,41 +308,8 @@ class Resources extends \Dna\Snps\SNPsResources {
         return $knownGene;
     }
 
-    /**
-     * Load UCSC kgXref table.
-     *
-     * @param string $filename Path to kgXref file
-     *
-     * @return array kgXref table (associative array)
-     */
-    public static function loadKgXref(string $filename): array
-    {
-        $file = fopen($filename, 'r');
-        $headers = [
-            'kgID',
-            'mRNA',
-            'spID',
-            'spDisplayID',
-            'geneSymbol',
-            'refseq',
-            'protAcc',
-            'description',
-            'rfamAcc',
-            'tRnaName',
-        ];
-        $kgXref = [];
 
-        while (($row = fgetcsv($file, 0, "\t")) !== false) {
-            $rowData = array_combine($headers, $row);
-            $kgXref[$rowData['kgID']] = $rowData;
-        }
-
-        fclose($file);
-
-        return $kgXref;
-    }
-
-
+    
     public function get_all_resources() 
     {
         $resources = array( );
