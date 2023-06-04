@@ -404,22 +404,7 @@ class Resources extends \Dna\Snps\SNPsResources {
             'genetic_map_HapMapII_GRCh37.tar.gz'
         );
     }
-
-    /**
-     * Get local path to population-specific 1000 Genomes Project genetic map,
-     * downloading if necessary.
-     *
-     * @param string $pop
-     * @return string path to {pop}_omni_recombination_20130507.tar
-     */
-    public function getGeneticMap1000G_GRCh37($pop)
-    {
-        $filename = "{$pop}_omni_recombination_20130507.tar";
-        return $this->downloadFile(
-            "ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/working/20130507_omni_recombination_rates/{$filename}",
-            $filename
-        );
-    }    
+    
 
     public function get_all_resources() 
     {

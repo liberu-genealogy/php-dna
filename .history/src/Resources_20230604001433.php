@@ -405,7 +405,7 @@ class Resources extends \Dna\Snps\SNPsResources {
         );
     }
 
-    /**
+/**
      * Get local path to population-specific 1000 Genomes Project genetic map,
      * downloading if necessary.
      *
