@@ -341,56 +341,55 @@ class Resources extends \Dna\Snps\SNPsResources {
 
         return $kgXref;
     }
-    
     /**
-     * Get local path to cytoBand file for hg19 / GRCh37 from UCSC, downloading if necessary.
-     *
-     * @return string Path to cytoBand_hg19.txt.gz
-     */
-    public function getPathCytoBandHg19(): string
-    {
-        return $this->downloadFile(
-            'ftp://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/cytoBand.txt.gz',
-            'cytoBand_hg19.txt.gz'
-        );
-    }
+ * Get local path to cytoBand file for hg19 / GRCh37 from UCSC, downloading if necessary.
+ *
+ * @return string Path to cytoBand_hg19.txt.gz
+ */
+public function getPathCytoBandHg19(): string
+{
+    return $this->downloadFile(
+        'ftp://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/cytoBand.txt.gz',
+        'cytoBand_hg19.txt.gz'
+    );
+}
 
-    /**
-     * Download file from a given URL if not exists and return its local path.
-     *
-     * @param string $url URL of the file to download
-     * @param string $filename Local name for the downloaded file
-     *
-     * @return string Local path to the downloaded file
-     */
-    protected function downloadFile(string $url, string $filename): string
-    {
-        $path = __DIR__ . '/' . $filename;
-        if (!file_exists($path)) {
-            $parsedUrl = parse_url($url);
-            $host = $parsedUrl['host'];
-            $remotePath = $parsedUrl['path'];
+/**
+ * Download file from a given URL if not exists and return its local path.
+ *
+ * @param string $url URL of the file to download
+ * @param string $filename Local name for the downloaded file
+ *
+ * @return string Local path to the downloaded file
+ */
+protected function downloadFile(string $url, string $filename): string
+{
+    $path = __DIR__ . '/' . $filename;
+    if (!file_exists($path)) {
+        $parsedUrl = parse_url($url);
+        $host = $parsedUrl['host'];
+        $remotePath = $parsedUrl['path'];
 
-            $conn = ftp_connect($host);
-            if ($conn) {
-                $loggedIn = ftp_login($conn, 'anonymous', '');
-                if ($loggedIn) {
-                    ftp_pasv($conn, true);
-                    $downloaded = ftp_get($conn, $path, $remotePath, FTP_BINARY);
-                    if (!$downloaded) {
-                        throw new Exception("Failed to download the file '{$url}'.");
-                    }
-                    ftp_close($conn);
-                } else {
-                    throw new Exception("Failed to log in to the FTP server '{$host}'.");
+        $conn = ftp_connect($host);
+        if ($conn) {
+            $loggedIn = ftp_login($conn, 'anonymous', '');
+            if ($loggedIn) {
+                ftp_pasv($conn, true);
+                $downloaded = ftp_get($conn, $path, $remotePath, FTP_BINARY);
+                if (!$downloaded) {
+                    throw new Exception("Failed to download the file '{$url}'.");
                 }
+                ftp_close($conn);
             } else {
-                throw new Exception("Failed to connect to the FTP server '{$host}'.");
+                throw new Exception("Failed to log in to the FTP server '{$host}'.");
             }
+        } else {
+            throw new Exception("Failed to connect to the FTP server '{$host}'.");
         }
-
-        return $path;
     }
+
+    return $path;
+}
 
 
     public function get_all_resources() 

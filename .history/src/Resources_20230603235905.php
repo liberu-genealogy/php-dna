@@ -341,7 +341,6 @@ class Resources extends \Dna\Snps\SNPsResources {
 
         return $kgXref;
     }
-    
     /**
      * Get local path to cytoBand file for hg19 / GRCh37 from UCSC, downloading if necessary.
      *

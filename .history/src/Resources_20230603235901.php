@@ -340,9 +340,7 @@ class Resources extends \Dna\Snps\SNPsResources {
         fclose($file);
 
         return $kgXref;
-    }
-    
-    /**
+    }    /**
      * Get local path to cytoBand file for hg19 / GRCh37 from UCSC, downloading if necessary.
      *
      * @return string Path to cytoBand_hg19.txt.gz
