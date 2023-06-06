@@ -162,5 +162,4 @@ class SNPsResources extends Singleton
         // TODO: Implement reference sequence path retrieval
         return [];
     }
-    
 }
