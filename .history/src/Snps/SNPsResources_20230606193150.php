@@ -203,22 +203,22 @@ class SNPsResources extends Singleton
       // ...
   }
 
-  /**
-   * Downloads example datasets.
-   *
-   * @return array Array of downloaded file paths.
-   */
-  public function download_example_datasets(): array 
-  {
-      $paths = [];
+/**
+ * Downloads example datasets.
+ *
+ * @return array Array of downloaded file paths.
+ */
+public function download_example_datasets(): array 
+{
+    $paths = [];
 
-      // Download 23andMe example dataset.
-      $paths[] = $this->_download_file("https://opensnp.org/data/662.23andme.340", "662.23andme.340.txt.gz", true);
+    // Download 23andMe example dataset.
+    $paths[] = $this->_download_file("https://opensnp.org/data/662.23andme.340", "662.23andme.340.txt.gz", true);
 
-      // Download FTDNA Illumina example dataset.
-      $paths[] = $this->_download_file("https://opensnp.org/data/662.ftdna-illumina.341", "662.ftdna-illumina.341.csv.gz", true);
+    // Download FTDNA Illumina example dataset.
+    $paths[] = $this->_download_file("https://opensnp.org/data/662.ftdna-illumina.341", "662.ftdna-illumina.341.csv.gz", true);
 
-      return $paths;
-  }  
+    return $paths;
+}  
 
 }
