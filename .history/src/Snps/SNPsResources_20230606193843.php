@@ -201,44 +201,44 @@ class SNPsResources extends Singleton
  *
  * @return array Array of resources.
  */
-  public function getAllResources()
-  {
-      // Get / download all resources used throughout snps.
-      //
-      // Notes
-      // -----
-      // This function does not download reference sequences and the openSNP datadump,
-      // due to their large sizes.
-      //
-      // Returns
-      // -------
-      // array of resources
+public function getAllResources()
+{
+    // Get / download all resources used throughout snps.
+    //
+    // Notes
+    // -----
+    // This function does not download reference sequences and the openSNP datadump,
+    // due to their large sizes.
+    //
+    // Returns
+    // -------
+    // array of resources
 
-      $resources = [];
-      $versions = ["NCBI36", "GRCh37", "GRCh38"];
+    $resources = [];
+    $versions = ["NCBI36", "GRCh37", "GRCh38"];
 
-      // Loop through all possible assembly mappings and get their data.
-      for ($i = 0; $i < count($versions); ++$i) {
-          for ($j = 0; $j < count($versions); ++$j) {
-              if ($i === $j) {
-                  continue;
-              }
-              $source = $versions[$i];
-              $target = $versions[$j];
-              $resources[$source . "_" . $target] = $this->getAssemblyMappingData($source, $target);
-          }
-      }
+    // Loop through all possible assembly mappings and get their data.
+    for ($i = 0; $i < count($versions); ++$i) {
+        for ($j = 0; $j < count($versions); ++$j) {
+            if ($i === $j) {
+                continue;
+            }
+            $source = $versions[$i];
+            $target = $versions[$j];
+            $resources[$source . "_" . $target] = $this->getAssemblyMappingData($source, $target);
+        }
+    }
 
-      // Get GSA resources.
-      $resources["gsa_resources"] = $this->getGsaResources();
+    // Get GSA resources.
+    $resources["gsa_resources"] = $this->getGsaResources();
 
-      // Get chip clusters.
-      $resources["chip_clusters"] = $this->getChipClusters();
+    // Get chip clusters.
+    $resources["chip_clusters"] = $this->getChipClusters();
 
-      // Get low quality SNPs.
-      $resources["low_quality_snps"] = $this->getLowQualitySnps();
+    // Get low quality SNPs.
+    $resources["low_quality_snps"] = $this->getLowQualitySnps();
 
-      return $resources;
-  }
+    return $resources;
+}
 
 }

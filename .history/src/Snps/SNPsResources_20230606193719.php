@@ -179,6 +179,31 @@ class SNPsResources extends Singleton
   }
 
   /**
+   * Load assembly mapping data.
+   *
+   * @param string $path path to assembly mapping data
+   *
+   * @return array array of json assembly mapping data if loading was successful, else []
+   */
+  private function loadAssemblyMappingData(string $path): array {
+      // Load assembly mapping data.
+      // ...
+  }
+
+  /**
+   * Get path to assembly mapping data.
+   *
+   * @param string $sourceAssembly {'NCBI36', 'GRCh37', 'GRCh38'} assembly to remap from
+   * @param string $targetAssembly {'NCBI36', 'GRCh37', 'GRCh38'} assembly to remap to
+   *
+   * @return string path to assembly mapping data
+   */
+  private function getPathAssemblyMappingData(string $sourceAssembly, string $targetAssembly): string {
+      // Get path to assembly mapping data.
+      // ...
+  }
+
+  /**
    * Downloads example datasets.
    *
    * @return array Array of downloaded file paths.
@@ -195,50 +220,5 @@ class SNPsResources extends Singleton
 
       return $paths;
   }  
-
-/**
- * Gets / downloads all resources used throughout snps.
- *
- * @return array Array of resources.
- */
-  public function getAllResources()
-  {
-      // Get / download all resources used throughout snps.
-      //
-      // Notes
-      // -----
-      // This function does not download reference sequences and the openSNP datadump,
-      // due to their large sizes.
-      //
-      // Returns
-      // -------
-      // array of resources
-
-      $resources = [];
-      $versions = ["NCBI36", "GRCh37", "GRCh38"];
-
-      // Loop through all possible assembly mappings and get their data.
-      for ($i = 0; $i < count($versions); ++$i) {
-          for ($j = 0; $j < count($versions); ++$j) {
-              if ($i === $j) {
-                  continue;
-              }
-              $source = $versions[$i];
-              $target = $versions[$j];
-              $resources[$source . "_" . $target] = $this->getAssemblyMappingData($source, $target);
-          }
-      }
-
-      // Get GSA resources.
-      $resources["gsa_resources"] = $this->getGsaResources();
-
-      // Get chip clusters.
-      $resources["chip_clusters"] = $this->getChipClusters();
-
-      // Get low quality SNPs.
-      $resources["low_quality_snps"] = $this->getLowQualitySnps();
-
-      return $resources;
-  }
 
 }
