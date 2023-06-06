@@ -42,46 +42,8 @@ class SNPsResources extends Singleton
     }
 
     /**
-     * An array of reference sequences
-     * @var array
+     * Initializes the resource attributes
      */
-    private array $_reference_sequences;
-
-    /**
-     * A map of GSA RSIDs to chromosome positions
-     * @var array|null
-     */
-    private ?array $_gsa_rsid_map;
-
-    /**
-     * A map of GSA chromosome positions to RSIDs
-     * @var array|null
-     */
-    private ?array $_gsa_chrpos_map;
-
-    /**
-     * A map of dbSNP 151 to GRCh37 reverse mappings
-     * @var array|null
-     */
-    private ?array $_dbsnp_151_37_reverse;
-
-    /**
-     * An array of filenames for the OpenSNP datadump
-     * @var array
-     */
-    private array $_opensnp_datadump_filenames;
-
-    /**
-     * A map of chip clusters
-     * @var array|null
-     */
-    private ?array $_chip_clusters;
-
-    /**
-     * An array of low quality SNPs
-     * @var array|null
-     */
-    private ?array $_low_quality_snps;
     private function _init_resource_attributes(): void {
       $this->_reference_sequences = [];
       $this->_gsa_rsid_map = null;
