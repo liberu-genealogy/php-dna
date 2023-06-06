@@ -201,6 +201,5 @@ class SNPsResources extends Singleton
   private function getPathAssemblyMappingData(string $sourceAssembly, string $targetAssembly): string {
       // Get path to assembly mapping data.
       // ...
-  }
-      
+  }    
 }

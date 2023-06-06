@@ -163,44 +163,5 @@ class SNPsResources extends Singleton
         return [];
     }
     
-    /**
-     * Get assembly mapping data.
-     *
-     * @param string $sourceAssembly {'NCBI36', 'GRCh37', 'GRCh38'} assembly to remap from
-     * @param string $targetAssembly {'NCBI36', 'GRCh37', 'GRCh38'} assembly to remap to
-     *
-     * @return array array of json assembly mapping data if loading was successful, else []
-     */
-    public function getAssemblyMappingData(string $sourceAssembly, string $targetAssembly): array {
-      // Get assembly mapping data.
-      return $this->loadAssemblyMappingData(
-          $this->getPathAssemblyMappingData($sourceAssembly, $targetAssembly)
-      );
-  }
-
-  /**
-   * Load assembly mapping data.
-   *
-   * @param string $path path to assembly mapping data
-   *
-   * @return array array of json assembly mapping data if loading was successful, else []
-   */
-  private function loadAssemblyMappingData(string $path): array {
-      // Load assembly mapping data.
-      // ...
-  }
-
-  /**
-   * Get path to assembly mapping data.
-   *
-   * @param string $sourceAssembly {'NCBI36', 'GRCh37', 'GRCh38'} assembly to remap from
-   * @param string $targetAssembly {'NCBI36', 'GRCh37', 'GRCh38'} assembly to remap to
-   *
-   * @return string path to assembly mapping data
-   */
-  private function getPathAssemblyMappingData(string $sourceAssembly, string $targetAssembly): string {
-      // Get path to assembly mapping data.
-      // ...
-  }
-      
+    
 }
