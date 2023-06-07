@@ -476,32 +476,32 @@ class SNPsResources extends Singleton
     gzclose($fGzip);
   }
   
-  /**
-   * Load assembly mapping data from a tar file.
-   *
-   * @param string $filename The name of the tar file to load the assembly mapping data from.
-   * @return array The assembly mapping data.
-   */
-  public static function loadAssemblyMappingData(string $filename): array {
-    // Initialize an empty array to store the assembly mapping data.
-    $assembly_mapping_data = [];
+/**
+ * Load assembly mapping data from a tar file.
+ *
+ * @param string $filename The name of the tar file to load the assembly mapping data from.
+ * @return array The assembly mapping data.
+ */
+public static function loadAssemblyMappingData(string $filename): array {
+  // Initialize an empty array to store the assembly mapping data.
+  $assembly_mapping_data = [];
 
-    // Create a new PharData object from the tar file.
-    $tar = new PharData($filename);
+  // Create a new PharData object from the tar file.
+  $tar = new PharData($filename);
 
-    // Iterate over each file in the tar file.
-    foreach ($tar as $tarinfo) {
-        $member_name = $tarinfo->getFilename();
+  // Iterate over each file in the tar file.
+  foreach ($tar as $tarinfo) {
+      $member_name = $tarinfo->getFilename();
 
-        // If the file is a JSON file, load its contents into an array and add it to the assembly mapping data.
-        if (str_contains($member_name, ".json")) {
-            $tarfile = $tar->offsetGet($member_name)->getContent();
-            $tar_bytes = $tarfile;
-            $assembly_mapping_data[explode(".", $member_name)[0]] = json_decode($tar_bytes, true);
-        }
-    }
+      // If the file is a JSON file, load its contents into an array and add it to the assembly mapping data.
+      if (str_contains($member_name, ".json")) {
+          $tarfile = $tar->offsetGet($member_name)->getContent();
+          $tar_bytes = $tarfile;
+          $assembly_mapping_data[explode(".", $member_name)[0]] = json_decode($tar_bytes, true);
+      }
+  }
 
-    // Return the assembly mapping data.
-    return $assembly_mapping_data;
-  }  
+  // Return the assembly mapping data.
+  return $assembly_mapping_data;
+}  
 }
