@@ -1,4 +1,5 @@
 <?php
+
 /**
  * php-dna.
  *
@@ -65,6 +66,4 @@ class Singleton
 
     return self::$instances[$cls];
   }
-
-  
 }
