@@ -273,23 +273,17 @@ class SNPsResources extends Singleton
       return $this->reference_sequences;
   }
 
-  /**
-   * Get resources for reading Global Screening Array files.
-   * https://support.illumina.com/downloads/infinium-global-screening-array-v2-0-product-files.html
-   *
-   * @return array An array of resources for reading Global Screening Array files.
-   */
   public function getGsaResources(): array
   {
       // Get the rsid map resource.
       $rsid_map = $this->getGsaRsid();
-
+  
       // Get the chrpos map resource.
       $chrpos_map = $this->getGsaChrpos();
-
+  
       // Get the dbsnp 151 37 reverse resource.
       $dbsnp_151_37_reverse = $this->getDbsnp15137Reverse();
-
+  
       // Return an array of resources.
       return [
           "rsid_map" => $rsid_map,
