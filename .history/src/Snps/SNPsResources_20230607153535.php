@@ -400,46 +400,46 @@ class SNPsResources extends Singleton
       return $this->_lowQualitySnps;
   }  
 
-  /**
-   * Get the dbsnp 151 37 reverse data.
-   *
-   * @return array|null The dbsnp 151 37 reverse data.
-   */
-  public function get_dbsnp_151_37_reverse(): ?array {
-    // If the dbsnp 151 37 reverse data has not been loaded yet, download and process it.
-    if ($this->_dbsnp_151_37_reverse === null) {
-        // Download the dbsnp 151 37 reverse file.
-        $dbsnp_rev_path = $this->download_file(
-            "https://sano-public.s3.eu-west-2.amazonaws.com/dbsnp151.b37.snps_reverse.txt.gz",
-            "dbsnp_151_37_reverse.txt.gz"
-        );
+/**
+ * Get the dbsnp 151 37 reverse data.
+ *
+ * @return array|null The dbsnp 151 37 reverse data.
+ */
+public function get_dbsnp_151_37_reverse(): ?array {
+  // If the dbsnp 151 37 reverse data has not been loaded yet, download and process it.
+  if ($this->_dbsnp_151_37_reverse === null) {
+      // Download the dbsnp 151 37 reverse file.
+      $dbsnp_rev_path = $this->download_file(
+          "https://sano-public.s3.eu-west-2.amazonaws.com/dbsnp151.b37.snps_reverse.txt.gz",
+          "dbsnp_151_37_reverse.txt.gz"
+      );
 
-        // Load the dbsnp 151 37 reverse file into an array.
-        $rsids = array();
-        $file_handle = fopen($dbsnp_rev_path, "r");
-        while (!feof($file_handle)) {
-            $line = fgets($file_handle);
-            if ($line[0] !== "#") {
-                $tokens = explode(" ", trim($line));
-                if (count($tokens) === 5) {
-                    $rsid = array(
-                        "dbsnp151revrsid" => $tokens[0],
-                        "dbsnp151freqa" => (double)$tokens[1],
-                        "dbsnp151freqt" => (double)$tokens[2],
-                        "dbsnp151freqc" => (double)$tokens[3],
-                        "dbsnp151freqg" => (double)$tokens[4]
-                    );
-                    $rsids[] = $rsid;
-                }
-            }
-        }
-        fclose($file_handle);
+      // Load the dbsnp 151 37 reverse file into an array.
+      $rsids = array();
+      $file_handle = fopen($dbsnp_rev_path, "r");
+      while (!feof($file_handle)) {
+          $line = fgets($file_handle);
+          if ($line[0] !== "#") {
+              $tokens = explode(" ", trim($line));
+              if (count($tokens) === 5) {
+                  $rsid = array(
+                      "dbsnp151revrsid" => $tokens[0],
+                      "dbsnp151freqa" => (double)$tokens[1],
+                      "dbsnp151freqt" => (double)$tokens[2],
+                      "dbsnp151freqc" => (double)$tokens[3],
+                      "dbsnp151freqg" => (double)$tokens[4]
+                  );
+                  $rsids[] = $rsid;
+              }
+          }
+      }
+      fclose($file_handle);
 
-        // Save the processed dbsnp 151 37 reverse data to the object.
-        $this->_dbsnp_151_37_reverse = $rsids;
-    }
+      // Save the processed dbsnp 151 37 reverse data to the object.
+      $this->_dbsnp_151_37_reverse = $rsids;
+  }
 
-    // Return the dbsnp 151 37 reverse data.
-    return $this->_dbsnp_151_37_reverse;
-  }  
+  // Return the dbsnp 151 37 reverse data.
+  return $this->_dbsnp_151_37_reverse;
+}  
 }
