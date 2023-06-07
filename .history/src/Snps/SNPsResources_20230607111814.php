@@ -343,61 +343,61 @@ class SNPsResources extends Singleton
     return $this->_chip_clusters;
   }
   
-  /**
-   * Get the low quality SNPs data.
-   *
-   * @return array The low quality SNPs data.
-   */
-  private ?array $_lowQualitySnps = null;
+/**
+ * Get the low quality SNPs data.
+ *
+ * @return array The low quality SNPs data.
+ */
+private ?array $_lowQualitySnps = null;
 
-  public function getLowQualitySNPs(): array
-  {
-      // If the low quality SNPs data has not been loaded yet, download and process it.
-      if ($this->_lowQualitySnps === null) {
-          // Download the low quality SNPs file.
-          $lowQualitySnpsPath = $this->downloadFile(
-              "https://supfam.mrc-lmb.cam.ac.uk/GenomePrep/datadir/badalleles.tsv.gz",
-              "low_quality_snps.tsv.gz"
-          );
+public function getLowQualitySNPs(): array
+{
+    // If the low quality SNPs data has not been loaded yet, download and process it.
+    if ($this->_lowQualitySnps === null) {
+        // Download the low quality SNPs file.
+        $lowQualitySnpsPath = $this->downloadFile(
+            "https://supfam.mrc-lmb.cam.ac.uk/GenomePrep/datadir/badalleles.tsv.gz",
+            "low_quality_snps.tsv.gz"
+        );
 
-          // Load the low quality SNPs file into an array.
-          $fileContents = file_get_contents($lowQualitySnpsPath);
-          $rows = explode("\n", $fileContents);
+        // Load the low quality SNPs file into an array.
+        $fileContents = file_get_contents($lowQualitySnpsPath);
+        $rows = explode("\n", $fileContents);
 
-          // Process the low quality SNPs data into an array of arrays.
-          $clusterDfs = [];
+        // Process the low quality SNPs data into an array of arrays.
+        $clusterDfs = [];
 
-          foreach ($rows as $row) {
-              if (empty($row)) {
-                  continue;
-              }
+        foreach ($rows as $row) {
+            if (empty($row)) {
+                continue;
+            }
 
-              [$cluster, $loci] = explode("\t", $row);
-              $lociSplit = explode(",", $loci);
+            [$cluster, $loci] = explode("\t", $row);
+            $lociSplit = explode(",", $loci);
 
-              foreach ($lociSplit as $locus) {
-                  $clusterDfs[] = ['cluster' => $cluster, 'locus' => $locus];
-              }
-          }
+            foreach ($lociSplit as $locus) {
+                $clusterDfs[] = ['cluster' => $cluster, 'locus' => $locus];
+            }
+        }
 
-          // Transform the low quality SNPs data into an array of arrays with separate columns for chromosome and position.
-          $transformedData = [];
+        // Transform the low quality SNPs data into an array of arrays with separate columns for chromosome and position.
+        $transformedData = [];
 
-          foreach ($clusterDfs as $clusterDf) {
-              [$chrom, $pos] = explode(':', $clusterDf['locus']);
-              $transformedData[] = [
-                  'cluster' => $clusterDf['cluster'],
-                  'chrom' => $chrom,
-                  'pos' => intval($pos)
-              ];
-          }
+        foreach ($clusterDfs as $clusterDf) {
+            [$chrom, $pos] = explode(':', $clusterDf['locus']);
+            $transformedData[] = [
+                'cluster' => $clusterDf['cluster'],
+                'chrom' => $chrom,
+                'pos' => intval($pos)
+            ];
+        }
 
-          // Save the processed low quality SNPs data to the object.
-          $this->_lowQualitySnps = $transformedData;
-      }
+        // Save the processed low quality SNPs data to the object.
+        $this->_lowQualitySnps = $transformedData;
+    }
 
-      // Return the low quality SNPs data.
-      return $this->_lowQualitySnps;
-  }  
+    // Return the low quality SNPs data.
+    return $this->_lowQualitySnps;
+}  
 
 }
