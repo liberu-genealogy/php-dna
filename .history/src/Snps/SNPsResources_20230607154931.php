@@ -443,19 +443,5 @@ class SNPsResources extends Singleton
     return $this->_dbsnp_151_37_reverse;
   }
   
-  /**
-   * Get the filenames of the OpenSNP datadump files.
-   *
-   * @return array The filenames of the OpenSNP datadump files.
-   */
-  public function getOpensnpDatadumpFilenames(): array {
-    // If the OpenSNP datadump filenames have not been loaded yet, load them from the path.
-    if (!$this->opensnpDatadumpFilenames) {
-        $this->opensnpDatadumpFilenames = $this->getOpensnpDatadumpFilenamesFromPath(
-            $this->getPathOpensnpDatadump()
-        );
-    }
-    // Return the OpenSNP datadump filenames.
-    return $this->opensnpDatadumpFilenames;
-  }  
+  
 }
