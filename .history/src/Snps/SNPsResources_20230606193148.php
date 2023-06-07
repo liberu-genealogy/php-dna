@@ -179,98 +179,30 @@ class SNPsResources extends Singleton
   }
 
   /**
-   * Downloads example datasets.
+   * Load assembly mapping data.
    *
-   * @return array Array of downloaded file paths.
+   * @param string $path path to assembly mapping data
+   *
+   * @return array array of json assembly mapping data if loading was successful, else []
    */
-  public function download_example_datasets(): array 
-  {
-      $paths = [];
-
-      // Download 23andMe example dataset.
-      $paths[] = $this->_download_file("https://opensnp.org/data/662.23andme.340", "662.23andme.340.txt.gz", true);
-
-      // Download FTDNA Illumina example dataset.
-      $paths[] = $this->_download_file("https://opensnp.org/data/662.ftdna-illumina.341", "662.ftdna-illumina.341.csv.gz", true);
-
-      return $paths;
-  }  
-
-/**
- * Gets / downloads all resources used throughout snps.
- *
- * @return array Array of resources.
- */
-  public function getAllResources()
-  {
-      // Get / download all resources used throughout snps.
-      //
-      // Notes
-      // -----
-      // This function does not download reference sequences and the openSNP datadump,
-      // due to their large sizes.
-      //
-      // Returns
-      // -------
-      // array of resources
-
-      $resources = [];
-      $versions = ["NCBI36", "GRCh37", "GRCh38"];
-
-      // Loop through all possible assembly mappings and get their data.
-      for ($i = 0; $i < count($versions); ++$i) {
-          for ($j = 0; $j < count($versions); ++$j) {
-              if ($i === $j) {
-                  continue;
-              }
-              $source = $versions[$i];
-              $target = $versions[$j];
-              $resources[$source . "_" . $target] = $this->getAssemblyMappingData($source, $target);
-          }
-      }
-
-      // Get GSA resources.
-      $resources["gsa_resources"] = $this->getGsaResources();
-
-      // Get chip clusters.
-      $resources["chip_clusters"] = $this->getChipClusters();
-
-      // Get low quality SNPs.
-      $resources["low_quality_snps"] = $this->getLowQualitySnps();
-
-      return $resources;
+  private function loadAssemblyMappingData(string $path): array {
+      // Load assembly mapping data.
+      // ...
   }
 
   /**
-   * Gets Homo sapiens reference sequences for Builds 36, 37, and 38 from Ensembl.
+   * Get path to assembly mapping data.
    *
-   * @param mixed ...$args Additional arguments to pass to getReferenceSequences.
+   * @param string $sourceAssembly {'NCBI36', 'GRCh37', 'GRCh38'} assembly to remap from
+   * @param string $targetAssembly {'NCBI36', 'GRCh37', 'GRCh38'} assembly to remap to
    *
-   * @return array Dictionary of ReferenceSequence, else {}.
+   * @return string path to assembly mapping data
    */
-  public function getAllReferenceSequences(...$args): array
-  {
-      /**
-       * Get Homo sapiens reference sequences for Builds 36, 37, and 38 from Ensembl.
-       *
-       * Notes
-       * -----
-       * This function can download over 2..
-       *
-       * Returns
-       * -------
-       * dict
-       *   dict of ReferenceSequence, else {}
-       */
-
-      $assemblies = ["NCBI36", "GRCh37", "GRCh38"];
-
-      // Loop through all assemblies and get their reference sequences.
-      foreach ($assemblies as $assembly) {
-          $this->getReferenceSequences($assembly, ...$args);
-      }
-
-      return $this->reference_sequences;
+  private function getPathAssemblyMappingData(string $sourceAssembly, string $targetAssembly): string {
+      // Get path to assembly mapping data.
+      // ...
   }
+
+  
 
 }

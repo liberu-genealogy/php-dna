@@ -405,7 +405,7 @@ class Resources extends \Dna\Snps\SNPsResources {
         );
     }
 
-    /**
+/**
      * Get local path to population-specific 1000 Genomes Project genetic map,
      * downloading if necessary.
      *
@@ -418,36 +418,6 @@ class Resources extends \Dna\Snps\SNPsResources {
         return $this->downloadFile(
             "ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/working/20130507_omni_recombination_rates/{$filename}",
             $filename
-        );
-    }    
-
-    /**
-     * Downloads the knownGene.txt.gz file for the hg19 genome assembly from the UCSC Genome Browser FTP server.
-     *
-     * @return string The path to the downloaded file.
-     */
-    public function get_path_knownGene_hg19(): string {
-        // Download the file from the UCSC Genome Browser FTP server.
-        // The file is located at ftp://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/knownGene.txt.gz
-        // and will be saved as knownGene_hg19.txt.gz in the current directory.
-        return $this->download_file(
-            "ftp://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/knownGene.txt.gz",
-            "knownGene_hg19.txt.gz"
-        );
-    }
-
-    /**
-     * Downloads the kgXref.txt.gz file for the hg19 genome assembly from the UCSC Genome Browser FTP server.
-     *
-     * @return string The path to the downloaded file.
-     */
-    public function get_path_kgXref_hg19(): string {
-        // Download the file from the UCSC Genome Browser FTP server.
-        // The file is located at ftp://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/kgXref.txt.gz
-        // and will be saved as kgXref_hg19.txt.gz in the current directory.
-        return $this->download_file(
-            "ftp://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/kgXref.txt.gz",
-            "kgXref_hg19.txt.gz"
         );
     }    
 

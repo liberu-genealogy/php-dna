@@ -241,36 +241,36 @@ class SNPsResources extends Singleton
       return $resources;
   }
 
-  /**
-   * Gets Homo sapiens reference sequences for Builds 36, 37, and 38 from Ensembl.
-   *
-   * @param mixed ...$args Additional arguments to pass to getReferenceSequences.
-   *
-   * @return array Dictionary of ReferenceSequence, else {}.
-   */
-  public function getAllReferenceSequences(...$args): array
-  {
-      /**
-       * Get Homo sapiens reference sequences for Builds 36, 37, and 38 from Ensembl.
-       *
-       * Notes
-       * -----
-       * This function can download over 2..
-       *
-       * Returns
-       * -------
-       * dict
-       *   dict of ReferenceSequence, else {}
-       */
+/**
+ * Gets Homo sapiens reference sequences for Builds 36, 37, and 38 from Ensembl.
+ *
+ * @param mixed ...$args Additional arguments to pass to getReferenceSequences.
+ *
+ * @return array Dictionary of ReferenceSequence, else {}.
+ */
+public function getAllReferenceSequences(...$args): array
+{
+    /**
+     * Get Homo sapiens reference sequences for Builds 36, 37, and 38 from Ensembl.
+     *
+     * Notes
+     * -----
+     * This function can download over 2..
+     *
+     * Returns
+     * -------
+     * dict
+     *   dict of ReferenceSequence, else {}
+     */
 
-      $assemblies = ["NCBI36", "GRCh37", "GRCh38"];
+    $assemblies = ["NCBI36", "GRCh37", "GRCh38"];
 
-      // Loop through all assemblies and get their reference sequences.
-      foreach ($assemblies as $assembly) {
-          $this->getReferenceSequences($assembly, ...$args);
-      }
+    // Loop through all assemblies and get their reference sequences.
+    foreach ($assemblies as $assembly) {
+        $this->getReferenceSequences($assembly, ...$args);
+    }
 
-      return $this->reference_sequences;
-  }
+    return $this->reference_sequences;
+}  
 
 }

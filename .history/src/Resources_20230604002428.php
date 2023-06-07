@@ -436,20 +436,28 @@ class Resources extends \Dna\Snps\SNPsResources {
         );
     }
 
-    /**
-     * Downloads the kgXref.txt.gz file for the hg19 genome assembly from the UCSC Genome Browser FTP server.
-     *
-     * @return string The path to the downloaded file.
-     */
-    public function get_path_kgXref_hg19(): string {
-        // Download the file from the UCSC Genome Browser FTP server.
-        // The file is located at ftp://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/kgXref.txt.gz
-        // and will be saved as kgXref_hg19.txt.gz in the current directory.
-        return $this->download_file(
-            "ftp://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/kgXref.txt.gz",
-            "kgXref_hg19.txt.gz"
-        );
-    }    
+Here's the code with comments:
+
+```php
+/**
+ * Downloads the kgXref.txt.gz file for the hg19 genome assembly from the UCSC Genome Browser FTP server.
+ *
+ * @return string The path to the downloaded file.
+ */
+public function get_path_kgXref_hg19(): string {
+    // Download the file from the UCSC Genome Browser FTP server.
+    // The file is located at ftp://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/kgXref.txt.gz
+    // and will be saved as kgXref_hg19.txt.gz in the current directory.
+    return $this->download_file(
+        "ftp://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/kgXref.txt.gz",
+        "kgXref_hg19.txt.gz"
+    );
+}
+```
+
+This is a PHP function that downloads the `kgXref.txt.gz` file for the `hg19` genome assembly from the UCSC Genome Browser FTP server. The function returns the path to the downloaded file as a string.
+
+The function uses the `download_file` method to download the file from the FTP server. The file is located at `ftp://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/kgXref.txt.gz` and will be saved as `kgXref_hg19.txt.gz` in the current directory.    
 
     public function get_all_resources() 
     {

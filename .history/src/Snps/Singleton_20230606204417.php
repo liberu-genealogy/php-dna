@@ -1,4 +1,8 @@
+composer require phpoffice/phpspreadsheet
+
+
 <?php
+
 /**
  * php-dna.
  *
@@ -66,5 +70,5 @@ class Singleton
     return self::$instances[$cls];
   }
 
-  
+
 }

@@ -436,6 +436,9 @@ class Resources extends \Dna\Snps\SNPsResources {
         );
     }
 
+    Here's the code with comments:
+
+    ```php
     /**
      * Downloads the kgXref.txt.gz file for the hg19 genome assembly from the UCSC Genome Browser FTP server.
      *
@@ -449,7 +452,12 @@ class Resources extends \Dna\Snps\SNPsResources {
             "ftp://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/kgXref.txt.gz",
             "kgXref_hg19.txt.gz"
         );
-    }    
+    }
+    ```
+    
+    This is a PHP function that downloads the `kgXref.txt.gz` file for the `hg19` genome assembly from the UCSC Genome Browser FTP server. The function returns the path to the downloaded file as a string.
+    
+    The function uses the `download_file` method to download the file from the FTP server. The file is located at `ftp://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/kgXref.txt.gz` and will be saved as `kgXref_hg19.txt.gz` in the current directory.    
 
     public function get_all_resources() 
     {

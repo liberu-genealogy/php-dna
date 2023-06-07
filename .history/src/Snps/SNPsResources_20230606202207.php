@@ -272,5 +272,6 @@ class SNPsResources extends Singleton
 
       return $this->reference_sequences;
   }
+    
 
 }

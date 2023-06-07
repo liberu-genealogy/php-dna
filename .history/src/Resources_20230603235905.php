@@ -239,37 +239,37 @@ class Resources extends \Dna\Snps\SNPsResources {
         return $genetic_map; // Return the $genetic_map array.
     }    
 
-    // public function _download_file($url, $filename, $compress=False, $timeout=30) 
-    // {
-    //     if(strpos($url, "ftp://") !== false) {
-    //     $url=str_replace($url,"ftp://", "http://");
-    //     } 
-    //     if ($compress && substr($filename,strlen($filename)-3,strlen($filename)) != ".gz"){
-    //     $filename = $filename+".gz";
-    //     }
-    //     $destination = join($this->resources_dir, $filename);
+    public function _download_file($url, $filename, $compress=False, $timeout=30) 
+    {
+        if(strpos($url, "ftp://") !== false) {
+        $url=str_replace($url,"ftp://", "http://");
+        } 
+        if ($compress && substr($filename,strlen($filename)-3,strlen($filename)) != ".gz"){
+        $filename = $filename+".gz";
+        }
+        $destination = join($this->resources_dir, $filename);
 
-    //     if (!mkdir($destination)){
-    //     return "";
-    //     }
-    //     if (file_exists($destination)) {            
-    //     $file_url = $destination;
-    //     header('Content-Type: application/octet-stream');
-    //     header('Content-Description: File Transfer');
-    //     header('Content-Disposition: attachment; filename=' . $filename);
-    //     header('Expires: 0');
-    //     header('Cache-Control: must-revalidate');
-    //     header('Pragma: public');
-    //     header('Content-Length: ' . filesize($file_url));
-    //     readfile($file_url);
+        if (!mkdir($destination)){
+        return "";
+        }
+        if (file_exists($destination)) {            
+        $file_url = $destination;
+        header('Content-Type: application/octet-stream');
+        header('Content-Description: File Transfer');
+        header('Content-Disposition: attachment; filename=' . $filename);
+        header('Expires: 0');
+        header('Cache-Control: must-revalidate');
+        header('Pragma: public');
+        header('Content-Length: ' . filesize($file_url));
+        readfile($file_url);
 
-    //     // if $compress
-    //     //     $this->_write_data_to_gzip(f, data)
-    //     // else
-    //     //     f.write(data)           
-    //     }   
-    //     return $destination;
-    // }
+        // if $compress
+        //     $this->_write_data_to_gzip(f, data)
+        // else
+        //     f.write(data)           
+        }   
+        return $destination;
+    }
     
     /**
      * Load UCSC knownGene table.
@@ -341,7 +341,6 @@ class Resources extends \Dna\Snps\SNPsResources {
 
         return $kgXref;
     }
-
     /**
      * Get local path to cytoBand file for hg19 / GRCh37 from UCSC, downloading if necessary.
      *
@@ -391,65 +390,7 @@ class Resources extends \Dna\Snps\SNPsResources {
 
         return $path;
     }
-    
-    /**
-     * Get local path to HapMap Phase II genetic map for hg19 / GRCh37 (HapMapII), downloading if necessary
-     *
-     * @return string Path to genetic_map_HapMapII_GRCh37.tar.gz
-     */
-    public function getPathGeneticMapHapMapIIGRCh37(): string
-    {
-        return $this->downloadFile(
-            'ftp://ftp.ncbi.nlm.nih.gov/hapmap/recombination/2011-01_phaseII_B37/genetic_map_HapMapII_GRCh37.tar.gz',
-            'genetic_map_HapMapII_GRCh37.tar.gz'
-        );
-    }
 
-    /**
-     * Get local path to population-specific 1000 Genomes Project genetic map,
-     * downloading if necessary.
-     *
-     * @param string $pop
-     * @return string path to {pop}_omni_recombination_20130507.tar
-     */
-    public function getGeneticMap1000G_GRCh37($pop)
-    {
-        $filename = "{$pop}_omni_recombination_20130507.tar";
-        return $this->downloadFile(
-            "ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/working/20130507_omni_recombination_rates/{$filename}",
-            $filename
-        );
-    }    
-
-    /**
-     * Downloads the knownGene.txt.gz file for the hg19 genome assembly from the UCSC Genome Browser FTP server.
-     *
-     * @return string The path to the downloaded file.
-     */
-    public function get_path_knownGene_hg19(): string {
-        // Download the file from the UCSC Genome Browser FTP server.
-        // The file is located at ftp://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/knownGene.txt.gz
-        // and will be saved as knownGene_hg19.txt.gz in the current directory.
-        return $this->download_file(
-            "ftp://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/knownGene.txt.gz",
-            "knownGene_hg19.txt.gz"
-        );
-    }
-
-    /**
-     * Downloads the kgXref.txt.gz file for the hg19 genome assembly from the UCSC Genome Browser FTP server.
-     *
-     * @return string The path to the downloaded file.
-     */
-    public function get_path_kgXref_hg19(): string {
-        // Download the file from the UCSC Genome Browser FTP server.
-        // The file is located at ftp://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/kgXref.txt.gz
-        // and will be saved as kgXref_hg19.txt.gz in the current directory.
-        return $this->download_file(
-            "ftp://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/kgXref.txt.gz",
-            "kgXref_hg19.txt.gz"
-        );
-    }    
 
     public function get_all_resources() 
     {
