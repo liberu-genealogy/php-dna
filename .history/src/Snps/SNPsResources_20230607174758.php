@@ -459,20 +459,20 @@ class SNPsResources extends Singleton
     return $this->opensnpDatadumpFilenames;
   }
   
-  /**
-   * Write data to a gzip file.
-   *
-   * @param string $filename The name of the gzip file to write to.
-   * @param string $data The data to write to the gzip file.
-   */
-  function writeDataToGzip(string $filename, string $data) {
-    // Open the gzip file for writing.
-    $fGzip = gzopen($filename, 'wb');
+/**
+ * Write data to a gzip file.
+ *
+ * @param string $filename The name of the gzip file to write to.
+ * @param string $data The data to write to the gzip file.
+ */
+function writeDataToGzip(string $filename, string $data) {
+  // Open the gzip file for writing.
+  $fGzip = gzopen($filename, 'wb');
 
-    // Write the data to the gzip file.
-    gzwrite($fGzip, $data);
+  // Write the data to the gzip file.
+  gzwrite($fGzip, $data);
 
-    // Close the gzip file.
-    gzclose($fGzip);
-  }  
+  // Close the gzip file.
+  gzclose($fGzip);
+}  
 }
