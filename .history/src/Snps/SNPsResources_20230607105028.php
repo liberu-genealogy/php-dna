@@ -298,49 +298,6 @@ class SNPsResources extends Singleton
       ];
   }
   
-  /**
-   * Get the chip clusters data.
-   *
-   * @return DataFrame The chip clusters data.
-   */
-  public function get_chip_clusters() {
-    // If the chip clusters data has not been loaded yet, download and process it.
-    if ($this->_chip_clusters === null) {
-        // Download the chip clusters file.
-        $chip_clusters_path = $this->_download_file(
-            "https://supfam.mrc-lmb.cam.ac.uk/GenomePrep/datadir/the_list.tsv.gz",
-            "chip_clusters.tsv.gz"
-        );
-
-        // Load the chip clusters file into a DataFrame.
-        $df = \DataFrame::from_csv($chip_clusters_path, [
-            'sep' => "\t",
-            'names' => ["locus", "clusters"],
-            'dtypes' => [
-                "locus" => 'string', "clusters" => \CategoricalDtype::create(['ordered' => false])
-            ]
-        ]);
-
-        // Split the locus column into separate columns for chromosome and position.
-        $clusters = $df['clusters'];
-        $locus = $df['locus']->str_split(":", ['expand' => true]);
-        $locus->rename(['chrom', 'pos'], ['axis' => 1, 'inplace' => true]);
-
-        // Convert the position column to an unsigned 32-bit integer.
-        $locus['pos'] = $locus['pos']->astype('uint32');
-
-        // Convert the chromosome column to a categorical data type.
-        $locus['chrom'] = $locus['chrom']->astype(\CategoricalDtype::create(['ordered' => false]));
-
-        // Add the clusters column to the locus DataFrame.
-        $locus['clusters'] = $clusters;
-
-        // Save the processed chip clusters data to the object.
-        $this->_chip_clusters = $locus;
-    }
-
-    // Return the chip clusters data.
-    return $this->_chip_clusters;
-  }  
+  
 
 }
