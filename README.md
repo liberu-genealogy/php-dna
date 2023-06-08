@@ -14,7 +14,7 @@ To install php-dna in your project using composer, simply add the following requ
 
     {
         "require": {
-            "familytree365/php-dna": "1.0.*"
+            "laravel-liberu/php-dna": "1.0.*"
         }
     }
 
