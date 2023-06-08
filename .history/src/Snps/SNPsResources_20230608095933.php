@@ -849,10 +849,7 @@ class SNPsResources extends Singleton
    */
   class ReferenceSequence {
 
-    private string $_ID; // The ID of the reference sequence chromosome.
-    private string $_url; // The URL to the Ensembl reference sequence.
-    private string $_path; // The path to the local reference sequence.
-    private string $_assembly; // The reference sequence assembly (e.g., "GRCh37").    
+    
       
     public function __construct(
         string $ID = "", string $url = "", string $path = "", string $assembly = "",
@@ -888,54 +885,4 @@ class SNPsResources extends Singleton
     public function __toString() {
         return "ReferenceSequence(assembly={$this->_assembly}, ID={$this->_ID})";
     }
-
-    /**
-     * Returns the ID of the reference sequence chromosome.
-     *
-     * @return string The ID of the reference sequence chromosome.
-     */
-    public function getID(): string
-    {
-        return $this->_ID;
-    }
-
-    /**
-     * Returns the ID of the reference sequence chromosome.
-     *
-     * @return string The ID of the reference sequence chromosome.
-     */
-    public function getChrom(): string
-    {
-        return $this->_ID;
-    }
-
-    /**
-     * Returns the URL to the Ensembl reference sequence.
-     *
-     * @return string The URL to the Ensembl reference sequence.
-     */
-    public function getUrl(): string
-    {
-        return $this->_url;
-    }
-
-    /**
-     * Returns the path to the local reference sequence.
-     *
-     * @return string The path to the local reference sequence.
-     */
-    public function getPath(): string
-    {
-        return $this->_path;
-    }
-
-    /**
-     * Returns the reference sequence assembly (e.g., "GRCh37").
-     *
-     * @return string The reference sequence assembly.
-     */
-    public function getAssembly(): string
-    {
-        return $this->_assembly;
-    }    
   }
