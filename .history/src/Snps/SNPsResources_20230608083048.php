@@ -841,9 +841,8 @@ class SNPsResources extends Singleton
   */
   private function write_data_to_gzip($file, string $data): void {
     fwrite($file, gzencode($data));
-  }  
-}
-
+  }
+  
   /**
    * Object used to represent and interact with a reference sequence.
    */
@@ -883,4 +882,5 @@ class SNPsResources extends Singleton
     public function __toString() {
         return "ReferenceSequence(assembly={$this->_assembly}, ID={$this->_ID})";
     }
-  }
+  }  
+}

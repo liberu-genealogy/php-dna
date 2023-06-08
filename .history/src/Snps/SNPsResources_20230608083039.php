@@ -841,46 +841,46 @@ class SNPsResources extends Singleton
   */
   private function write_data_to_gzip($file, string $data): void {
     fwrite($file, gzencode($data));
-  }  
-}
-
-  /**
-   * Object used to represent and interact with a reference sequence.
-   */
-  class ReferenceSequence {
-      
-    public function __construct(
-        string $ID = "", string $url = "", string $path = "", string $assembly = "",
-        string $species = "", string $taxonomy = ""
-    ) {
-        /* Initialize a ReferenceSequence object.
-        
-        Parameters:
-          ID: reference sequence chromosome
-          url: url to Ensembl reference sequence
-          path: path to local reference sequence
-          assembly: reference sequence assembly (e.g., "GRCh37")
-          species: reference sequence species
-          taxonomy: reference sequence taxonomy
-        
-        References:
-          1. The Variant Call Format (VCF) Version 4.2 Specification, 8 Mar 2019,
-            https://samtools.github.io/hts-specs/VCFv4.2.pdf
-        */
-        $this->_ID = $ID;
-        $this->_url = $url;
-        $this->_path = $path;
-        $this->_assembly = $assembly;
-        $this->_species = $species;
-        $this->_taxonomy = $taxonomy;
-        $this->_sequence = array();
-        $this->_md5 = "";
-        $this->_start = 0;
-        $this->_end = 0;
-        $this->_length = 0;
-    }
-    
-    public function __toString() {
-        return "ReferenceSequence(assembly={$this->_assembly}, ID={$this->_ID})";
-    }
   }
+  
+/**
+ * Object used to represent and interact with a reference sequence.
+ */
+class ReferenceSequence {
+    
+  public function __construct(
+      string $ID = "", string $url = "", string $path = "", string $assembly = "",
+      string $species = "", string $taxonomy = ""
+  ) {
+      /* Initialize a ReferenceSequence object.
+      
+      Parameters:
+        ID: reference sequence chromosome
+        url: url to Ensembl reference sequence
+        path: path to local reference sequence
+        assembly: reference sequence assembly (e.g., "GRCh37")
+        species: reference sequence species
+        taxonomy: reference sequence taxonomy
+      
+      References:
+        1. The Variant Call Format (VCF) Version 4.2 Specification, 8 Mar 2019,
+           https://samtools.github.io/hts-specs/VCFv4.2.pdf
+      */
+      $this->_ID = $ID;
+      $this->_url = $url;
+      $this->_path = $path;
+      $this->_assembly = $assembly;
+      $this->_species = $species;
+      $this->_taxonomy = $taxonomy;
+      $this->_sequence = array();
+      $this->_md5 = "";
+      $this->_start = 0;
+      $this->_end = 0;
+      $this->_length = 0;
+  }
+  
+  public function __toString() {
+      return "ReferenceSequence(assembly={$this->_assembly}, ID={$this->_ID})";
+  }
+}  
+}
