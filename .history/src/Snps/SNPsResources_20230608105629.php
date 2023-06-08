@@ -940,33 +940,5 @@ class SNPsResources extends Singleton
     {
         return $this->_assembly;
     }
-    
-  /**
-     * Returns the build number of the reference sequence assembly.
-     *
-     * @return string The build number of the reference sequence assembly.
-     */
-    public function getBuild(): string
-    {
-        return "B" . substr($this->_assembly, -2);
-    }
-    /**
-     * Returns the species of the reference sequence.
-     *
-     * @return string The species of the reference sequence.
-     */
-    public function getSpecies(): string
-    {
-        return $this->_species;
-    }
-
-    /**
-     * Returns the taxonomy of the reference sequence.
-     *
-     * @return string The taxonomy of the reference sequence.
-     */
-    public function getTaxonomy(): string
-    {
-        return $this->_taxonomy;
-    }  
+        
   }

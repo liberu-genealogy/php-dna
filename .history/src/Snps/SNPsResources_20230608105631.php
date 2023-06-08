@@ -950,6 +950,7 @@ class SNPsResources extends Singleton
     {
         return "B" . substr($this->_assembly, -2);
     }
+
     /**
      * Returns the species of the reference sequence.
      *
