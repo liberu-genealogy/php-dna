@@ -855,9 +855,6 @@ class SNPsResources extends Singleton
     private string $_assembly; // The reference sequence assembly (e.g., "GRCh37").
     private string $_species; // The reference sequence species.
     private string $_taxonomy; // The reference sequence taxonomy.
-    private ?array $sequence = null; // The reference sequence.
-    private ?string $md5 = null; // The MD5 hash of the reference sequence.
-    private ?int $start = null; // The start position of the reference sequence.
       
     public function __construct(
         string $ID = "", string $url = "", string $path = "", string $assembly = "",
