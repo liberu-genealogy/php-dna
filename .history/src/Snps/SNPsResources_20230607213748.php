@@ -505,50 +505,38 @@ class SNPsResources extends Singleton
     return $assembly_mapping_data;
   }
   
-  /**
-   * Get the paths to reference sequences for a given assembly and set of chromosomes.
-   *
-   * @param string $sub_dir The subdirectory to download the reference sequences to.
-   * @param string $assembly The assembly to get the reference sequences for.
-   * @param array $chroms The chromosomes to get the reference sequences for.
-   * @return array An array containing the assembly, chromosomes, URLs, and local filenames of the reference sequences.
-   */
-  public function getPathsReferenceSequences(
-    string $sub_dir = "fasta",
-    string $assembly = "GRCh37",
-    array $chroms = []
-  ): array {
-    // Determine the base URL and release number based on the assembly.
-    if ($assembly === "GRCh37") {
-        $base = "ftp://ftp.ensembl.org/pub/grch37/release-96/fasta/homo_sapiens/dna/";
-        $release = "";
-    } elseif ($assembly === "NCBI36") {
-        $base = "ftp://ftp.ensembl.org/pub/release-54/fasta/homo_sapiens/dna/";
-        $release = "54.";
-    } elseif ($assembly === "GRCh38") {
-        $base = "ftp://ftp.ensembl.org/pub/release-96/fasta/homo_sapiens/dna/";
-        $release = "";
-    } else {
-        // If the assembly is not recognized, return an empty array.
-        return ["", [], [], []];
-    }
+public function getPathsReferenceSequences(
+        string $sub_dir = "fasta",
+        string $assembly = "GRCh37",
+        array $chroms = []
+    ): array {
+        if ($assembly === "GRCh37") {
+            $base = "ftp://ftp.ensembl.org/pub/grch37/release-96/fasta/homo_sapiens/dna/";
+            $release = "";
+        } elseif ($assembly === "NCBI36") {
+            $base = "ftp://ftp.ensembl.org/pub/release-54/fasta/homo_sapiens/dna/";
+            $release = "54.";
+        } elseif ($assembly === "GRCh38") {
+            $base = "ftp://ftp.ensembl.org/pub/release-96/fasta/homo_sapiens/dna/";
+            $release = "";
+        } else {
+            return ["", [], [], []];
+        }
 
-    // Generate the filenames, URLs, and local filenames for the reference sequences.
-    $filenames = array_map(
-        fn($chrom) => "Homo_sapiens.{$assembly}.{$release}dna.chromosome.{$chrom}.fa.gz",
-        $chroms
-    );
+        $filenames = array_map(
+            fn($chrom) => "Homo_sapiens.{$assembly}.{$release}dna.chromosome.{$chrom}.fa.gz",
+            $chroms
+        );
 
-    $urls = array_map(fn($filename) => "{$base}{$filename}", $filenames);
+        $urls = array_map(fn($filename) => "{$base}{$filename}", $filenames);
 
-    $local_filenames = array_map(
-        fn($filename) => "{$sub_dir}" . DIRECTORY_SEPARATOR . "{$assembly}" . DIRECTORY_SEPARATOR . "{$filename}",
-        $filenames
-    );
+        $local_filenames = array_map(
+            fn($filename) => "{$sub_dir}" . DIRECTORY_SEPARATOR . "{$assembly}" . DIRECTORY_SEPARATOR . "{$filename}",
+            $filenames
+        );
 
-    // Download the reference sequences and return the assembly, chromosomes, URLs, and local filenames.
-    $downloads = array_map([$this, "downloadFile"], $urls, $local_filenames);
+        $downloads = array_map([$this, "downloadFile"], $urls, $local_filenames);
 
-    return [$assembly, $chroms, $urls, $downloads];
-  }  
+        return [$assembly, $chroms, $urls, $downloads];
+    }  
 }
