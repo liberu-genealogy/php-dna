@@ -853,6 +853,8 @@ class SNPsResources extends Singleton
     private string $_url; // The URL to the Ensembl reference sequence.
     private string $_path; // The path to the local reference sequence.
     private string $_assembly; // The reference sequence assembly (e.g., "GRCh37").
+    
+    private string $_assembly; // The reference sequence assembly (e.g., "GRCh37").
     private string $_species; // The reference sequence species.
     private string $_taxonomy; // The reference sequence taxonomy.
       
@@ -939,35 +941,5 @@ class SNPsResources extends Singleton
     public function getAssembly(): string
     {
         return $this->_assembly;
-    }
-    
-  /**
-     * Returns the build number of the reference sequence assembly.
-     *
-     * @return string The build number of the reference sequence assembly.
-     */
-    public function getBuild(): string
-    {
-        return "B" . substr($this->_assembly, -2);
-    }
-
-    /**
-     * Returns the species of the reference sequence.
-     *
-     * @return string The species of the reference sequence.
-     */
-    public function getSpecies(): string
-    {
-        return $this->_species;
-    }
-
-    /**
-     * Returns the taxonomy of the reference sequence.
-     *
-     * @return string The taxonomy of the reference sequence.
-     */
-    public function getTaxonomy(): string
-    {
-        return $this->_taxonomy;
-    }  
+    }    
   }
