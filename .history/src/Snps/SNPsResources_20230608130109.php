@@ -1054,14 +1054,14 @@ class SNPsResources extends Singleton
         // Store FASTA sequence as an array of integers
         $this->sequence = array_map('ord', str_split($data));
     }
-  }
+}
 
-  private function parseFirstLine(string $firstLine): array {
-      $items = explode(":", $firstLine);
-      $index = array_search($this->ID, $items);
-      return [
-          intval($items[$index + 1]),
-          intval($items[$index + 2])
-      ];
-  }  
+private function parseFirstLine(string $firstLine): array {
+    $items = explode(":", $firstLine);
+    $index = array_search($this->ID, $items);
+    return [
+        intval($items[$index + 1]),
+        intval($items[$index + 2])
+    ];
+}  
 }

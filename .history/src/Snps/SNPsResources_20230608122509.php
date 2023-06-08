@@ -890,8 +890,7 @@ class SNPsResources extends Singleton
         $this->_start = 0;
         $this->_end = 0;
         $this->_length = 0;
-        $this->clear(); // Initialize the object with default values
-        $this->loadSequence();
+        clear
     }
     
     public function __toString() {
@@ -1032,36 +1031,5 @@ class SNPsResources extends Singleton
       $this->start = 0; // Reset the start position
       $this->end = 0; // Reset the end position
       $this->length = 0; // Reset the length
-  }
-  
-  private function loadSequence(): void {
-    if (!count($this->sequence)) {
-        // Decompress and read file
-        $data = gzdecode(file_get_contents($this->path));
-
-        // Convert bytes to str and split lines
-        $data = explode(PHP_EOL, utf8_encode($data));
-
-        // Parse the first line
-        [$this->start, $this->end] = $this->parseFirstLine($data[0]);
-
-        // Convert str (FASTA sequence) to bytes
-        $data = utf8_decode(implode("", array_slice($data, 1)));
-
-        // Get MD5 of FASTA sequence
-        $this->md5 = md5($data);
-
-        // Store FASTA sequence as an array of integers
-        $this->sequence = array_map('ord', str_split($data));
-    }
-  }
-
-  private function parseFirstLine(string $firstLine): array {
-      $items = explode(":", $firstLine);
-      $index = array_search($this->ID, $items);
-      return [
-          intval($items[$index + 1]),
-          intval($items[$index + 2])
-      ];
   }  
 }

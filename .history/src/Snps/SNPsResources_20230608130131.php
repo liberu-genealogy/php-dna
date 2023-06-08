@@ -1056,12 +1056,12 @@ class SNPsResources extends Singleton
     }
   }
 
-  private function parseFirstLine(string $firstLine): array {
-      $items = explode(":", $firstLine);
-      $index = array_search($this->ID, $items);
-      return [
-          intval($items[$index + 1]),
-          intval($items[$index + 2])
-      ];
-  }  
+private function parseFirstLine(string $firstLine): array {
+    $items = explode(":", $firstLine);
+    $index = array_search($this->ID, $items);
+    return [
+        intval($items[$index + 1]),
+        intval($items[$index + 2])
+    ];
+}  
 }
