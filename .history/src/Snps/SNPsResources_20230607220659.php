@@ -40,6 +40,7 @@ class SNPsResources extends Singleton
         $this->_resources_dir = realpath($resources_dir);
         $this->_ensembl_rest_client = new EnsemblRestClient();
         $this->_init_resource_attributes();
+        
     }
 
     /**
@@ -550,45 +551,5 @@ class SNPsResources extends Singleton
     $downloads = array_map([$this, "downloadFile"], $urls, $local_filenames);
 
     return [$assembly, $chroms, $urls, $downloads];
-  }
-  
-  /**
-   * Create reference sequences from downloaded files.
-   *
-   * @param string $assembly The assembly of the reference sequences.
-   * @param array $chroms The chromosomes of the reference sequences.
-   * @param array $urls The URLs of the reference sequences.
-   * @param array $paths The paths of the downloaded reference sequence files.
-   * @return array An array of ReferenceSequence objects.
-   */
-  public function create_reference_sequences($assembly, $chroms, $urls, $paths)
-  {
-      // Initialize an empty array to store the reference sequences.
-      $seqs = [];
-
-      // Iterate over each downloaded reference sequence file.
-      foreach ($paths as $i => $path) {
-          // If the path is empty, skip this reference sequence.
-          if (!$path) {
-              continue;
-          }
-
-          // Create a dictionary to store information about the reference sequence.
-          $d = [];
-
-          // Add the chromosome, URL, path, assembly, species, and taxonomy to the dictionary.
-          $d["ID"] = $chroms[$i];
-          $d["url"] = $urls[$i];
-          $d["path"] = realpath($path);
-          $d["assembly"] = $assembly;
-          $d["species"] = "Homo sapiens";
-          $d["taxonomy"] = "x";
-
-          // Create a new ReferenceSequence object from the dictionary and add it to the array of reference sequences.
-          $seqs[$chroms[$i]] = new ReferenceSequence($d);
-      }
-
-      // Return the array of reference sequences.
-      return $seqs;
   }  
 }
