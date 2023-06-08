@@ -592,41 +592,5 @@ class SNPsResources extends Singleton
       return $seqs;
   }
   
-  /**
-   * Get the path to the assembly mapping data for a given source and target assembly.
-   *
-   * @param string $source_assembly The source assembly of the assembly mapping data.
-   * @param string $target_assembly The target assembly of the assembly mapping data.
-   * @param int $retries The number of times to retry downloading the assembly mapping data if it fails.
-   * @return string The path to the assembly mapping data.
-   */
-  public function getPathAssemblyMappingData(string $source_assembly, string $target_assembly, int $retries = 10): string
-  {
-      // Create the resources directory if it does not exist.
-      if (!$this->createDir($this->resources_dir)) {
-          return "";
-      }
-
-      // Generate the list of chromosomes to download the assembly mapping data for.
-      $chroms = [];
-      for ($i = 1; $i <= 22; $i++) {
-          $chroms[] = (string)$i;
-      }
-      $chroms = array_merge($chroms, ["X", "Y", "MT"]);
-
-      // Generate the name of the assembly mapping data file and its destination path.
-      $assembly_mapping_data = $source_assembly . "_" . $target_assembly;
-      $destination = $this->resources_dir . DIRECTORY_SEPARATOR . $assembly_mapping_data . ".tar.gz";
-
-      // If the assembly mapping data file does not exist, download it.
-      if (!file_exists($destination)) {
-          if ($this->logger) {
-              $this->logger->info("Downloading " . str_replace(getcwd(), ".", $destination));
-          }
-          $this->downloadAssemblyMappingData($destination, $chroms, $source_assembly, $target_assembly, $retries);
-      }
-
-      // Return the path to the assembly mapping data file.
-      return $destination;
-  }  
+  
 }
