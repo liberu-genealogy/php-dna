@@ -670,25 +670,17 @@ class SNPsResources extends Singleton
     }
   }
   
-  /**
-   * Get the GSA rsid map.
-   *
-   * @return array|null The GSA rsid map.
-   */
   public function getGsaRsid(): array|null {
-    // If the GSA rsid map has not been loaded, download and process the file.
     if ($this->gsa_rsid_map === null) {
-        // Download the GSA rsid map file.
         $url = "https://sano-public.s3.eu-west-2.amazonaws.com/gsa_rsid_map.txt.gz";
         $destination = "gsa_rsid_map.txt.gz";
         $this->downloadFile($url, $destination);
 
-        // Process the GSA rsid map file and load it into an array.
         $file_path = $this->processArchiveFile($destination);
         $this->gsa_rsid_map = $this->loadCsv($file_path);
     }
 
-    // Return the GSA rsid map.
     return $this->gsa_rsid_map;
-  }  
+}
+
 }
