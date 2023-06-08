@@ -77,6 +77,7 @@ function os_cpu_count(): int {
     }
 }
 
+
 class Singleton {
     private static array $instances = [];
 
