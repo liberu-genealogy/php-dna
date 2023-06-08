@@ -889,6 +889,7 @@ class SNPsResources extends Singleton
         return "ReferenceSequence(assembly={$this->_assembly}, ID={$this->_ID})";
     }
 
+
     /**
      * Returns the ID of the reference sequence chromosome.
      *
