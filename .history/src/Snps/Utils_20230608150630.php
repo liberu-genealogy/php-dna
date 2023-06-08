@@ -78,30 +78,4 @@ function os_cpu_count(): int {
 }
 
 
-class Singleton {
-    private static array $instances = [];
-
-    public static function getInstance(): self {
-        $cls = static::class;
-        if (!isset(self::$instances[$cls])) {
-            self::$instances[$cls] = new static();
-        }
-        return self::$instances[$cls];
-    }
-
-    protected function __construct() {}
-    private function __clone() {}
-    private function __wakeup() {}
-}
-
-function create_dir(string $path): bool {
-    if (!file_exists($path)) {
-        // Create directory if it doesn't exist
-        if (!mkdir($path, 0777, true)) {
-            return false;
-        }
-    }
-    return true;
-}
-
 ?>

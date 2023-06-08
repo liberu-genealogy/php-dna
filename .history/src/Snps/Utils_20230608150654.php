@@ -77,7 +77,6 @@ function os_cpu_count(): int {
     }
 }
 
-
 class Singleton {
     private static array $instances = [];
 
@@ -92,7 +91,7 @@ class Singleton {
     protected function __construct() {}
     private function __clone() {}
     private function __wakeup() {}
-}
+
 
 function create_dir(string $path): bool {
     if (!file_exists($path)) {
