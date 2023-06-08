@@ -732,13 +732,13 @@ class SNPsResources extends Singleton
     return $this->gsaChrposMap;
   }
   
-  /**
-   * Get the path to the OpenSNP datadump file.
-   *
-   * @return string The path to the OpenSNP datadump file.
-   */
-  public function get_path_opensnp_datadump(): string {
-    // Download the OpenSNP datadump file and return its path.
-    return $this->download_file("https://opensnp.org/data/zip/opensnp_datadump.current.zip", "opensnp_datadump.current.zip");
-  }  
+/**
+ * Get the path to the OpenSNP datadump file.
+ *
+ * @return string The path to the OpenSNP datadump file.
+ */
+public function get_path_opensnp_datadump(): string {
+  // Download the OpenSNP datadump file and return its path.
+  return $this->download_file("https://opensnp.org/data/zip/opensnp_datadump.current.zip", "opensnp_datadump.current.zip");
+}  
 }
