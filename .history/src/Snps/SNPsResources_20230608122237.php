@@ -855,6 +855,9 @@ class SNPsResources extends Singleton
     private string $_assembly; // The reference sequence assembly (e.g., "GRCh37").
     private string $_species; // The reference sequence species.
     private string $_taxonomy; // The reference sequence taxonomy.
+    private ?array $sequence = null; // The reference sequence.
+    private ?string $md5 = null; // The MD5 hash of the reference sequence.
+    private ?int $start = null; // The start position of the reference sequence.
     private array $sequence; // Array to store the sequence
     private string $md5; // MD5 hash of the sequence
     private int $start; // Start position of the sequence
@@ -1009,26 +1012,5 @@ class SNPsResources extends Singleton
           $this->loadSequence();
       }
       return $this->start;
-  }
-  
-  public function getEnd(): int
-  {
-      $this->loadSequence(); // Load the sequence
-      return $this->end; // Return the end position
-  }
-
-  public function getLength(): int
-  {
-      $this->loadSequence(); // Load the sequence
-      return count($this->sequence); // Return the length of the sequence
-  }
-
-  public function clear(): void
-  {
-      $this->sequence = []; // Clear the sequence array
-      $this->md5 = ""; // Clear the MD5 hash
-      $this->start = 0; // Reset the start position
-      $this->end = 0; // Reset the end position
-      $this->length = 0; // Reset the length
   }  
 }
