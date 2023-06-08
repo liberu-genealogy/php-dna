@@ -692,43 +692,43 @@ class SNPsResources extends Singleton
     return $this->gsa_rsid_map;
   }
   
-  /**
-   * Get the GSA chrpos map.
-   *
-   * @return array The GSA chrpos map.
-   */
-  public function getGsaChrpos(): array {
-    // If the GSA chrpos map has not been loaded, download and process the file.
-    if ($this->gsaChrposMap === null) {
-        // Download the GSA chrpos map file.
-        $chrposPath = $this->downloadFile(
-            "https://sano-public.s3.eu-west-2.amazonaws.com/gsa_chrpos_map.txt.gz",
-            "gsa_chrpos_map.txt.gz"
-        );
+/**
+ * Get the GSA chrpos map.
+ *
+ * @return array The GSA chrpos map.
+ */
+public function getGsaChrpos(): array {
+  // If the GSA chrpos map has not been loaded, download and process the file.
+  if ($this->gsaChrposMap === null) {
+      // Download the GSA chrpos map file.
+      $chrposPath = $this->downloadFile(
+          "https://sano-public.s3.eu-west-2.amazonaws.com/gsa_chrpos_map.txt.gz",
+          "gsa_chrpos_map.txt.gz"
+      );
 
-        // Uncompress the gzipped file.
-        $csvContent = gzdecode(file_get_contents($chrposPath));
+      // Uncompress the gzipped file.
+      $csvContent = gzdecode(file_get_contents($chrposPath));
 
-        // Load the uncompressed file into an array.
-        $csv = League\Csv\Reader::createFromString($csvContent);
-        $csv->setDelimiter("\t");
-        $chrposData = $csv->getRecords(["gsaname_chrpos", "gsachr", "gsapos", "gsacm"]);
+      // Load the uncompressed file into an array.
+      $csv = League\Csv\Reader::createFromString($csvContent);
+      $csv->setDelimiter("\t");
+      $chrposData = $csv->getRecords(["gsaname_chrpos", "gsachr", "gsapos", "gsacm"]);
 
-        // Process and store the data in an array.
-        $chrpos = [];
-        foreach ($chrposData as $row) {
-            $chrpos[] = [
-                "gsaname_chrpos" => $row["gsaname_chrpos"],
-                "gsachr" => $row["gsachr"],
-                "gsapos" => (int)$row["gsapos"],
-                "gsacm" => (float)$row["gsacm"],
-            ];
-        }
+      // Process and store the data in an array.
+      $chrpos = [];
+      foreach ($chrposData as $row) {
+          $chrpos[] = [
+              "gsaname_chrpos" => $row["gsaname_chrpos"],
+              "gsachr" => $row["gsachr"],
+              "gsapos" => (int)$row["gsapos"],
+              "gsacm" => (float)$row["gsacm"],
+          ];
+      }
 
-        $this->gsaChrposMap = $chrpos;
-    }
+      $this->gsaChrposMap = $chrpos;
+  }
 
-    // Return the GSA chrpos map.
-    return $this->gsaChrposMap;
-  }  
+  // Return the GSA chrpos map.
+  return $this->gsaChrposMap;
+}  
 }
