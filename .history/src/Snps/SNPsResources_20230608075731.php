@@ -808,38 +808,5 @@ class SNPsResources extends Singleton
     return $destination;
   }
   
-  /**
-   * Creates a directory if it doesn't already exist.
-   *
-   * @param string $path The path of the directory to create.
-   *
-   * @return bool True if the directory exists or was successfully created, false otherwise.
-   */
-  private function create_dir(string $path): bool {
-    // Check if the directory already exists or if it was successfully created.
-    return !(!is_dir($path) && !mkdir($path) && !is_dir($path));
-  }
-
-  /**
-  * Prints a message indicating that a file is being downloaded.
-  *
-  * @param string $destination The path of the file being downloaded.
-  *
-  * @return void
-  */
-  private function print_download_msg(string $destination): void {
-    echo "Downloading {$destination}\n";
-  }
-
-  /**
-  * Writes data to a file in gzip format.
-  *
-  * @param resource $file The file resource to write to.
-  * @param string $data The data to write to the file.
-  *
-  * @return void
-  */
-  private function write_data_to_gzip($file, string $data): void {
-    fwrite($file, gzencode($data));
-  }  
+  image.png  
 }
