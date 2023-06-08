@@ -25,22 +25,22 @@ class Utils
 
 use ZipArchive;
 
-// import datetime; // PHP has built-in date functions
-// import gzip; // PHP has built-in gzip functions
-// import io; // PHP has built-in I/O functions
-// import logging; // You can use Monolog or another logging library in PHP
-// from multiprocessing import Pool; // You can use parallel or pthreads for multi-processing in PHP
-// import os; // PHP has built-in OS functions
-// import re; // PHP has built-in RegExp functions
-// import shutil; // PHP has built-in filesystem functions
-// import tempfile; // PHP has built-in temporary file functions
-// import zipfile; // PHP has built-in ZipArchive class available
+import datetime; // PHP has built-in date functions
+import gzip; // PHP has built-in gzip functions
+import io; // PHP has built-in I/O functions
+import logging; // You can use Monolog or another logging library in PHP
+from multiprocessing import Pool; // You can use parallel or pthreads for multi-processing in PHP
+import os; // PHP has built-in OS functions
+import re; // PHP has built-in RegExp functions
+import shutil; // PHP has built-in filesystem functions
+import tempfile; // PHP has built-in temporary file functions
+import zipfile; // PHP has built-in ZipArchive class available
 
-// from atomicwrites import atomic_write; // You can use a library or implement atomic writes in PHP
-// import pandas as pd; // There is no direct PHP alternative to pandas; consider using array functions or a data manipulation library
-// import snps; // If this is a custom module, you can rewrite it in PHP and load it here
+from atomicwrites import atomic_write; // You can use a library or implement atomic writes in PHP
+import pandas as pd; // There is no direct PHP alternative to pandas; consider using array functions or a data manipulation library
+import snps; // If this is a custom module, you can rewrite it in PHP and load it here
 
-// logger = logging.getLogger(__name__); // Replace this with your preferred logging solution in PHP
+logger = logging.getLogger(__name__); // Replace this with your preferred logging solution in PHP
 
 class Parallelizer {
     private bool $_parallelize;
@@ -77,4 +77,3 @@ function os_cpu_count(): int {
     }
 }
 
-?>

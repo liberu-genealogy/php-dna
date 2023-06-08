@@ -76,5 +76,4 @@ function os_cpu_count(): int {
         return (int) shell_exec('nproc');
     }
 }
-
 ?>
