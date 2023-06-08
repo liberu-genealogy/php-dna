@@ -1010,25 +1010,5 @@ class SNPsResources extends Singleton
       }
       return $this->start;
   }
-  
-  public function getEnd(): int
-  {
-      $this->loadSequence(); // Load the sequence
-      return $this->end; // Return the end position
-  }
-
-  public function getLength(): int
-  {
-      $this->loadSequence(); // Load the sequence
-      return count($this->sequence); // Return the length of the sequence
-  }
-
-  public function clear(): void
-  {
-      $this->sequence = []; // Clear the sequence array
-      $this->md5 = ""; // Clear the MD5 hash
-      $this->start = 0; // Reset the start position
-      $this->end = 0; // Reset the end position
-      $this->length = 0; // Reset the length
-  }  
+    
 }
