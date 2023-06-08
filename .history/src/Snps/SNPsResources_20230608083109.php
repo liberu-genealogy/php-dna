@@ -841,14 +841,13 @@ class SNPsResources extends Singleton
   */
   private function write_data_to_gzip($file, string $data): void {
     fwrite($file, gzencode($data));
-  }  
-}
-
-  /**
-   * Object used to represent and interact with a reference sequence.
-   */
-  class ReferenceSequence {
-      
+  }
+  
+/**
+ * Object used to represent and interact with a reference sequence.
+ */
+class ReferenceSequence {
+    
     public function __construct(
         string $ID = "", string $url = "", string $path = "", string $assembly = "",
         string $species = "", string $taxonomy = ""
@@ -865,7 +864,7 @@ class SNPsResources extends Singleton
         
         References:
           1. The Variant Call Format (VCF) Version 4.2 Specification, 8 Mar 2019,
-            https://samtools.github.io/hts-specs/VCFv4.2.pdf
+             https://samtools.github.io/hts-specs/VCFv4.2.pdf
         */
         $this->_ID = $ID;
         $this->_url = $url;
@@ -883,4 +882,5 @@ class SNPsResources extends Singleton
     public function __toString() {
         return "ReferenceSequence(assembly={$this->_assembly}, ID={$this->_ID})";
     }
-  }
+}  
+}
