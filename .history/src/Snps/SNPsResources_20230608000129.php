@@ -630,43 +630,5 @@ class SNPsResources extends Singleton
       return $destination;
   }
   
-  /**
-   * Download assembly mapping data for a given set of chromosomes and save it to a tar file.
-   *
-   * @param string $destination The destination path of the tar file to save the assembly mapping data to.
-   * @param array $chroms The chromosomes to download the assembly mapping data for.
-   * @param string $sourceAssembly The source assembly of the assembly mapping data.
-   * @param string $targetAssembly The target assembly of the assembly mapping data.
-   * @param int $retries The number of times to retry downloading the assembly mapping data if it fails.
-   */
-  public function downloadAssemblyMappingData($destination, $chroms, $sourceAssembly, $targetAssembly, $retries) {
-    // Create a new PharData object for the destination tar file.
-    $phar = new PharData($destination, 0, null, Phar::TAR | Phar::GZ);
-
-    // Iterate over each chromosome and download its assembly mapping data.
-    foreach ($chroms as $chrom) {
-        $file = "$chrom.json";
-        $mapEndpoint = "/map/human/{$sourceAssembly}/{$chrom}/{$targetAssembly}?";
-
-        // Get the assembly mapping data from the Ensembl REST API.
-        $response = null;
-        $retry = 0;
-        while ($response === null && $retry < $retries) {
-            $response = $this->ensemblRestClient->performRestAction($mapEndpoint);
-            $retry++;
-        }
-
-        if ($response !== null) {
-            // Save the assembly mapping data to a temporary file.
-            $tmpFile = tempnam(sys_get_temp_dir(), "tmp");
-            file_put_contents($tmpFile, json_encode($response));
-
-            // Add the temporary file to the tar file.
-            $phar->addFile($tmpFile, $file);
-
-            // Remove the temporary file.
-            unlink($tmpFile);
-        }
-    }
-  }  
+  
 }
