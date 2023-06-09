@@ -258,29 +258,6 @@
             return $this->_duplicate;
         }
         
-        public function getDiscrepantXY(): array
-        {
-            // Discrepant XY SNPs.
-            //
-            // A discrepant XY SNP is a heterozygous SNP in the non-PAR region of the X
-            // or Y chromosome found during deduplication for a detected male genotype.
-            //
-            // Returns
-            // -------
-            // array
-            //     normalized "snps" array
-            return $this->_discrepantXY;
-        }
-    
-        public function getHeterozygousMT(): array
-        {
-            // Heterozygous SNPs on the MT chromosome found during deduplication.
-            //
-            // Returns
-            // -------
-            // array
-            //     normalized "snps" array
-            return $this->_heterozygousMT;
-        }        
+        
     }
 ?>
