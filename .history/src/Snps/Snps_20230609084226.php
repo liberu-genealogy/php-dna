@@ -227,35 +227,6 @@
             // Implement the method in PHP.
         }
         
-        /**
-         * Get the SNPs after quality control filtering.
-         *
-         * @return array The SNPs array after quality control filtering
-         */
-        public function getSnpsQc(): array
-        {
-            if (count($this->_low_quality) == 0) {
-                // Ensure low quality SNPs, if any, are identified
-                $this->identify_low_quality_snps();
-            }
-
-            if (count($this->_low_quality) > 0) {
-                // Filter out low quality SNPs
-                return array_diff_key($this->_snps, array_flip($this->_low_quality));
-            } else {
-                // No low quality SNPs to filter
-                return $this->_snps;
-            }
-        }
-
-        /**
-         * Get the duplicate SNPs.
-         *
-         * @return array The duplicate SNPs array
-         */
-        public function getDuplicate(): array
-        {
-            return $this->_duplicate;
-        }        
+        
     }
 ?>
