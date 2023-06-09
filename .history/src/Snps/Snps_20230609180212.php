@@ -599,57 +599,6 @@
             return $this->save($filename, $atomic, $options);
         }
         
-        public function to_vcf(
-            string $filename = "",
-            bool $atomic = true,
-            string $alt_unavailable = ".",
-            string $chrom_prefix = "",
-            bool $qc_only = false,
-            bool $qc_filter = false,
-            array $kwargs = []
-        ): string {
-            // Output SNPs as Variant Call Format.
-            //
-            // Parameters:
-            // $filename : str or buffer
-            //     filename for file to save or buffer to write to
-            // $atomic : bool
-            //     atomically write output to a file on the local filesystem
-            // $alt_unavailable : str
-            //     representation of ALT allele when ALT is not able to be determined
-            // $chrom_prefix : str
-            //     prefix for chromosomes in VCF CHROM column
-            // $qc_only : bool
-            //     output only SNPs that pass quality control
-            // $qc_filter : bool
-            //     populate FILTER column based on quality control results
-            // $kwargs : array
-            //     additional parameters to pandas.DataFrame.to_csv
-            //
-            // Returns:
-            // str
-            //     path to file in output directory if SNPs were saved, else empty str
-            //
-            // Notes:
-            // Parameters $qc_only and $qc_filter, if true, will identify low-quality SNPs per
-            // "identify_low_quality_snps" method in the SNPs class if not done already.
-            // Moreover, these parameters have no effect if this SNPs object does not map to a cluster
-            // per "compute_cluster_overlap" method in the SNPs class.
-            //
-            // References:
-            // 1. The Variant Call Format (VCF) Version 4.2 Specification, 8 Mar 2019,
-            //    https://samtools.github.io/hts-specs/VCFv4.2.pdf
         
-            return $this->_save(
-                filename: $filename,
-                vcf: true,
-                atomic: $atomic,
-                vcf_alt_unavailable: $alt_unavailable,
-                vcf_chrom_prefix: $chrom_prefix,
-                vcf_qc_only: $qc_only,
-                vcf_qc_filter: $qc_filter,
-                kwargs: $kwargs
-            );
-        }                
     }
 ?>
