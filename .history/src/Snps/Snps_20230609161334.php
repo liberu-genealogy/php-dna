@@ -524,61 +524,6 @@
             });
         }
         
-        public function getSummary(): array
-        {
-            // Check if the object is valid
-            if (!$this->isValid()) {
-                return []; // If not valid, return an empty array
-            } else {
-                // If valid, return an array with summary information
-                return [
-                    "source" => $this->source,
-                    "assembly" => $this->assembly,
-                    "build" => $this->build,
-                    "build_detected" => $this->build_detected,
-                    "count" => $this->count,
-                    "chromosomes" => $this->chromosomes_summary,
-                    "sex" => $this->sex,
-                ];
-            }
-        }
         
-        public function isValid(): bool
-        {
-            // Check if the 'snps' property is empty
-            if (empty($this->snps)) {
-                return false; // If 'snps' is empty, the object is not valid
-            } else {
-                return true; // If 'snps' is not empty, the object is valid
-            }
-        }
-        
-        public function save(
-            string $filename = "",
-            bool $vcf = false,
-            bool $atomic = true,
-            string $vcf_alt_unavailable = ".",
-            bool $vcf_qc_only = false,
-            bool $vcf_qc_filter = false,
-            array $kwargs = [] // For compatibility, changed **kwargs to array
-        ): bool
-        {
-            // Trigger a deprecated error indicating that 'save' method should be replaced
-            trigger_error(
-                "Method 'save' has been replaced by 'to_csv', 'to_tsv', and 'to_vcf'.",
-                E_USER_DEPRECATED
-            );
-        
-            // Call the internal '_save' method with the provided arguments
-            return $this->_save(
-                $filename,
-                $vcf,
-                $atomic,
-                $vcf_alt_unavailable,
-                $vcf_qc_only,
-                $vcf_qc_filter,
-                $kwargs
-            );
-        }                
     }
 ?>

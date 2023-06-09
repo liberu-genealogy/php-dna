@@ -551,7 +551,6 @@
             } else {
                 return true; // If 'snps' is not empty, the object is valid
             }
-        }
         
         public function save(
             string $filename = "",
