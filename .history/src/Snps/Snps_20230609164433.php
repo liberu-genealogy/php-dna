@@ -581,22 +581,6 @@
             );
         }
         
-        public function toCsv(string $filename = "", bool $atomic = true, array $options = []): string
-        {
-            // Set the separator to comma (",") in the options array
-            $options["sep"] = ",";
-            
-            // Call the 'save' method with the provided arguments and return the result
-            return $this->save($filename, $atomic, $options);
-        }
         
-        public function toTsv(string $filename = "", bool $atomic = true, array $options = []): string
-        {
-            // Set the separator to tab ("\t") in the options array
-            $options["sep"] = "\t";
-            
-            // Call the 'save' method with the provided arguments and return the result
-            return $this->save($filename, $atomic, $options);
-        }                
     }
 ?>

@@ -597,6 +597,7 @@
             
             // Call the 'save' method with the provided arguments and return the result
             return $this->save($filename, $atomic, $options);
-        }                
+        }
+                
     }
 ?>
