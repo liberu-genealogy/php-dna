@@ -483,45 +483,6 @@
             return [];
         }
 
-        public function heterozygous(string $chrom = ''): array
-        {
-            // Call the filter() method to get the filtered data
-            $df = $this->filter($chrom);
-    
-            // Filter the data to return rows with heterozygous genotypes
-            return array_filter($df, function ($row) {
-                return (
-                    $row['genotype'] !== null &&                      // Genotype is not null
-                    strlen($row['genotype']) === 2 &&                  // Genotype is of length 2
-                    $row['genotype'][0] !== $row['genotype'][1]       // The two alleles are different
-                );
-            });
-        }
-    
-        public function homozygous(string $chrom = ''): array
-        {
-            // Call the filter() method to get the filtered data
-            $df = $this->filter($chrom);
-    
-            // Filter the data to return rows with homozygous genotypes
-            return array_filter($df, function ($row) {
-                return (
-                    $row['genotype'] !== null &&                      // Genotype is not null
-                    strlen($row['genotype']) === 2 &&                  // Genotype is of length 2
-                    $row['genotype'][0] === $row['genotype'][1]        // The two alleles are the same
-                );
-            });
-        }
-    
-        public function notnull(string $chrom = ''): array
-        {
-            // Call the filter() method to get the filtered data
-            $df = $this->filter($chrom);
-    
-            // Filter the data to return rows with non-null genotypes
-            return array_filter($df, function ($row) {
-                return $row['genotype'] !== null;                     // Genotype is not null
-            });
-        }        
+        
     }
 ?>
