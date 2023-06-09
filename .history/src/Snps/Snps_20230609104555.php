@@ -356,16 +356,7 @@
             return $this->_build;
         }
         
-        public function isBuildDetected(): bool
-        {
-            // Check if the build was detected.
-            //
-            // Returns
-            // -------
-            // bool
-            //     True if the build was detected, False otherwise
-            return $this->_build_detected;
-        }        
+        
             
     }
 ?>
