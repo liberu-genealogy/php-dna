@@ -102,7 +102,6 @@
             $this->_chip = "";
             $this->_chip_version = "";
         }
-        
         /**
          * Get the default CPU count.
          *

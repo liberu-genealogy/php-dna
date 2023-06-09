@@ -69,40 +69,39 @@
         private $_chip;
         private $_chip_version;
          
-        /**
-         * SNPs constructor.
-         *
-         * @param string $file           Input file path
-         * @param bool   $only_detect_source  Flag to indicate whether to only detect the source
-         * @param string $output_dir     Output directory path
-         * @param string $resources_dir  Resources directory path
-         * @param bool   $parallelize    Flag to indicate whether to parallelize
-         * @param int    $processes      Number of processes to use for parallelization
-         */
-        public function __construct($file, $only_detect_source, $output_dir, $resources_dir, $parallelize, $processes)
-        {
-            $this->_file = $file;
-            $this->_only_detect_source = $only_detect_source;
-            $this->_snps = $this->get_empty_snps_dataframe();
-            $this->_duplicate = $this->get_empty_snps_dataframe();
-            $this->_discrepant_XY = $this->get_empty_snps_dataframe();
-            $this->_heterozygous_MT = $this->get_empty_snps_dataframe();
-            $this->_discrepant_vcf_position = $this->get_empty_snps_dataframe();
-            $this->_low_quality = $this->_snps->index;
-            $this->_discrepant_merge_positions = new DataFrame();
-            $this->_discrepant_merge_genotypes = new DataFrame();
-            $this->_source = [];
-            $this->_phased = false;
-            $this->_build = 0;
-            $this->_build_detected = false;
-            $this->_output_dir = $output_dir;
-            $this->_resources = new Resources($resources_dir);
-            $this->_parallelizer = new Parallelizer($parallelize, $processes);
-            $this->_cluster = "";
-            $this->_chip = "";
-            $this->_chip_version = "";
-        }
-        
+    /**
+     * SNPs constructor.
+     *
+     * @param string $file           Input file path
+     * @param bool   $only_detect_source  Flag to indicate whether to only detect the source
+     * @param string $output_dir     Output directory path
+     * @param string $resources_dir  Resources directory path
+     * @param bool   $parallelize    Flag to indicate whether to parallelize
+     * @param int    $processes      Number of processes to use for parallelization
+     */
+    public function __construct($file, $only_detect_source, $output_dir, $resources_dir, $parallelize, $processes)
+    {
+        $this->_file = $file;
+        $this->_only_detect_source = $only_detect_source;
+        $this->_snps = $this->get_empty_snps_dataframe();
+        $this->_duplicate = $this->get_empty_snps_dataframe();
+        $this->_discrepant_XY = $this->get_empty_snps_dataframe();
+        $this->_heterozygous_MT = $this->get_empty_snps_dataframe();
+        $this->_discrepant_vcf_position = $this->get_empty_snps_dataframe();
+        $this->_low_quality = $this->_snps->index;
+        $this->_discrepant_merge_positions = new DataFrame();
+        $this->_discrepant_merge_genotypes = new DataFrame();
+        $this->_source = [];
+        $this->_phased = false;
+        $this->_build = 0;
+        $this->_build_detected = false;
+        $this->_output_dir = $output_dir;
+        $this->_resources = new Resources($resources_dir);
+        $this->_parallelizer = new Parallelizer($parallelize, $processes);
+        $this->_cluster = "";
+        $this->_chip = "";
+        $this->_chip_version = "";
+    }
         /**
          * Get the default CPU count.
          *

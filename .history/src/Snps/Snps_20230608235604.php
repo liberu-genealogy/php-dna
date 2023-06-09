@@ -48,61 +48,34 @@
          * @param int    $processes           Number of processes to use for parallelization
          * @param array  $rsids               Array of rsids
          */
-        private $_file;
-        private $_only_detect_source;
-        private $_snps;
-        private $_duplicate;
-        private $_discrepant_XY;
-        private $_heterozygous_MT;
-        private $_discrepant_vcf_position;
-        private $_low_quality;
-        private $_discrepant_merge_positions;
-        private $_discrepant_merge_genotypes;
-        private $_source;
-        private $_phased;
-        private $_build;
-        private $_build_detected;
-        private $_output_dir;
-        private $_resources;
-        private $_parallelizer;
-        private $_cluster;
-        private $_chip;
-        private $_chip_version;
+
          
-        /**
-         * SNPs constructor.
-         *
-         * @param string $file           Input file path
-         * @param bool   $only_detect_source  Flag to indicate whether to only detect the source
-         * @param string $output_dir     Output directory path
-         * @param string $resources_dir  Resources directory path
-         * @param bool   $parallelize    Flag to indicate whether to parallelize
-         * @param int    $processes      Number of processes to use for parallelization
-         */
-        public function __construct($file, $only_detect_source, $output_dir, $resources_dir, $parallelize, $processes)
-        {
-            $this->_file = $file;
-            $this->_only_detect_source = $only_detect_source;
-            $this->_snps = $this->get_empty_snps_dataframe();
-            $this->_duplicate = $this->get_empty_snps_dataframe();
-            $this->_discrepant_XY = $this->get_empty_snps_dataframe();
-            $this->_heterozygous_MT = $this->get_empty_snps_dataframe();
-            $this->_discrepant_vcf_position = $this->get_empty_snps_dataframe();
-            $this->_low_quality = $this->_snps->index;
-            $this->_discrepant_merge_positions = new DataFrame();
-            $this->_discrepant_merge_genotypes = new DataFrame();
-            $this->_source = [];
-            $this->_phased = false;
-            $this->_build = 0;
-            $this->_build_detected = false;
-            $this->_output_dir = $output_dir;
-            $this->_resources = new Resources($resources_dir);
-            $this->_parallelizer = new Parallelizer($parallelize, $processes);
-            $this->_cluster = "";
-            $this->_chip = "";
-            $this->_chip_version = "";
+        public function __construct(
+            string $file = "",
+            bool $only_detect_source = false,
+            bool $assign_par_snps = false,
+            string $output_dir = "output",
+            string $resources_dir = "resources",
+            bool $deduplicate = true,
+            bool $deduplicate_XY_chrom = true,
+            bool $deduplicate_MT_chrom = true,
+            bool $parallelize = false,
+            int $processes = 0,
+            array $rsids = []
+        ) {
+            $this->file = $file;
+            $this->only_detect_source = $only_detect_source;
+            $this->assign_par_snps = $assign_par_snps;
+            $this->output_dir = $output_dir;
+            $this->resources_dir = $resources_dir;
+            $this->deduplicate = $deduplicate;
+            $this->deduplicate_XY_chrom = $deduplicate_XY_chrom;
+            $this->deduplicate_MT_chrom = $deduplicate_MT_chrom;
+            $this->parallelize = $parallelize;
+            $this->processes = $processes === 0 ? self::default_cpu_count() : $processes;
+            $this->rsids = $rsids;
         }
-        
+    
         /**
          * Get the default CPU count.
          *
