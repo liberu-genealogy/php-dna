@@ -398,6 +398,8 @@
             // TODO: Replace with the appropriate implementation
         }
     
+    
+    
         public function getChromosomes(): array
         {
             // Check if the "_snps" array is not empty

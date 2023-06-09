@@ -386,28 +386,7 @@
             }
         }
 
-        public function getCount(): int
-        {
-            // Replace with the relevant implementation for getting the count of SNPs.
-            // For example: return count($this->_snps);
-            //
-            // Returns
-            // -------
-            // int
-            //     The count of SNPs
-            // TODO: Replace with the appropriate implementation
-        }
-    
-        public function getChromosomes(): array
-        {
-            // Check if the "_snps" array is not empty
-            if (!$this->_snps->isEmpty()) {
-                // Return unique values of the "chrom" key in the "_snps" array
-                return array_unique($this->_snps["chrom"]);
-            } else {
-                // Return an empty array if "_snps" is empty
-                return [];
-            }
-        }           
+        
+            
     }
 ?>
