@@ -465,22 +465,6 @@
             }
         }
         
-        public function getSex(): string
-        {
-            // Determine sex based on the presence of specific chromosomes
-            $sex = $this->determineSex(chrom: "X");
-            if (!$sex) {
-                $sex = $this->determineSex(chrom: "Y");
-            }
-            // Return the determined sex
-            return $sex;
-        }
-    
-        public function filter(string $chrom = ''): array
-        {
-            // Implement the filtering logic here
-            // Add your implementation code and comments here
-            return [];
-        }
+        
     }
 ?>

@@ -476,11 +476,17 @@
             return $sex;
         }
     
-        public function filter(string $chrom = ''): array
+    
+        public function getChromosomes(): array
         {
-            // Implement the filtering logic here
-            // Add your implementation code and comments here
-            return [];
-        }
+            // Check if the "_snps" array is not empty
+            if (!$this->_snps->isEmpty()) {
+                // Return unique values of the "chrom" key in the "_snps" array
+                return array_unique($this->_snps["chrom"]);
+            } else {
+                // Return an empty array if "_snps" is empty
+                return [];
+            }
+        }        
     }
 ?>
