@@ -652,57 +652,6 @@
             );
         }
         
-        public function filter($chrom = "") {
-            // Filter the snps collection based on the 'chrom' value
-            return $chrom ? $this->snps->where('chrom', $chrom) : $this->snps;
-        }
         
-        public function read_raw_data($file, $only_detect_source, $rsids) {
-            // Create a new instance of the Reader class
-            $reader = new Reader($file, $only_detect_source, $this->resources, $rsids);
-            // Read and return the data using the Reader instance
-            return $reader->read();
-        }
-        
-        public function assign_par_snps() {
-            // Create a new instance of the EnsemblRestClient class with configuration options
-            $rest_client = new EnsemblRestClient([
-                'server' => 'https://api.ncbi.nlm.nih.gov',
-                'reqs_per_sec' => 1,
-            ]);
-        
-            // Iterate over the snps collection to find 'PAR' keys
-            foreach ($this->snps->where('chrom', 'PAR')->keys() as $rsid) {
-                if (strpos($rsid, 'rs') !== false) {
-                    // Lookup the refsnp snapshot using the EnsemblRestClient
-                    $response = $this->lookup_refsnp_snapshot($rsid, $rest_client);
-        
-                    if ($response !== null) {
-                        // Iterate over the placements_with_allele in the response
-                        foreach ($response['primary_snapshot_data']['placements_with_allele'] as $item) {
-                            if (strpos($item['seq_id'], 'NC_000023') !== false) {
-                                // Assign the snp with 'X' chromosome if seq_id contains 'NC_000023'
-                                $assigned = $this->assign_snp($rsid, $item['alleles'], 'X');
-                            } elseif (strpos($item['seq_id'], 'NC_000024') !== false) {
-                                // Assign the snp with 'Y' chromosome if seq_id contains 'NC_000024'
-                                $assigned = $this->assign_snp($rsid, $item['alleles'], 'Y');
-                            } else {
-                                $assigned = false;
-                            }
-        
-                            if ($assigned) {
-                                // Update the build if not already detected and break the loop
-                                if (!$this->build_detected) {
-                                    $this->build = $this->extract_build($item);
-                                    $this->build_detected = true;
-                                }
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-                
     }
 ?>
