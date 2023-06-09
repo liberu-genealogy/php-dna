@@ -409,60 +409,6 @@
                 return [];
             }
         }
-        
-        public function getChromosomesSummary(): string
-        {
-            // Check if the "_snps" array is not empty
-            if (!$this->_snps->isEmpty()) {
-                // Get unique values of the "chrom" key in the "_snps" array
-                $chroms = array_unique($this->_snps["chrom"]);
-    
-                // Separate integer and non-integer chromosomes
-                $intChroms = array_filter($chroms, fn($chrom) => ctype_digit($chrom));
-                $strChroms = array_filter($chroms, fn($chrom) => !ctype_digit($chrom));
-    
-                // Initialize an array to store ranges of integer chromosomes
-                $intRanges = [];
-    
-                $start = null;
-                $prev = null;
-    
-                // Sort the integer chromosomes in ascending order
-                sort($intChroms);
-    
-                // Iterate over the sorted integer chromosomes
-                foreach ($intChroms as $current) {
-                    if ($start === null) {
-                        // Set the start of a new range
-                        $start = $current;
-                    } else if ($prev !== null && $current !== $prev + 1) {
-                        // If the current number is not consecutive to the previous one,
-                        // add the range to the array
-                        $intRanges[] = ($start === $prev) ? $start : "{$start}-{$prev}";
-                        $start = $current;
-                    }
-                    $prev = $current;
-                }
-    
-                // Add the last range (if any) to the array
-                if ($start !== null) {
-                    $intRanges[] = ($start === $prev) ? $start : "{$start}-{$prev}";
-                }
-    
-                // Convert the ranges and non-integer chromosomes to strings
-                $intChromsStr = implode(", ", $intRanges);
-                $strChromsStr = implode(", ", $strChroms);
-    
-                if ($intChromsStr !== "" && $strChromsStr !== "") {
-                    $intChromsStr .= ", ";
-                }
-    
-                // Return the concatenated string representation of the chromosomes
-                return $intChromsStr . $strChromsStr;
-            } else {
-                // Return an empty string if "_snps" is empty
-                return "";
-            }
-        }                   
+                   
     }
 ?>
