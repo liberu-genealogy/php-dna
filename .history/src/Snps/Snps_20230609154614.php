@@ -476,11 +476,6 @@
             return $sex;
         }
     
-        public function filter(string $chrom = ''): array
-        {
-            // Implement the filtering logic here
-            // Add your implementation code and comments here
-            return [];
-        }
+
     }
 ?>
