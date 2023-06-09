@@ -319,31 +319,6 @@
             return $this->_discrepant_merge_positions;
         }
         
-        public function getDiscrepantMergeGenotypes(): DataFrame {
-            // Get the DataFrame of SNPs with discrepant merge genotypes.
-            //
-            // Returns
-            // -------
-            // DataFrame
-            //     DataFrame containing SNPs with discrepant merge genotypes
-            return $this->_discrepant_merge_genotypes;
-        }
-    
-        public function getDiscrepantMergePositionsGenotypes(): DataFrame {
-            // Get the DataFrame of SNPs with discrepant merge positions and genotypes.
-            //
-            // Returns
-            // -------
-            // DataFrame
-            //     DataFrame containing SNPs with discrepant merge positions and genotypes
-            $df = DataFrame::concat([$this->_discrepant_merge_positions, $this->_discrepant_merge_genotypes]);
-    
-            if (count($df) > 1) {
-                $df = DataFrame::dropDuplicates($df);
-            }
-    
-            return $df;
-        }
-            
+        
     }
 ?>
