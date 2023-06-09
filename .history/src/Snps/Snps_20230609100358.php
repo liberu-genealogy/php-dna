@@ -283,40 +283,6 @@
             return $this->_heterozygousMT;
         }
         
-        public function getDiscrepantVcfPosition(): array
-        {
-            // SNPs with discrepant positions discovered while saving VCF.
-            //
-            // Returns
-            // -------
-            // array
-            //     normalized "snps" array
-            return $this->_discrepantVcfPosition;
-        }
-    
-        private array $lowQuality = [];
-        private DataFrame $_snps;
-        private DataFrame $_discrepant_merge_positions;
-    
-        public function getLowQuality(): DataFrame
-        {
-            if (count($this->lowQuality) === 0) {
-                // Ensure low quality SNPs, if any, are identified
-                $this->identify_low_quality_snps();
-            }
-    
-            return $this->_snps->loc($this->lowQuality);
-        }
-    
-        public function getDiscrepantMergePositions(): DataFrame
-        {
-            // Get the DataFrame of SNPs with discrepant merge positions.
-            //
-            // Returns
-            // -------
-            // DataFrame
-            //     DataFrame containing SNPs with discrepant merge positions
-            return $this->_discrepant_merge_positions;
-        }        
+        
     }
 ?>
