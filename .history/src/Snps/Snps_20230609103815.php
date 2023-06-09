@@ -345,16 +345,7 @@
             return $df;
         }
 
-        public function getBuild(): int
-        {
-            // Get the build number associated with the data.
-            //
-            // Returns
-            // -------
-            // int
-            //     The build number
-            return $this->_build;
-        }        
+        
             
     }
 ?>
