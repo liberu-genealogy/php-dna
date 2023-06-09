@@ -579,6 +579,7 @@
                 $vcf_qc_filter,
                 $kwargs
             );
-        }                
+        }
+                
     }
 ?>
