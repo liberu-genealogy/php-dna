@@ -409,7 +409,6 @@
                 return [];
             }
         }
-        
         public function getChromosomesSummary(): string
         {
             // Check if the "_snps" array is not empty
