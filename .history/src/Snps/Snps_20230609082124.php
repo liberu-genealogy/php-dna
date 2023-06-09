@@ -197,35 +197,6 @@
             }
         }
         
-        /**
-         * Get the source as a string.
-         *
-         * @return string The source string
-         */
-        public function getSource(): string
-        {
-            return implode(", ", $this->_source);
-        }
-
-        /**
-         * Get the SNPs as an array.
-         *
-         * @return array The SNPs array
-         */
-        public function getSnps(): array
-        {
-            return $this->_snps;
-        }
-
-        /**
-         * Identify low quality SNPs.
-         *
-         * @return void
-         */
-        public function identify_low_quality_snps(): void
-        {
-            // Implement the method in PHP.
-        }
         
     }
 ?>
