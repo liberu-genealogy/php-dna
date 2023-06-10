@@ -84,11 +84,9 @@
         private $_discrepant_merge_genotypes;
 
         private $_source;
-
+        
         private $_phased;
-
         private $_build;
-
         private $_build_detected;
          
         /**
@@ -849,27 +847,7 @@
             $filteredSnps = $this->filter($chrom);
             // Return the count of the filtered snps collection
             return count($filteredSnps);
-        }
-        
-        /**
-         * Determine the sex based on X chromosome SNPs.
-         *
-         * @param float $threshold The threshold for determining sex.
-         * @return string The determined sex ("Male", "Female") or an empty string if unknown.
-         */
-        public function determineSexX($threshold) {
-            $x_snps = $this->getCount("X"); // Get the count of X chromosome SNPs
-
-            if ($x_snps > 0) {
-                if (count($this->heterozygous("X")) / $x_snps > $threshold) {
-                    return "Female"; // More heterozygous SNPs than the threshold, likely female
-                } else {
-                    return "Male"; // Fewer heterozygous SNPs than the threshold, likely male
-                }
-            } else {
-                return ""; // No X chromosome SNPs found
-            }
-        }
+        }                
 
     }
 ?>
