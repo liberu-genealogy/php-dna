@@ -891,14 +891,6 @@
             }
         }
         
-        public function deduplicateRsids()
-        {
-            // Keep the first duplicate rsid
-            $duplicateRsids = $this->_snps->duplicated("first");
-            // Save duplicate SNPs
-            $this->_duplicate = array_merge($this->_duplicate, $this->_snps->where($duplicateRsids));
-            // Deduplicate
-            $this->_snps = $this->_snps->where(!$duplicateRsids);
-        }    
+        
     }
 ?>
