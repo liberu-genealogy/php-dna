@@ -704,51 +704,7 @@
             }
         }
 
-        private function lookupRefsnpSnapshot(string $rsid, RestClient $rest_client)
-        {
-            // Extract the ID from the rsid by removing the 'rs' prefix
-            $id = substr($rsid, 2);
-            // Perform the REST action to retrieve the RefSnp snapshot data
-            $response = $rest_client->performRestAction("/variation/v0/refsnp/" . $id);
         
-            if (isset($response["merged_snapshot_data"])) {
-                // This RefSnp id was merged into another
-                // We'll pick the first one to decide which chromosome this PAR will be assigned to
-                $merged_id = "rs" . $response["merged_snapshot_data"]["merged_into"][0];
-                $logger->info("SNP id {$rsid} has been merged into id {$merged_id}");
-                // Recursively lookup the snapshot data for the merged id
-                return $this->lookupRefsnpSnapshot($merged_id, $rest_client);
-            } elseif (isset($response["nosnppos_snapshot_data"])) {
-                $logger->warning("Unable to look up SNP id {$rsid}");
-                return null;
-            } else {
-                // Return the response containing the snapshot data
-                return $response;
-            }
-        }
-        
-        private function assignSnp(string $rsid, array $alleles, string $chrom)
-        {
-            // Only assign the SNP if positions match (i.e., same build)
-            foreach ($alleles as $allele) {
-                $allele_pos = $allele["allele"]["spdi"]["position"];
-                // Ref SNP positions seem to be 0-based...
-                if ($allele_pos == ($this->snps[$rsid]->pos - 1)) {
-                    $this->snps[$rsid]->chrom = $chrom;
-                    return true;
-                }
-            }
-            return false;
-        }
-        
-        private function extractBuild(array $item)
-        {
-            $assembly_name = $item["placement_annot"]["seq_id_traits_by_assembly"][0]["assembly_name"];
-            // Extract the assembly name from the item
-            $assembly_name = explode(".", $assembly_name)[0];
-            // Extract the build number from the assembly name
-            return (int)substr($assembly_name, -2);
-        }
-                        
+                
     }
 ?>
