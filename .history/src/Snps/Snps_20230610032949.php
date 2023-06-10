@@ -827,7 +827,8 @@
             $filteredSnps = $this->filter($chrom);
             // Return the count of the filtered snps collection
             return count($filteredSnps);
-        }                
+        }
+                
 
     }
 ?>

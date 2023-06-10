@@ -822,12 +822,7 @@
             return $build;
         }
         
-        public function get_count($chrom = "") {
-            // Get the filtered snps collection based on the 'chrom' value
-            $filteredSnps = $this->filter($chrom);
-            // Return the count of the filtered snps collection
-            return count($filteredSnps);
-        }                
+        
 
     }
 ?>
