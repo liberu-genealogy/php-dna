@@ -871,24 +871,25 @@
             }
         }
 
-        /**
-         * Determine the sex based on Y chromosome SNPs.
-         *
-         * @param float $threshold The threshold for determining sex.
-         * @return string The determined sex ("Male", "Female") or an empty string if unknown.
-         */
-        public function determineSexY($threshold) {
-            $y_snps = $this->getCount("Y"); // Get the count of Y chromosome SNPs
+    /**
+     * Determine the sex based on Y chromosome SNPs.
+     *
+     * @param float $threshold The threshold for determining sex.
+     * @return string The determined sex ("Male", "Female") or an empty string if unknown.
+     */
+    public function determineSexY($threshold) {
+        $y_snps = $this->getCount("Y"); // Get the count of Y chromosome SNPs
 
-            if ($y_snps > 0) {
-                if (count($this->notnull("Y")) / $y_snps > $threshold) {
-                    return "Male"; // More non-null SNPs than the threshold, likely male
-                } else {
-                    return "Female"; // Fewer non-null SNPs than the threshold, likely female
-                }
+        if ($y_snps > 0) {
+            if (count($this->notnull("Y")) / $y_snps > $threshold) {
+                return "Male"; // More non-null SNPs than the threshold, likely male
             } else {
-                return ""; // No Y chromosome SNPs found
+                return "Female"; // Fewer non-null SNPs than the threshold, likely female
             }
-        }    
+        } else {
+            return ""; // No Y chromosome SNPs found
+        }
+    }    
+
     }
 ?>

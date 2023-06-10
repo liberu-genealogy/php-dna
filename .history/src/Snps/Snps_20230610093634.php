@@ -890,5 +890,6 @@
                 return ""; // No Y chromosome SNPs found
             }
         }    
+
     }
 ?>
