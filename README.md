@@ -2,7 +2,7 @@
 
 ## Requirements
 
-* php-dna 1.0+ requires PHP 8.0 (or later).
+* php-dna 1.0+ requires PHP 8.2 (or later).
 
 ## Installation
 
