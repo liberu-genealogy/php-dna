@@ -750,77 +750,7 @@
             return (int)substr($assembly_name, -2);
         }
 
-        public function detectBuild(): int
-        {
-            // Define a closure to look up the build based on SNP position
-            $lookupBuildWithSnpPos = function ($pos, $s) {
-                // Search for the position in the sorted collection and retrieve the corresponding value (build)
-                return isset($s[$s->search($pos)]) ? (int)$s->keys()[$s->search($pos)] : 0;
-            };
         
-            $build = 0;
-        
-            // List of rsids to detect the build
-            $rsids = [
-                "rs3094315",
-                "rs11928389",
-                "rs2500347",
-                "rs964481",
-                "rs2341354",
-                "rs3850290",
-                "rs1329546",
-            ];
-        
-            // Data frame with build positions for the rsids
-            $df = [
-                36 => [
-                    742429,
-                    50908372,
-                    143649677,
-                    27566744,
-                    908436,
-                    22315141,
-                    135302086,
-                ],
-                37 => [
-                    752566,
-                    50927009,
-                    144938320,
-                    27656823,
-                    918573,
-                    23245301,
-                    135474420,
-                ],
-                38 => [
-                    817186,
-                    50889578,
-                    148946169,
-                    27638706,
-                    983193,
-                    22776092,
-                    136392261,
-                ],
-            ];
-        
-            foreach ($rsids as $rsid) {
-                if (array_key_exists($rsid, $this->_snps)) {
-                    // Create a collection from the data frame and map the values to SNP positions
-                    $s = collect($df)->mapWithKeys(function ($value, $key) use ($rsid) {
-                        return [$value[array_search($rsid, $rsids)] => $key];
-                    });
-        
-                    // Look up the build based on the SNP position and the mapped collection
-                    $build = $lookupBuildWithSnpPos($this->_snps[$rsid]['pos'], $s);
-                }
-        
-                if ($build) {
-                    // If the build is detected, break the loop
-                    break;
-                }
-            }
-        
-            return $build;
-        }        
 
     }
 ?>
