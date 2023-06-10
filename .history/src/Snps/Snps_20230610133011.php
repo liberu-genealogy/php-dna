@@ -902,51 +902,5 @@
         }    
     }
 
-   /**
-     * Get the start and stop positions of the non-PAR region on a given chromosome.
-     *
-     * @param string $chrom The chromosome identifier.
-     * @return array An array containing the start and stop positions of the non-PAR region.
-     */
-    public function getNonParStartStop($chrom) {
-        $pr = $this->getParRegions($this->build); // Get the PAR regions
-
-        $np_start = $pr->filter(function ($item) use ($chrom) {
-            return $item['chrom'] === $chrom && $item['region'] === "PAR1";
-        })->pluck('stop')->first(); // Get the stop position of PAR1 on the given chromosome
-
-        $np_stop = $pr->filter(function ($item) use ($chrom) {
-            return $item['chrom'] === $chrom && $item['region'] === "PAR2";
-        })->pluck('start')->first(); // Get the start position of PAR2 on the given chromosome
-
-        return [$np_start, $np_stop]; // Return the start and stop positions of the non-PAR region
-    }
-
-
-    public function getNonParSnps($chrom, $heterozygous = true)
-    {
-        [$np_start, $np_stop] = $this->getNonParStartStop($chrom); // Get the start and stop positions of the non-PAR region
-        $df = $this->filter($chrom); // Filter the data for the given chromosome
-
-        if ($heterozygous) {
-            // Get heterozygous SNPs in the non-PAR region (i.e., discrepant XY SNPs)
-            return $df->filter(function ($row) use ($np_start, $np_stop) {
-                return !is_null($row['genotype']) &&
-                    strlen($row['genotype']) == 2 &&
-                    $row['genotype'][0] != $row['genotype'][1] &&
-                    $row['pos'] > $np_start &&
-                    $row['pos'] < $np_stop;
-            })->keys(); // Return the keys (indices) of the filtered SNPs
-        } else {
-            // Get homozygous SNPs in the non-PAR region
-            return $df->filter(function ($row) use ($np_start, $np_stop) {
-                return !is_null($row['genotype']) &&
-                    strlen($row['genotype']) == 2 &&
-                    $row['genotype'][0] == $row['genotype'][1] &&
-                    $row['pos'] > $np_start &&
-                    $row['pos'] < $np_stop;
-            })->keys(); // Return the keys (indices) of the filtered SNPs
-        }
-    }
-
+    
 ?>
