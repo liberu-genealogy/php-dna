@@ -986,6 +986,7 @@
         // Fix chromosome issue where some data providers duplicate male X and Y chromosomes
         $this->deduplicateSexChrom("X");
         $this->deduplicateSexChrom("Y");
-    }        
+    }
+        
 
 ?>
