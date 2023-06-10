@@ -949,15 +949,6 @@
         }
     }
 
-    public function deduplicateAlleles($rsids)
-    {
-        // Remove duplicate alleles
-        $this->_snps = $this->_snps->map(function ($row) use ($rsids) {
-            if (in_array($row["id"], $rsids)) {
-                $row["genotype"] = $row["genotype"][0];
-            }
-            return $row;
-        });
-    }    
+    
 
 ?>
