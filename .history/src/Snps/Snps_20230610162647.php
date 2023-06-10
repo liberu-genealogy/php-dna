@@ -960,25 +960,6 @@
         });
     }
     
-    public function deduplicateSexChrom(string $chrom): void
-    {
-        // Deduplicate a chromosome in the non-PAR region.
-        $discrepantXYSnps = $this->getNonParSnps($chrom);
     
-        // Save discrepant XY SNPs
-        $this->_discrepant_XY = array_merge(
-            $this->_discrepant_XY,
-            $this->_snps[$discrepantXYSnps]
-        );
-    
-        // Drop discrepant XY SNPs since it's ambiguous for which allele to deduplicate
-        unset($this->_snps[$discrepantXYSnps]);
-    
-        // Get remaining non-PAR SNPs with two alleles
-        $nonParSnps = $this->getNonParSnps($chrom, heterozygous: false);
-    
-        // Deduplicate the remaining non-PAR SNPs
-        $this->deduplicateAlleles($nonParSnps);
-    } 
 
 ?>
