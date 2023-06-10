@@ -979,6 +979,7 @@
     
         // Deduplicate the remaining non-PAR SNPs
         $this->deduplicateAlleles($nonParSnps);
-    } 
+    }
+        
 
 ?>
