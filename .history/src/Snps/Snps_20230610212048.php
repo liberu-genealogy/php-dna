@@ -1032,39 +1032,6 @@
         return $data;
     }
     
-    function natural_sort_key(string $value): array {
-        return preg_split("/(\D*\d+\D*)/", $value, 0, PREG_SPLIT_DELIM_CAPTURE);
-    }
     
-    function sort_snps(array &$snps): void {
-        // Get unique chrom values
-        $uniqueChromosomalValues = array_unique(array_column($snps, 'chrom'));
-    
-        // Sort uniqueChromosomalValues based on natural sorting
-        usort($uniqueChromosomalValues, function ($a, $b) {
-            return strnatcmp($a, $b);
-        });
-    
-        // Move PAR and MT to the end of sorted array
-        if (($key = array_search("PAR", $uniqueChromosomalValues)) !== false) {
-            unset($uniqueChromosomalValues[$key]);
-            $uniqueChromosomalValues[] = "PAR";
-        }
-        if (($key = array_search("MT", $uniqueChromosomalValues)) !== false) {
-            unset($uniqueChromosomalValues[$key]);
-            $uniqueChromosomalValues[] = "MT";
-        }
-    
-        // Sort snps based on uniqueChromosomalValues and pos
-        usort($snps, function ($a, $b) use ($uniqueChromosomalValues) {
-            $chromosomeA = array_search($a['chrom'], $uniqueChromosomalValues);
-            $chromosomeB = array_search($b['chrom'], $uniqueChromosomalValues);
-    
-            if ($chromosomeA === $chromosomeB) {
-                return $a['pos'] <=> $b['pos'];
-            }
-            return $chromosomeA <=> $chromosomeB;
-        });
-    }    
     
 ?>
