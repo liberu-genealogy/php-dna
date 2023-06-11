@@ -1330,28 +1330,5 @@
         }
     }
     
-    /**
-     * Ensures that the builds match when merging SNPs objects.
-     *
-     * @param mixed $s The SNPs object being merged.
-     */
-    public function ensure_same_build($s)
-    {
-        // Ensure builds match when merging
-        if (!$s->build_detected) {
-            $this->logger->warning(sprintf("Build not detected for %s, assuming Build %s",
-                $s->__toString(),
-                $s->build
-            ));
-        }
-
-        if ($this->build != $s->build) {
-            $this->logger->info(sprintf("%s has Build %s; remapping to Build %s",
-                $s->__toString(),
-                $s->build,
-                $this->build
-            ));
-            $s->remap($this->build);
-        }
-    }    
+    
 ?>
