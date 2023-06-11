@@ -988,21 +988,5 @@
         $this->deduplicateSexChrom("Y");
     }        
 
-    public function deduplicateMTChrom(): void
-    {
-        // Deduplicate MT chromosome.
-        $heterozygousMTSnps = $this->_snps[$this->heterozygous("MT")->index] ?? [];
-    
-        // Save heterozygous MT SNPs
-        $this->_heterozygous_MT = array_merge(
-            $this->_heterozygous_MT,
-            $this->_snps[$heterozygousMTSnps]
-        );
-    
-        // Drop heterozygous MT SNPs since it's ambiguous for which allele to deduplicate
-        unset($this->_snps[$heterozygousMTSnps]);
-    
-        $this->deduplicateAlleles($this->homozygous("MT")->index);
-    }
     
 ?>
