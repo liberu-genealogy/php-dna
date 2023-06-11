@@ -278,7 +278,8 @@ class VariedicInherit
     ) {
         // Method implementation goes here  
     }
-    public function getPredictions(
+    
+    function getPredictions(
         $output_directory,
         $write_predictions,
         $models_directory,

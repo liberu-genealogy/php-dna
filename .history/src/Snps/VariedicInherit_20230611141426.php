@@ -276,55 +276,7 @@ class VariedicInherit
         ?string $algorithm = null,
         ?string $aisnps_set = null
     ) {
-        // Method implementation goes here  
-    }
-    public function getPredictions(
-        $output_directory,
-        $write_predictions,
-        $models_directory,
-        $aisnps_directory,
-        $n_components,
-        $k,
-        $thousand_genomes_directory,
-        $samples_directory,
-        $algorithm,
-        $aisnps_set
-    ) {
-        if (!$this->valid) {
-            // If the object is not valid, return an empty array
-            return [];
-        }
-
-        // Check if ezancestry package is installed
-        if (!class_exists('ezancestry\commands\Predict')) {
-            // Throw an exception if the ezancestry package is not installed
-            throw new \Exception('Ancestry prediction requires the ezancestry package; please install it');
-        }
-
-        $predict = new ezancestry\commands\Predict();
-
-        // Call the predict method of the ezancestry\commands\Predict class
-        $predictions = $predict->predict(
-            $this->snps,
-            $output_directory,
-            $write_predictions,
-            $models_directory,
-            $aisnps_directory,
-            $n_components,
-            $k,
-            $thousand_genomes_directory,
-            $samples_directory,
-            $algorithm,
-            $aisnps_set
-        );
-
-        // Get the maxPop values from the first prediction
-        $maxPopValues = $this->maxPop($predictions[0]);
-
-        // Add the predictions to the maxPopValues array
-        $maxPopValues['ezancestry_df'] = $predictions;
-
-        // Return the maxPopValues array
-        return $maxPopValues;
+        // Method implementation goes here
+         
     }    
 }
