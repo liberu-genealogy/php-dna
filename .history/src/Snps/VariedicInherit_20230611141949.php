@@ -325,27 +325,8 @@ class VariedicInherit
         $maxPopValues['ezancestry_df'] = $predictions;
 
         // Return the maxPopValues array
-        return $maxPopValues;        
-    }
-    
-    private function maxPop($row)
-    {
-        // Extract the values from the $row array
-        $popcode = $row['predicted_population_population'];
-        $popdesc = $row['population_description'];
-        $poppct = $row[$popcode];
-        $superpopcode = $row['predicted_population_superpopulation'];
-        $superpopdesc = $row['superpopulation_name'];
-        $superpoppct = $row[$superpopcode];
+        return $maxPopValues;
 
-        // Return an array with the extracted values
-        return [
-            'population_code' => $popcode,
-            'population_description' => $popdesc,
-            '_percent' => $poppct,
-            'superpopulation_code' => $superpopcode,
-            'superpopulation_description' => $superpopdesc,
-            'population_percent' => $superpoppct,
-        ];
+        
     }    
 }
