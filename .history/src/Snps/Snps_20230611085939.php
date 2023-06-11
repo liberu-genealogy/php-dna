@@ -1375,7 +1375,7 @@
         $this->_source = array_merge($this->_source, $s->_source);
     }
     
-    /**
+/**
      * Merges the dataframes of the SNPs object being merged.
      *
      * @param SNPs $s The SNPs object being merged.

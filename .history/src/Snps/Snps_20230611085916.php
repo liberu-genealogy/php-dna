@@ -1375,17 +1375,5 @@
         $this->_source = array_merge($this->_source, $s->_source);
     }
     
-    /**
-     * Merges the dataframes of the SNPs object being merged.
-     *
-     * @param SNPs $s The SNPs object being merged.
-     */
-    public function merge_dfs(SNPs $s): void
-    {
-        // Append dataframes created when a "SNPs" object is instantiated
-        $this->_duplicate = array_merge($this->_duplicate, $s->_duplicate);
-        $this->_discrepant_XY = array_merge($this->_discrepant_XY, $s->_discrepant_XY);
-        $this->_heterozygous_MT = array_merge($this->_heterozygous_MT, $s->_heterozygous_MT);
-        $this->_discrepant_vcf_position = array_merge($this->_discrepant_vcf_position, $s->_discrepant_vcf_position);
-    }    
+    
 ?>
