@@ -1273,21 +1273,21 @@
         return $complement; // Return the complement genotype string.
     }
     
-    /**
-     * Returns an array representing the natural sort order of a given string.
-     *
-     * @param string $s The string to generate the natural sort key for.
-     * @return array An array representing the natural sort order of the string.
-     */
-    function natural_sort_key(string $s): array
-    {
-        $natural_sort_re = '/([0-9]+)/'; // Regular expression pattern to match numbers in the string.
+/**
+ * Returns an array representing the natural sort order of a given string.
+ *
+ * @param string $s The string to generate the natural sort key for.
+ * @return array An array representing the natural sort order of the string.
+ */
+function natural_sort_key(string $s): array
+{
+    $natural_sort_re = '/([0-9]+)/'; // Regular expression pattern to match numbers in the string.
 
-        // Split the string using the regular expression pattern and capture the delimiter.
-        // Map each segment to its corresponding natural sort key value.
-        return array_map(
-            fn($text) => is_numeric($text) ? intval($text) : strtolower($text),
-            preg_split($natural_sort_re, $s, -1, PREG_SPLIT_DELIM_CAPTURE)
-        );
-    }    
+    // Split the string using the regular expression pattern and capture the delimiter.
+    // Map each segment to its corresponding natural sort key value.
+    return array_map(
+        fn($text) => is_numeric($text) ? intval($text) : strtolower($text),
+        preg_split($natural_sort_re, $s, -1, PREG_SPLIT_DELIM_CAPTURE)
+    );
+}    
 ?>
