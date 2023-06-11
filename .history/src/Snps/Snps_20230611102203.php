@@ -1572,6 +1572,7 @@
         
         // Call the new method `getCount` with the provided argument and return the result.
         return $this->getCount($chrom);
-    }    
+    }
+    
         
 ?>
