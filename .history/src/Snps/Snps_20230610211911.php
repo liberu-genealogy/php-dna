@@ -1005,31 +1005,6 @@
         $this->deduplicateAlleles($this->homozygous("MT")->index);
     }
 
-    function get_par_regions(int $build): array {
-        $data = [];
-        if ($build === 37) {
-            $data = [
-                ["region" => "PAR1", "chrom" => "X", "start" => 60001, "stop" => 2699520],
-                ["region" => "PAR2", "chrom" => "X", "start" => 154931044, "stop" => 155260560],
-                ["region" => "PAR1", "chrom" => "Y", "start" => 10001, "stop" => 2649520],
-                ["region" => "PAR2", "chrom" => "Y", "start" => 59034050, "stop" => 59363566],
-            ];
-        } elseif ($build === 38) {
-            $data = [
-                ["region" => "PAR1", "chrom" => "X", "start" => 10001, "stop" => 2781479],
-                ["region" => "PAR2", "chrom" => "X", "start" => 155701383, "stop" => 156030895],
-                ["region" => "PAR1", "chrom" => "Y", "start" => 10001, "stop" => 2781479],
-                ["region" => "PAR2", "chrom" => "Y", "start" => 56887903, "stop" => 57217415],
-            ];
-        } elseif ($build === 36) {
-            $data = [
-                ["region" => "PAR1", "chrom" => "X", "start" => 1, "stop" => 2709520],
-                ["region" => "PAR2", "chrom" => "X", "start" => 154584238, "stop" => 154913754],
-                ["region" => "PAR1", "chrom" => "Y", "start" => 1, "stop" => 2709520],
-                ["region" => "PAR2", "chrom" => "Y", "start" => 57443438, "stop" => 57772954],
-            ];
-        }
-        return $data;
-    }    
+    
     
 ?>
