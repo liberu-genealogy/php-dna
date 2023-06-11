@@ -1290,43 +1290,6 @@
             preg_split($natural_sort_re, $s, -1, PREG_SPLIT_DELIM_CAPTURE)
         );
     }
-        
-    /**
-     * Merge SNP objects based on specified thresholds and options.
-     *
-     * @param array $snps_objects An array of SNP objects to merge.
-     * @param int $discrepant_positions_threshold The threshold for the number of discrepant positions allowed.
-     * @param int $discrepant_genotypes_threshold The threshold for the number of discrepant genotypes allowed.
-     * @param bool $remap Whether to remap the merged SNP objects.
-     * @param string $chrom The chromosome to merge SNP objects for.
-     */
-    public function merge(
-        array $snps_objects = [],
-        int $discrepant_positions_threshold = 100,
-        int $discrepant_genotypes_threshold = 500,
-        bool $remap = true,
-        string $chrom = ""
-    ) {
-        // Your PHP code implementation here
-        /**
-         * Initializes the SNPs object with the properties of the SNPs object being merged.
-         *
-         * @param mixed $s The SNPs object being merged.
-         */
-        public function init($s)
-        {
-            // Initialize properties of the SNPs object being merged
-            $this->_snps = $s->snps;
-            $this->_duplicate = $s->duplicate;
-            $this->_discrepant_XY = $s->discrepant_XY;
-            $this->_heterozygous_MT = $s->heterozygous_MT;
-            $this->_discrepant_vcf_position = $s->discrepant_vcf_position;
-            $this->_discrepant_merge_positions = $s->discrepant_merge_positions;
-            $this->_discrepant_merge_genotypes = $s->discrepant_merge_genotypes;
-            $this->_source = $s->_source;
-            $this->_phased = $s->phased;
-            $this->_build = $s->build;
-            $this->_build_detected = $s->build_detected;
-        }
-    }    
+    
+    
 ?>
