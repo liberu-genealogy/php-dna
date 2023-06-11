@@ -1238,38 +1238,6 @@
         return $temp;
     }
     
-    /**
-     * Returns the complement of a given genotype string.
-     *
-     * @param string|null $genotype The genotype string to complement.
-     * @return string|null The complement of the genotype string, or null if the input is null.
-     */
-    function complement_bases(string|null $genotype): string|null
-    {
-        if (is_null($genotype)) {
-            return null;
-        }
-
-        $complement = ""; // Variable to store the complement genotype string.
-
-        // Iterate over each character in the genotype string.
-        for ($i = 0; $i < strlen($genotype); $i++) {
-            $base = $genotype[$i]; // Get the current base.
-
-            // Determine the complement of the base and append it to the complement string.
-            if ($base === "A") {
-                $complement .= "T";
-            } elseif ($base === "G") {
-                $complement .= "C";
-            } elseif ($base === "C") {
-                $complement .= "G";
-            } elseif ($base === "T") {
-                $complement .= "A";
-            } else {
-                $complement .= $base; // If the base is not A, G, C, or T, keep it as is.
-            }
-        }
-
-        return $complement; // Return the complement genotype string.
-    }     
+    
+    
 ?>

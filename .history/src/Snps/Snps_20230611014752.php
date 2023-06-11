@@ -1271,5 +1271,6 @@
         }
 
         return $complement; // Return the complement genotype string.
-    }     
+    }    
+    
 ?>
