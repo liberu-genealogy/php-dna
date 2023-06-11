@@ -1355,23 +1355,5 @@
         }
     }
     
-    /**
-     * Merges the properties of the SNPs object being merged.
-     *
-     * @param mixed $s The SNPs object being merged.
-     */
-    public function merge_properties($s)
-    {
-        if (!$s->build_detected) {
-            // Can no longer assume build has been detected for all SNPs after merge
-            $this->_build_detected = false;
-        }
-
-        if (!$s->phased) {
-            // Can no longer assume all SNPs are phased after merge
-            $this->_phased = false;
-        }
-
-        $this->_source = array_merge($this->_source, $s->_source);
-    }    
+    
 ?>
