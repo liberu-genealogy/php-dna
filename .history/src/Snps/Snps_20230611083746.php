@@ -1355,7 +1355,7 @@
         }
     }
     
-    /**
+/**
      * Merges the properties of the SNPs object being merged.
      *
      * @param mixed $s The SNPs object being merged.
