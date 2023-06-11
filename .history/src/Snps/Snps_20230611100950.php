@@ -1477,77 +1477,59 @@
         ];
 
         $results = [];
-        foreach ($snps_objects as $snps_object) {
-            $d = [
-                "merged" => false,
-                "common_rsids" => [],
-                "discrepant_position_rsids" => [],
-                "discrepant_genotype_rsids" => [],
-            ];
+    foreach ($snps_objects as $snps_object) {
+        $d = [
+            "merged" => false,
+            "common_rsids" => [],
+            "discrepant_position_rsids" => [],
+            "discrepant_genotype_rsids" => [],
+        ];
 
-            if (!$snps_object->valid) {
-                $this->logger->warning("No SNPs to merge...");
-                $results[] = $d;
-                continue;
-            }
-
-            if (!$this->valid) {
-                $this->logger->info("Loading ".$snps_object->__toString());
-
-                $this->init($snps_object);
-                $d["merged"] = true;
-            } else {
-                $this->logger->info("Merging ".$snps_object->__toString());
-
-                if ($remap) {
-                    $this->ensure_same_build($snps_object);
-                }
-
-                if ($this->build != $snps_object->build) {
-                    $this->logger->warning(
-                        $snps_object->__toString()." has Build ".$snps_object->build."; this SNPs object has Build ".$this->build
-                    );
-                }
-
-                [$merged, $extra] = $this->merge_snps(
-                    $snps_object,
-                    $discrepant_positions_threshold,
-                    $discrepant_genotypes_threshold,
-                    $chrom
-                );
-
-                if ($merged) {
-                    $this->merge_properties($snps_object);
-                    $this->merge_dfs($snps_object);
-                    $this->sort();
-
-                    $d["merged"] = true;
-                    $d = array_merge($d, $extra);
-                }
-            }
-
+        if (!$snps_object->valid) {
+            $this->logger->warning("No SNPs to merge...");
             $results[] = $d;
+            continue;
         }
 
-        return $results;
+        if (!$this->valid) {
+            $this->logger->info("Loading ".$snps_object->__toString());
+
+            $this->init($snps_object);
+            $d["merged"] = true;
+        } else {
+            $this->logger->info("Merging ".$snps_object->__toString());
+
+            if ($remap) {
+                $this->ensure_same_build($snps_object);
+            }
+
+            if ($this->build != $snps_object->build) {
+                $this->logger->warning(
+                    $snps_object->__toString()." has Build ".$snps_object->build."; this SNPs object has Build ".$this->build
+                );
+            }
+
+            [$merged, $extra] = $this->merge_snps(
+                $snps_object,
+                $discrepant_positions_threshold,
+                $discrepant_genotypes_threshold,
+                $chrom
+            );
+
+            if ($merged) {
+                $this->merge_properties($snps_object);
+                $this->merge_dfs($snps_object);
+                $this->sort();
+
+                $d["merged"] = true;
+                $d = array_merge($d, $extra);
+            }
+        }
+
+        $results[] = $d;
     }
-    
-    public function sortSnps()
-    {
-        // Deprecated method. Display a deprecation error.
-        trigger_error("This method has been renamed to `sort`.", E_USER_DEPRECATED);
-        
-        // Call the new method `sort`.
-        $this->sort();
-    }
-    
-    public function remapSnps($target_assembly, $complement_bases = true)
-    {
-        // Deprecated method. Display a deprecation error.
-        trigger_error("This method has been renamed to `remap`.", E_USER_DEPRECATED);
-        
-        // Call the new method `remap` and return the result.
-        return $this->remap($target_assembly, $complement_bases);
-    }
-        
+
+    return $results;
+
+    }    
 ?>
