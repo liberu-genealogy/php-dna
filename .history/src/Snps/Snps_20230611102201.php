@@ -1550,28 +1550,6 @@
         return $this->remap($target_assembly, $complement_bases);
     }
 
-    public function saveSnps($filename = "", $vcf = false, $atomic = true, ...$kwargs)
-    {
-        // Deprecated method. Display a deprecation error.
-        trigger_error(
-            "Method `save_snps` has been replaced by `to_csv`, `to_tsv`, and `to_vcf`.",
-            E_USER_DEPRECATED
-        );
-        
-        // Call the private method `_save` with the provided arguments and return the result.
-        return $this->_save($filename, $vcf, $atomic, ...$kwargs);
-    }
     
-    public function getSnpCount($chrom = "")
-    {
-        // Deprecated method. Display a deprecation error.
-        trigger_error(
-            "This method has been renamed to `get_count`.",
-            E_USER_DEPRECATED
-        );
-        
-        // Call the new method `getCount` with the provided argument and return the result.
-        return $this->getCount($chrom);
-    }    
         
 ?>
