@@ -1574,22 +1574,5 @@
         return $this->getCount($chrom);
     }    
 
-    public function notNullSnps($chrom = "")
-    {
-        // Deprecated method. Display a deprecation error.
-        trigger_error("This method has been renamed to `notnull`.", E_USER_DEPRECATED);
-        
-        // Call the new method `notnull` with the provided argument and return the result.
-        return $this->notnull($chrom);
-    }
     
-    public function getSummary() // Also rename this method to match the property
-    {
-        // Deprecated method. Display a deprecation error.
-        trigger_error("This method has been renamed to `summary` and is now a property.", E_USER_DEPRECATED);
-        
-        // Return the value of the `summary` property.
-        return $this->summary;
-    }
-        
 ?>
