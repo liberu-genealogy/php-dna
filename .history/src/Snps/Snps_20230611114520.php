@@ -1592,31 +1592,5 @@
         return $this->summary;
     }
 
-    public function getAssembly()
-    {
-        // Deprecated method. Display a deprecation error.
-        trigger_error("See the `assembly` property.", E_USER_DEPRECATED);
-        
-        // Return the value of the `assembly` property.
-        return $this->assembly;
-    }
     
-    public function getChromosomes()
-    {
-        // Deprecated method. Display a deprecation error.
-        trigger_error("See the `chromosomes` property.", E_USER_DEPRECATED);
-        
-        // Return the value of the `chromosomes` property.
-        return $this->chromosomes;
-    }
-    
-    public function getChromosomesSummary()
-    {
-        // Deprecated method. Display a deprecation error.
-        trigger_error("See the `chromosomes_summary` property.", E_USER_DEPRECATED);
-        
-        // Return the value of the `chromosomes_summary` property.
-        return $this->chromosomes_summary;
-    }
-        
 ?>
