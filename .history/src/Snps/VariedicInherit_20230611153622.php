@@ -438,5 +438,6 @@ class VariedicInherit
 
         // Return the computed cluster overlap DataFrame
         return $df;
-    }    
+    }
+    
 }
