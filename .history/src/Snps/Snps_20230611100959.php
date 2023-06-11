@@ -1527,27 +1527,9 @@
             }
 
             $results[] = $d;
-        }
+    }
 
-        return $results;
-    }
-    
-    public function sortSnps()
-    {
-        // Deprecated method. Display a deprecation error.
-        trigger_error("This method has been renamed to `sort`.", E_USER_DEPRECATED);
-        
-        // Call the new method `sort`.
-        $this->sort();
-    }
-    
-    public function remapSnps($target_assembly, $complement_bases = true)
-    {
-        // Deprecated method. Display a deprecation error.
-        trigger_error("This method has been renamed to `remap`.", E_USER_DEPRECATED);
-        
-        // Call the new method `remap` and return the result.
-        return $this->remap($target_assembly, $complement_bases);
-    }
-        
+    return $results;
+
+    }    
 ?>
