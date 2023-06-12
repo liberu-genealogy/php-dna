@@ -338,9 +338,9 @@ class VariadicInherit
     private function maxPop($row)
     {
         // Extract the values from the $row array
-        $popcode = $row['predicted_population_population'];
-        $popdesc = $row['population_description'];
-        $poppct = $row[$popcode];
+        $opcode = $row['predicted_population_population'];
+        $popes = $row['population_description'];
+        $poppct = $row[$opcode];
         $superpopcode = $row['predicted_population_superpopulation'];
         $superpopdesc = $row['superpopulation_name'];
         $superpoppct = $row[$superpopcode];

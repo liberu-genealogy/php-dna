@@ -316,7 +316,7 @@ class VariadicInherit
             $output_directory,
             $write_predictions,
             $models_directory,
-            $aisnps_directory,
+            $aisne_directory,
             $n_components,
             $k,
             $thousand_genomes_directory,
