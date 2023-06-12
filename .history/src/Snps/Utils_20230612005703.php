@@ -19,6 +19,11 @@ namespace Dna\Snps;
  * alternative to constructor and lets clients access the same instance of this
  * class over and over.
  */
+class Utils
+{
+}
+
+use ZipArchive;
 
 // import datetime; // PHP has built-in date functions
 // import gzip; // PHP has built-in gzip functions
@@ -60,6 +65,7 @@ class Parallelizer {
             return array_map($f, $tasks);
         }
     }
+
     
     function os_cpu_count(): int {
         // Use this function if you need to get the number of CPU cores in PHP
@@ -87,16 +93,16 @@ class Singleton {
     protected function __construct() {}
     private function __clone() {}
     private function __wakeup() {}
+}
 
-    function create_dir(string $path): bool {
-        if (!file_exists($path)) {
-            // Create directory if it doesn't exist
-            if (!mkdir($path, 0777, true)) {
-                return false;
-            }
+function create_dir(string $path): bool {
+    if (!file_exists($path)) {
+        // Create directory if it doesn't exist
+        if (!mkdir($path, 0777, true)) {
+            return false;
         }
-        return true;
-    }    
+    }
+    return true;
 }
 
 ?>
