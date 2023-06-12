@@ -209,56 +209,7 @@ class Singleton {
     } else {
         echo "Error zipping file.";
     }
-
-    function gzipFile($src, $dest)
-    {
-        /**
-         * Gzip a file.
-         *
-         * @param string $src  Path to file to gzip
-         * @param string $dest Path to output gzip file
-         *
-         * @return string Path to gzipped file
-         */
-        
-        $bufferSize = 4096;
-        $srcFile = fopen($src, "rb");
-        
-        if ($srcFile === false) {
-            throw new Exception("Cannot open source file");
-        }
-        
-        try {
-            $destFile = fopen($dest, "wb");
-            
-            if ($destFile === false) {
-                throw new Exception("Cannot create destination file");
-            }
-            
-            try {
-                $gzFile = gzopen($dest, "wb");
-                
-                if ($gzFile === false) {
-                    throw new Exception("Cannot create gzipped file");
-                }
-                
-                try {
-                    while (!feof($srcFile)) {
-                        $buffer = fread($srcFile, $bufferSize);
-                        gzwrite($gzFile, $buffer);
-                    }
-                } finally {
-                    gzclose($gzFile);
-                }
-            } finally {
-                fclose($destFile);
-            }
-        } finally {
-            fclose($srcFile);
-        }
-        
-        return $dest;
-    }  
+    
     
 }
 
