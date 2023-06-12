@@ -20,6 +20,8 @@ namespace Dna\Snps;
  * class over and over.
  */
 
+use ZipArchive;
+
 // import datetime; // PHP has built-in date functions
 // import gzip; // PHP has built-in gzip functions
 // import io; // PHP has built-in I/O functions

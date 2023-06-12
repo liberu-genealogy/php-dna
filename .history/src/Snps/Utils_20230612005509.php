@@ -19,6 +19,11 @@ namespace Dna\Snps;
  * alternative to constructor and lets clients access the same instance of this
  * class over and over.
  */
+class Utils
+{
+}
+
+use ZipArchive;
 
 // import datetime; // PHP has built-in date functions
 // import gzip; // PHP has built-in gzip functions
@@ -48,8 +53,8 @@ class Parallelizer {
 
     public function __invoke(callable $f, array $tasks): array {
         if ($this->_parallelize) {
-            // Implement parallel (multi-process) execution using pthreads, parallel or another multi-processing library
-            // For example, using the parallel extension:
+            Implement parallel (multi-process) execution using pthreads, parallel or another multi-processing library
+            For example, using the parallel extension:
             $runtime = new \parallel\Runtime();
             $promises = [];
             foreach ($tasks as $task) {
@@ -60,18 +65,17 @@ class Parallelizer {
             return array_map($f, $tasks);
         }
     }
-    
-    function os_cpu_count(): int {
-        // Use this function if you need to get the number of CPU cores in PHP
-        // You might need to adjust this code based on your environment
-        if (substr(php_uname('s'), 0, 7) == 'Windows') {
-            return (int) shell_exec('echo %NUMBER_OF_PROCESSORS%');
-        } else {
-            return (int) shell_exec('nproc');
-        }
-    }
 }
 
+function os_cpu_count(): int {
+    // Use this function if you need to get the number of CPU cores in PHP
+    // You might need to adjust this code based on your environment
+    if (substr(php_uname('s'), 0, 7) == 'Windows') {
+        return (int) shell_exec('echo %NUMBER_OF_PROCESSORS%');
+    } else {
+        return (int) shell_exec('nproc');
+    }
+}
 
 class Singleton {
     private static array $instances = [];
@@ -87,16 +91,16 @@ class Singleton {
     protected function __construct() {}
     private function __clone() {}
     private function __wakeup() {}
+}
 
-    function create_dir(string $path): bool {
-        if (!file_exists($path)) {
-            // Create directory if it doesn't exist
-            if (!mkdir($path, 0777, true)) {
-                return false;
-            }
+function create_dir(string $path): bool {
+    if (!file_exists($path)) {
+        // Create directory if it doesn't exist
+        if (!mkdir($path, 0777, true)) {
+            return false;
         }
-        return true;
-    }    
+    }
+    return true;
 }
 
 ?>

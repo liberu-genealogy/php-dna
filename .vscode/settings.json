@@ -1,10 +1,12 @@
 {
   "php.version": "v8.2",
   "cSpell.words": [
+    "atomicwrites",
     "autoload",
     "chrom",
     "codesniffer",
     "cytobands",
+    "Devmanateam",
     "facecolors",
     "familytree",
     "figsize",
@@ -13,22 +15,28 @@
     "groupby",
     "itertuples",
     "kwargs",
+    "nproc",
     "Omni",
+    "Parallelizer",
     "phpunit",
     "popcode",
     "popdesc",
     "poppct",
+    "pthreads",
     "relpath",
     "savefig",
+    "shutil",
     "squizlabs",
     "superpopcode",
     "superpopdesc",
     "superpoppct",
     "superpopulation",
+    "tempfile",
     "xlabel",
     "xranges",
     "yrange",
     "yticklabels",
-    "yticks"
+    "yticks",
+    "zipfile"
   ]
 }

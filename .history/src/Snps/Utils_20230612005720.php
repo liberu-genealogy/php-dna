@@ -19,6 +19,11 @@ namespace Dna\Snps;
  * alternative to constructor and lets clients access the same instance of this
  * class over and over.
  */
+class Utils
+{
+}
+
+use ZipArchive;
 
 // import datetime; // PHP has built-in date functions
 // import gzip; // PHP has built-in gzip functions
@@ -98,5 +103,7 @@ class Singleton {
         return true;
     }    
 }
+
+
 
 ?>
