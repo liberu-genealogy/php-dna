@@ -112,7 +112,7 @@ class Singleton {
 
         // Check if DataFrame is valid and contains data
         if (is_a($df, 'DataFrame') && count($df) > 0) {
-            if (!$buffer && !$this->create_dir($path)) {
+            if (!$buffer && !create_dir($path)) {
                 return ""; // Unable to create directory
             }
 
