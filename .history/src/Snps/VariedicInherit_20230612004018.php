@@ -308,11 +308,11 @@ class VariadicInherit
             throw new Exception('Ancestry prediction requires the ezancestry package; please install it');
         }
 
-        $predict = new ezancestry\commands\Predict();
+        $predict = new Predict();
 
         // Call the predict method of the ezancestry\commands\Predict class
         $predictions = $predict->predict(
-            $this->snps,
+            // $this->snps,
             $output_directory,
             $write_predictions,
             $models_directory,

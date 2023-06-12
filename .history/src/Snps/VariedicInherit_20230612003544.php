@@ -1,10 +1,8 @@
 <?php
 declare(strict_types=1);
 namespace Php8\Migration;
-use Exception;
-use InvalidArgumentException;
 
-class VariadicInherit
+class VariedicInherit
 {
     const ERR_MAGIC_SIGNATURE = 'WARNING: magic method signature for %s does not appear to match required signature';
     const ERR_REMOVED         = 'WARNING: the following function has been removed: %s.  Use this instead: %s';
@@ -26,7 +24,6 @@ class VariadicInherit
     public $contents = '';
     public $messages = [];
     public $magic = [];
-    
     /**
      * @param array $config : scan config
      */
@@ -41,14 +38,13 @@ class VariadicInherit
             }
         }
     }
-
     /**
      * Grabs contents
      * Initializes messages to []
      * Converts "\r" and "\n" to ' '
      *
      * @param string $fn    : name of file to scan
-     * @return string $name : classnames
+     * @return string $name : classname
      */
     public function getFileContents(string $fn) : string
     {
@@ -61,14 +57,13 @@ class VariadicInherit
         $this->contents = str_replace(["\r","\n"],['', ' '], $this->contents);
         return $this->contents;
     }
-
     /**
      * Extracts the value immediately following the supplied word up until the supplied end
      *
      * @param string $contents : text to search (usually $this->contents)
      * @param string $key   : starting keyword or set of characters
      * @param string $delim : ending delimiter
-     * @return string $name : classnames
+     * @return string $name : classname
      */
     public static function getKeyValue(string $contents, string $key, string $delim)
     {
@@ -84,7 +79,7 @@ class VariadicInherit
         $key = trim($key);
         return $key;
     }
-
+    
     /**
      * Clears messages
      *
@@ -305,7 +300,7 @@ class VariadicInherit
         // Check if ezancestry package is installed
         if (!class_exists('ezancestry\commands\Predict')) {
             // Throw an exception if the ezancestry package is not installed
-            throw new Exception('Ancestry prediction requires the ezancestry package; please install it');
+            throw new \Exception('Ancestry prediction requires the ezancestry package; please install it');
         }
 
         $predict = new ezancestry\commands\Predict();

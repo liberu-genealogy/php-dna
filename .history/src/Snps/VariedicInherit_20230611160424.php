@@ -1,10 +1,8 @@
 <?php
 declare(strict_types=1);
 namespace Php8\Migration;
-use Exception;
-use InvalidArgumentException;
 
-class VariadicInherit
+class VariedicInherit
 {
     const ERR_MAGIC_SIGNATURE = 'WARNING: magic method signature for %s does not appear to match required signature';
     const ERR_REMOVED         = 'WARNING: the following function has been removed: %s.  Use this instead: %s';
@@ -26,7 +24,6 @@ class VariadicInherit
     public $contents = '';
     public $messages = [];
     public $magic = [];
-    
     /**
      * @param array $config : scan config
      */
@@ -41,14 +38,13 @@ class VariadicInherit
             }
         }
     }
-
     /**
      * Grabs contents
      * Initializes messages to []
      * Converts "\r" and "\n" to ' '
      *
      * @param string $fn    : name of file to scan
-     * @return string $name : classnames
+     * @return string $name : classname
      */
     public function getFileContents(string $fn) : string
     {
@@ -61,14 +57,13 @@ class VariadicInherit
         $this->contents = str_replace(["\r","\n"],['', ' '], $this->contents);
         return $this->contents;
     }
-
     /**
      * Extracts the value immediately following the supplied word up until the supplied end
      *
      * @param string $contents : text to search (usually $this->contents)
      * @param string $key   : starting keyword or set of characters
      * @param string $delim : ending delimiter
-     * @return string $name : classnames
+     * @return string $name : classname
      */
     public static function getKeyValue(string $contents, string $key, string $delim)
     {
@@ -84,7 +79,6 @@ class VariadicInherit
         $key = trim($key);
         return $key;
     }
-
     /**
      * Clears messages
      *
@@ -95,7 +89,6 @@ class VariadicInherit
         $this->messages = [];
         $this->magic    = [];
     }
-
     /**
      * Returns messages
      *
@@ -108,7 +101,6 @@ class VariadicInherit
         if ($clear) $this->clearMessages();
         return $messages;
     }
-
     /**
      * Returns 0 and adds OK message
      *
@@ -120,7 +112,6 @@ class VariadicInherit
         $this->messages[] = sprintf(self::OK_PASSED, $function);
         return 0;
     }
-
     /**
      * Runs all scans
      *
@@ -201,7 +192,9 @@ class VariadicInherit
         // locate all magic methods
         $found   = 0;
         $matches = [];
-
+        $messages = [];
+        $magic    = [];
+        $result  = preg_match_all('/function __(.+?)\b/', $this->contents, $matches);
         if (!empty($matches[1])) {
             $this->messages[] = self::MAGIC_METHODS;
             $config = $this->config[self::KEY_MAGIC] ?? NULL;
@@ -305,7 +298,7 @@ class VariadicInherit
         // Check if ezancestry package is installed
         if (!class_exists('ezancestry\commands\Predict')) {
             // Throw an exception if the ezancestry package is not installed
-            throw new Exception('Ancestry prediction requires the ezancestry package; please install it');
+            throw new \Exception('Ancestry prediction requires the ezancestry package; please install it');
         }
 
         $predict = new ezancestry\commands\Predict();
@@ -446,4 +439,95 @@ class VariadicInherit
         // Return the computed cluster overlap DataFrame
         return $df;
     }
+    
+/**
+     * Computes cluster overlap based on given threshold.
+     *
+     * @param float $cluster_overlap_threshold The threshold for cluster overlap.
+     * @return DataFrame The computed cluster overlap DataFrame.
+     */
+    public function compute_cluster_overlap($cluster_overlap_threshold = 0.95) {
+        // Sample data for cluster overlap computation
+        $data = [
+            "cluster_id" => ["c1", "c3", "c4", "c5", "v5"],
+            "company_composition" => [
+                "23andMe-v4",
+                "AncestryDNA-v1, FTDNA, MyHeritage",
+                "23andMe-v3",
+                "AncestryDNA-v2",
+                "23andMe-v5, LivingDNA",
+            ],
+            "chip_base_deduced" => [
+                "HTS iSelect HD",
+                "OmniExpress",
+                "OmniExpress plus",
+                "OmniExpress plus",
+                "Illumina GSAs",
+            ],
+            "snps_in_cluster" => array_fill(0, 5, 0),
+            "snps_in_common" => array_fill(0, 5, 0),
+        ];
+
+        // Create a DataFrame from the data and set "cluster_id" as the index
+        $df = new DataFrame($data);
+        $df->setIndex("cluster_id");
+
+        $to_remap = null;
+        if ($this->build != 37) {
+            // Create a clone of the current object for remapping
+            $to_remap = clone $this;
+            $to_remap->remap(37); // clusters are relative to Build 37
+            $self_snps = $to_remap->snps()->select(["chrom", "pos"])->dropDuplicates();
+        } else {
+            $self_snps = $this->snps()->select(["chrom", "pos"])->dropDuplicates();
+        }
+
+        // Retrieve chip clusters from resources
+        $chip_clusters = $this->resources->get_chip_clusters();
+
+        // Iterate over each cluster in the DataFrame
+        foreach ($df->indexValues() as $cluster) {
+            // Filter chip clusters based on the current cluster
+            $cluster_snps = $chip_clusters->filter(function ($row) use ($cluster) {
+                return strpos($row["clusters"], $cluster) !== false;
+            })->select(["chrom", "pos"]);
+
+            // Update the DataFrame with the number of SNPs in the cluster and in common with the current object
+            $df->loc[$cluster]["snps_in_cluster"] = count($cluster_snps);
+            $df->loc[$cluster]["snps_in_common"] = count($self_snps->merge($cluster_snps, "inner"));
+
+            // Calculate overlap ratios for cluster and self
+            $df["overlap_with_cluster"] = $df["snps_in_common"] / $df["snps_in_cluster"];
+            $df["overlap_with_self"] = $df["snps_in_common"] / count($self_snps);
+
+            // Find the cluster with the maximum overlap
+            $max_overlap = array_keys($df["overlap_with_cluster"], max($df["overlap_with_cluster"]))[0];
+
+            // Check if the maximum overlap exceeds the threshold for both cluster and self
+            if (
+                $df["overlap_with_cluster"][$max_overlap] > $cluster_overlap_threshold &&
+                $df["overlap_with_self"][$max_overlap] > $cluster_overlap_threshold
+            ) {
+                // Update the current object's cluster and chip based on the maximum overlap
+                $this->cluster = $max_overlap;
+                $this->chip = $df["chip_base_deduced"][$max_overlap];
+
+                $company_composition = $df["company_composition"][$max_overlap];
+
+                // Check if the current object's source is present in the company composition
+                if (strpos($company_composition, $this->source) !== false) {
+                    if ($this->source === "23andMe" || $this->source === "AncestryDNA") {
+                        // Extract the chip version from the company composition
+                        $i = strpos($company_composition, "v");
+                        $this->chip_version = substr($company_composition, $i, $i + 2);
+                    }
+                } else {
+                    // Log a warning about the SNPs data source not found
+                }
+            }
+        }
+
+        // Return the computed cluster overlap DataFrame
+        return $df;
+    }    
 }

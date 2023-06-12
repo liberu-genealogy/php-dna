@@ -312,7 +312,7 @@ class VariadicInherit
 
         // Call the predict method of the ezancestry\commands\Predict class
         $predictions = $predict->predict(
-            $this->snps,
+            // $this->snps,
             $output_directory,
             $write_predictions,
             $models_directory,

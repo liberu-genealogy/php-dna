@@ -385,7 +385,7 @@ class VariadicInherit
         ];
 
         // Create a DataFrame from the data and set "cluster_id" as the index
-        $df = new DataFrame($data);
+        $df = new \DataFrame($data);
         $df->setIndex("cluster_id");
 
         $to_remap = null;

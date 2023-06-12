@@ -305,7 +305,7 @@ class VariadicInherit
         // Check if ezancestry package is installed
         if (!class_exists('ezancestry\commands\Predict')) {
             // Throw an exception if the ezancestry package is not installed
-            throw new Exception('Ancestry prediction requires the ezancestry package; please install it');
+            throw new \Exception('Ancestry prediction requires the ezancestry package; please install it');
         }
 
         $predict = new ezancestry\commands\Predict();
