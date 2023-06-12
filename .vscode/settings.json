@@ -1,6 +1,7 @@
 {
   "php.version": "v8.2",
   "cSpell.words": [
+    "arcname",
     "atomicwrites",
     "autoload",
     "chrom",
@@ -37,6 +38,7 @@
     "yrange",
     "yticklabels",
     "yticks",
+    "ziparchive",
     "zipfile"
   ]
 }

@@ -169,47 +169,6 @@ class Singleton {
         $s = preg_replace('/\W|^(\d)/', '_', $s);
         return $s;
     }
-
-    function zip_file($src, $dest, $arcname) {
-        // Zip a file.
-        // 
-        // Parameters
-        // ----------
-        // $src : string
-        //    path to file to zip
-        // $dest : string
-        //    path to output zip file
-        // $arcname : string
-        //     name of file in zip archive
-        //
-        // Returns
-        // -------
-        // string
-        //     path to zipped file
-    
-        $zip = new ZipArchive();
-    
-        if ($zip->open($dest, ZipArchive::CREATE | ZipArchive::OVERWRITE) === TRUE) {
-            $zip->addFile($src, $arcname);
-            $zip->close();
-            return $dest;
-        } else {
-            return false;
-        }
-    }
-    
-    $src = 'path/to/source/file';
-    $dest = 'path/to/output/zipfile.zip';
-    $arcname = 'name_of_file_in_ziparchive';
-    
-    $result = zip_file($src, $dest, $arcname);
-    
-    if ($result !== false) {
-        echo "Zipped file saved at: $result";
-    } else {
-        echo "Error zipping file.";
-    }
-    
     
 }
 
