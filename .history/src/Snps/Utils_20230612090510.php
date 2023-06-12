@@ -258,7 +258,8 @@ class Singleton {
         }
         
         return $dest;
-    }  
+    }    
+    
     
 }
 
