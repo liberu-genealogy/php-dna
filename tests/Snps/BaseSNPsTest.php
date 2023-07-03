@@ -7,7 +7,7 @@ namespace DnaTest;
 // use Dna\Utils\zip_file;
 use PHPUnit\Framework\TestCase;
 
-class BaseSNPsTest extends TestCase
+abstract class BaseSNPsTestCase extends TestCase
 {
     public function simulate_snps(
         $chrom = "1",
