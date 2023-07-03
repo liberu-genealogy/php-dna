@@ -54,17 +54,6 @@ use Countable;
          * @param array  $rsids               Array of rsids
          */
      
-         
-        /**
-         * SNPs constructor.
-         *
-         * @param string $file           Input file path
-         * @param bool   $only_detect_source  Flag to indicate whether to only detect the source
-         * @param string $output_dir     Output directory path
-         * @param string $resources_dir  Resources directory path
-         * @param bool   $parallelize    Flag to indicate whether to parallelize
-         * @param int    $processes      Number of processes to use for parallelization
-         */
         public function __construct(
             private $file,
             private $rsids = []
