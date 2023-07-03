@@ -173,7 +173,6 @@ abstract class BaseSNPsTestCase extends TestCase
     ) {
         if (empty($snps_df))
             $snps_df = $this->generic_snps();
-        //     snps_df = self.generic_snps()
 
         // # these are useful for debugging if there is a problem
         // print("Observed:")
@@ -183,7 +182,7 @@ abstract class BaseSNPsTestCase extends TestCase
         // print(snps_df)
         // print(snps_df.info())
 
-        // self.assertEqual(snps.source, source)
+        $this->assertEquals($snps->source, $source);
         // pd.testing.assert_frame_equal(snps.snps, snps_df, check_exact=True)
         // self.assertTrue(snps.phased) if phased else self.assertFalse(snps.phased)
         // self.assertEqual(snps.build, build)

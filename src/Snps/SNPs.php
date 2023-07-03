@@ -38,6 +38,9 @@ use Countable;
 
     class SNPs implements Countable
     {
+
+        private $_source;
+        
         /**
          * SNPs constructor.
          *
@@ -68,7 +71,7 @@ use Countable;
             // $this->_low_quality = $this->_snps->index;
             // $this->_discrepant_merge_positions = new DataFrame();
             // $this->_discrepant_merge_genotypes = new DataFrame();
-            // $this->_source = [];
+            $this->_source = [];
             // $this->_phased = false;
             // $this->_build = 0;
             // $this->_build_detected = false;
@@ -85,6 +88,33 @@ use Countable;
         public function count(): int
         {
             return 8;
+        }
+
+        /**
+         * Get the value of the source property.
+         *
+         * @return string
+         *   Data source(s) for this `SNPs` object, separated by ", ".
+         */
+        public function getSource(): string {
+            return implode(", ", $this->_source);
+        }
+
+        /**
+         * Magic method to handle property access.
+         *
+         * @param string $name
+         *   The name of the property.
+         *
+         * @return mixed
+         *   The value of the property.
+         */
+        public function __get(string $name) {
+            $getter = 'get' . ucfirst($name);
+            if (method_exists($this, $getter)) {
+                return $this->$getter();
+            }
+            return null; // Or throw an exception for undefined properties
         }
 
     }
