@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace DnaTest;
+namespace DnaTest\Snps;
 
 use Dna\Snps\SNPs;
 

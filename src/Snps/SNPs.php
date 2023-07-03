@@ -53,25 +53,7 @@ use Countable;
          * @param int    $processes           Number of processes to use for parallelization
          * @param array  $rsids               Array of rsids
          */
-        private $file;
-        private $_only_detect_source;
-        private $_snps;
-        private $_duplicate;
-        private $_discrepant_XY;
-        private $_heterozygous_MT;
-        private $_discrepant_vcf_position;
-        private $_low_quality;
-        private $_discrepant_merge_positions;
-        private $_discrepant_merge_genotypes;
-        private $_source;
-        private $_phased;
-        private $_build;
-        private $_build_detected;
-        private $_output_dir;
-        private $_resources;
-        private $_parallelizer;
-        private $_cluster;
-        private $_chip;
+     
          
         /**
          * SNPs constructor.
@@ -83,9 +65,11 @@ use Countable;
          * @param bool   $parallelize    Flag to indicate whether to parallelize
          * @param int    $processes      Number of processes to use for parallelization
          */
-        public function __construct($file) //, $only_detect_source, $output_dir, $resources_dir, $parallelize, $processes)
+        public function __construct(
+            private $file,
+            private $rsids = []
+        ) //, $only_detect_source, $output_dir, $resources_dir, $parallelize, $processes)
         {
-            $this->file = $file;
             // $this->_only_detect_source = $only_detect_source;
             // $this->_snps = $this->get_empty_snps_dataframe();
             // $this->_duplicate = $this->get_empty_snps_dataframe();
