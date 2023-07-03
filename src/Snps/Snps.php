@@ -48,7 +48,7 @@
          * @param int    $processes           Number of processes to use for parallelization
          * @param array  $rsids               Array of rsids
          */
-        private $_file;
+        private $file;
         private $_only_detect_source;
         private $_snps;
         private $_duplicate;
@@ -103,7 +103,7 @@
          */
         public function __construct($file, $only_detect_source, $output_dir, $resources_dir, $parallelize, $processes)
         {
-            $this->_file = $file;
+            $this->file = $file;
             $this->_only_detect_source = $only_detect_source;
             $this->_snps = $this->get_empty_snps_dataframe();
             $this->_duplicate = $this->get_empty_snps_dataframe();
@@ -123,63 +123,68 @@
             $this->_cluster = "";
             $this->_chip = "";
             $this->_chip_version = "";
+
+            $this->initSnps();
         }
-        if ($file) {
-            $d = $this->_read_raw_data($file, $only_detect_source, $rsids);
         
-            // Replace multiple rsids separated by commas in index with the first rsid. E.g. rs1,rs2 -> rs1
-            $multi_rsids = [];
-            foreach ($d["snps"] as $multi_rsid) {
-                if (count(explode(",", $multi_rsid)) > 1) {
-                    $multi_rsids[$multi_rsid] = explode(",", $multi_rsid)[0];
-                }
-            }
-            $d["snps"] = array_replace_key($d["snps"], $_rsids);
-        
-            $this->_snps = $d["snps"];
-            $this->_source = (strpos($d["source"], ", ") !== false) ? explode(", ", $d["source"]) : [$d["source"]];
-            $this->_phased = $d["phased"];
-            $this->_build = $d["build"];
-            $this->_build_detected = $d["build"] ? true : false;
-        
-            if (!empty($this->_snps)) {
-                $this->sort();
-        
-                if ($deduplicate) {
-                    $this->_deduplicate_rsids();
-                }
-        
-                // use build detected from `read` method or comments, if any
-                // otherwise use SNP positions to detect build
-                if (!$this->_build_detected) {
-                    $this->_build = $this->detect_build();
-                    $this->_build_detected = $this->_build ? true : false;
-        
-                    if (!$this->_build) {
-                        $this->_build = 37; // assume Build 37 / GRCh37 if not detected
-                    } else {
-                        $this->_build_detected = true;
+        protected function initSnps() {
+            if ($this->file) {
+                $d = $this->_read_raw_data($file, $only_detect_source, $rsids);
+            
+                // Replace multiple rsids separated by commas in index with the first rsid. E.g. rs1,rs2 -> rs1
+                $multi_rsids = [];
+                foreach ($d["snps"] as $multi_rsid) {
+                    if (count(explode(",", $multi_rsid)) > 1) {
+                        $multi_rsids[$multi_rsid] = explode(",", $multi_rsid)[0];
                     }
                 }
-        
-                if ($assign_par_snps) {
-                    $this->_assign_par_snps();
+                $d["snps"] = array_replace_key($d["snps"], $_rsids);
+            
+                $this->_snps = $d["snps"];
+                $this->_source = (strpos($d["source"], ", ") !== false) ? explode(", ", $d["source"]) : [$d["source"]];
+                $this->_phased = $d["phased"];
+                $this->_build = $d["build"];
+                $this->_build_detected = $d["build"] ? true : false;
+            
+                if (!empty($this->_snps)) {
                     $this->sort();
-                }
-        
-                if ($deduplicate_XY_chrom) {
-                    if ($deduplicate_XY_chrom === true && $this->determine_sex() === "Male" || $this->determine_sex(chrom: $deduplicate_XY_chrom) === "Male") {
-                        $this->_deduplicate_XY_chrom();
+            
+                    if ($deduplicate) {
+                        $this->_deduplicate_rsids();
                     }
+            
+                    // use build detected from `read` method or comments, if any
+                    // otherwise use SNP positions to detect build
+                    if (!$this->_build_detected) {
+                        $this->_build = $this->detect_build();
+                        $this->_build_detected = $this->_build ? true : false;
+            
+                        if (!$this->_build) {
+                            $this->_build = 37; // assume Build 37 / GRCh37 if not detected
+                        } else {
+                            $this->_build_detected = true;
+                        }
+                    }
+            
+                    if ($assign_par_snps) {
+                        $this->_assign_par_snps();
+                        $this->sort();
+                    }
+            
+                    if ($deduplicate_XY_chrom) {
+                        if ($deduplicate_XY_chrom === true && $this->determine_sex() === "Male" || $this->determine_sex(chrom: $deduplicate_XY_chrom) === "Male") {
+                            $this->_deduplicate_XY_chrom();
+                        }
+                    }
+            
+                    if ($deduplicate_MT_chrom) {
+                        $this->_deduplicate_MT_chrom();
+                    }
+            
+                } else {
+                    // Use PHP's error_log function or other logging library to display a warning
+                    error_log("no SNPs loaded...");
                 }
-        
-                if ($deduplicate_MT_chrom) {
-                    $this->_deduplicate_MT_chrom();
-                }
-        
-            } else {
-                // Use PHP's error_log function or other logging library to display a warning
-                error_log("no SNPs loaded...");
             }
         }
         
@@ -900,7 +905,7 @@
             // Deduplicate
             $this->_snps = $this->_snps->where(!$duplicateRsids);
         }    
-    }
+    
 
    /**
      * Get the start and stop positions of the non-PAR region on a given chromosome.
@@ -1141,9 +1146,16 @@
             $remapped_snps = pd.concat($remapped_snps);
     
             // Update remapped SNP positions and genotypes
-            $snps->loc[$remapped_snps->index, "pos"] = $remapped_snps["pos"];
-            $snps->loc[$remapped_snps->index, "genotype"] = $remapped_snps["genotype"];
-            $snps->pos = $snps->pos->astype(np.uint32);
+            foreach ($remapped_snps['index'] as $index) {
+                $snps['pos'][$index] = $remapped_snps['pos'][$index];
+                $snps['genotype'][$index] = $remapped_snps['genotype'][$index];
+            }
+            foreach ($snps->pos as &$value) {
+                $value = (int)$value;
+            }
+            // $snps->[$remapped_snps->index, "pos"] = $remapped_snps["pos"];
+            // $snps->loc[$remapped_snps->index, "genotype"] = $remapped_snps["genotype"];
+            // $snps->pos = $snps->pos->astype(np.uint32);
     
             // Update SNPs and rebuild index
             $this->_snps = $snps;
@@ -1217,22 +1229,31 @@
             }
     
             // Remap the SNPs
-            if ($mapping["mapped"]["strand"] === -1) {
+            if ($mapping['mapped']['strand'] === -1) {
                 // Flip and (optionally) complement since we're mapping to the minus strand
-                $diff_from_start = $temp->loc[$snp_indices, "pos"] - $orig_start;
-                $temp->loc[$snp_indices, "pos"] = $mapped_end - $diff_from_start;
-    
+                $diff_from_start = array_map(function($pos) use ($orig_start) {
+                    return $pos - $orig_start;
+                }, $temp['pos'][$snp_indices]);
+            
+                $temp['pos'][$snp_indices] = array_map(function($diff) use ($mapped_end) {
+                    return $mapped_end - $diff;
+                }, $diff_from_start);
+            
                 if ($complement_bases) {
-                    $temp->loc[$snp_indices, "genotype"] = $temp->loc[$snp_indices, "genotype"]->apply($this->_complement_bases);
+                    $temp['genotype'][$snp_indices] = array_map([$this, '_complement_bases'], $temp['genotype'][$snp_indices]);
                 }
             } else {
                 // Mapping is on the same (plus) strand, so just remap based on offset
                 $offset = $mapped_start - $orig_start;
-                $temp->loc[$snp_indices, "pos"] = $temp["pos"] + $offset;
+                $temp['pos'][$snp_indices] = array_map(function($pos) use ($offset) {
+                    return $pos + $offset;
+                }, $temp['pos'][$snp_indices]);
             }
-    
+            
             // Mark these SNPs as remapped
-            $temp->loc[$snp_indices, "remapped"] = true;
+            foreach ($snp_indices as $index) {
+                $temp['remapped'][$index] = true;
+            }
         }
     
         return $temp;
@@ -1306,7 +1327,7 @@
         int $discrepant_genotypes_threshold = 500,
         bool $remap = true,
         string $chrom = ""
-    ) {
+    ) {}
         // Your PHP code implementation here
         /**
          * Initializes the SNPs object with the properties of the SNPs object being merged.
@@ -1328,7 +1349,7 @@
             $this->_build = $s->build;
             $this->_build_detected = $s->build_detected;
         }
-    }
+    
     
     /**
      * Ensures that the builds match when merging SNPs objects.
@@ -1709,5 +1730,5 @@
         // Return the computed cluster overlap DataFrame
         return $df;
     }    
-        
-?>
+}
+
