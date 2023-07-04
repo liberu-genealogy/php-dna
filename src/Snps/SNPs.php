@@ -4,6 +4,7 @@
 namespace Dna\Snps;
 
 use Countable;
+use Dna\Snps\IO\Reader;
 
     // You may need to find alternative libraries for numpy, pandas, and snps in PHP, as these libraries are specific to Python
     // For numpy, consider using a library such as MathPHP: https://github.com/markrogoyski/math-php
@@ -59,7 +60,8 @@ use Countable;
      
         public function __construct(
             private $file,
-            private $rsids = []
+            private bool $only_detect_source = False,
+            private array $rsids = []
         ) //, $only_detect_source, $output_dir, $resources_dir, $parallelize, $processes)
         {
             // $this->_only_detect_source = $only_detect_source;
@@ -82,7 +84,9 @@ use Countable;
             // $this->_chip = "";
             // $this->_chip_version = "";
 
-            // $this->initSnps();
+            if (!empty($file)) {
+                $this->readFile();
+            }
         }
 
         public function count(): int
@@ -117,7 +121,29 @@ use Countable;
             return null; // Or throw an exception for undefined properties
         }
 
+        protected function readFile() {
+            $d = $this->readRawData($this->file, $this->only_detect_source, $this->rsids);
+            // $this->_snps = $d["snps"];
+            // $this->_source = (strpos($d["source"], ", ") !== false) ? explode(", ", $d["source"]) : [$d["source"]];
+            // $this->_phased = $d["phased"];
+            // $this->_build = $d["build"];
+            // $this->_build_detected = $d["build_detected"];
+            // $this->_cluster = $d["cluster"];
+            // $this->_chip = $d["chip"];
+            // $this->_chip_version = $d["chip_version"];
+        }
+
+        // def _read_raw_data(self, file, only_detect_source, rsids):
+        // r = Reader(file, only_detect_source, self._resources, rsids)
+        // return r.read()
+
+        protected function readRawData($file, $only_detect_source, $rsids = [])
+        {
+            $r = new Reader($file, $only_detect_source, $this->resources, $rsids);
+            return $r->read();
+        }
     }
+
         
 //         protected function initSnps() {
 //             if ($this->file) {
