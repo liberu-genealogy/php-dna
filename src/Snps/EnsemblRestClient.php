@@ -1,5 +1,9 @@
 <?php
 
+namespace Dna\Snps;
+
+use Exception;
+
 class EnsemblRestClient
 {
     private string $server;
