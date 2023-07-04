@@ -71,7 +71,7 @@ use Countable;
             // $this->_low_quality = $this->_snps->index;
             // $this->_discrepant_merge_positions = new DataFrame();
             // $this->_discrepant_merge_genotypes = new DataFrame();
-            $this->_source = [];
+            $this->_source = ["23andMe"];
             // $this->_phased = false;
             // $this->_build = 0;
             // $this->_build_detected = false;
