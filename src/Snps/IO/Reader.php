@@ -1,4 +1,4 @@
-<?php 
+<?php
 
 namespace Dna\Snps\IO;
 
@@ -26,7 +26,8 @@ class Reader
         private bool $onlyDetectSource = false,
         private ?SNPsResources $resources = null,
         private array $rsids = []
-    ) {}
+    ) {
+    }
 
     /**
      * Read and parse a raw data / genotype file.
@@ -39,7 +40,31 @@ class Reader
      */
     public function read(): array
     {
-        // Implementation goes here
+        echo "Reading file: $this->file\n";
+        $f = fopen($this->file, "r");
+        echo static::readLine($f, false);
         return [];
+    }
+
+    /**
+     * Read a line from the file.
+     *
+     * @param resource $f
+     *   The file resource.
+     * @param bool $decode
+     *   Flag indicating if the line should be decoded as UTF-8.
+     *
+     * @return string
+     *   The read line.
+     */
+    private static function readLine($f, bool $decode): string
+    {
+        if ($decode) {
+            // https://stackoverflow.com/a/606199
+            $data = fgets($f);
+            return mb_convert_encoding($data, "UTF-8", mb_detect_encoding($data));;
+        } else {
+            return fgets($f);
+        }
     }
 }
