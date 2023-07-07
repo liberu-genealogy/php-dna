@@ -3,6 +3,7 @@
 namespace Dna\Snps\IO;
 
 use Dna\Snps\SNPsResources;
+use ZipArchive;
 
 /**
  * Class for reading and parsing raw data / genotype files.
@@ -45,6 +46,57 @@ class Reader
         echo static::readLine($f, false);
         return [];
     }
+
+    private function extractComments($f, $decode = false, $include_data = false)
+    {
+        $line = $this->readLine($f, $decode);
+
+        $first_line = $line;
+        $comments = "";
+        $data = "";
+
+        if (strpos($first_line, "#") === 0) {
+            while (strpos($line, "#") === 0) {
+                $comments .= $line;
+                $line = $this->readLine($f, $decode);
+            }
+            if ($include_data) {
+                if (!$data) {
+                    $data = stream_get_contents($f);
+                    if ($decode) {
+                        $data = mb_convert_encoding($data, "UTF-8", mb_detect_encoding($data));
+                    }
+                }
+            }
+        } elseif (strpos($first_line, "[Header]") === 0) {
+            while (!strpos($line, "[Data]") === 0) {
+                $comments .= $line;
+                $line = $this->readLine($f, $decode);
+            }
+            // Ignore the [Data] row
+            $line = $this->readLine($f, $decode);
+            if ($include_data) {
+                while ($line) {
+                    $data .= $line;
+                    $line = $this->readLine($f, $decode);
+                }
+            }
+        }
+
+        if (!$data && $include_data) {
+            $data = stream_get_contents($f);
+            if ($decode) {
+                $data = mb_convert_encoding($data, "UTF-8", mb_detect_encoding($data));
+            }
+        }
+
+        if (!$f instanceof ZipArchive) {
+            fseek($f, 0);
+        }
+
+        return array($first_line, $comments, $data);
+    }
+
 
     /**
      * Read a line from the file.
