@@ -123,6 +123,8 @@ use Dna\Snps\IO\Reader;
 
         protected function readFile() {
             $d = $this->readRawData($this->file, $this->only_detect_source, $this->rsids);
+            echo $this->file;
+            print_r($d);
             // $this->_snps = $d["snps"];
             // $this->_source = (strpos($d["source"], ", ") !== false) ? explode(", ", $d["source"]) : [$d["source"]];
             // $this->_phased = $d["phased"];

@@ -52,6 +52,7 @@ class Reader
     {
         $file = $this->file;
         $compression = "infer";
+        $read_data = [];
         $d = array(
             "snps" => get_empty_snps_dataframe(),
             "source" => "",
@@ -61,6 +62,7 @@ class Reader
 
         // Peek into files to determine the data format
         if (is_string($file) && file_exists($file)) {
+            echo "file exists\n";  
             if (strpos($file, ".zip") !== false) {
                 $zip = new ZipArchive();
                 if ($zip->open($file) === true) {
@@ -76,29 +78,46 @@ class Reader
             } elseif (strpos($file, ".gz") !== false) {
                 $fileContents = file_get_contents($file);
                 $fileContents = gzdecode($fileContents);
-                $first_line = '';
-                $comments = '';
-                $data = '';
-                $this->_extract_comments($fileContents, false, $first_line, $comments, $data);
+               
+                $read_data = $this->_extract_comments($fileContents);
                 $compression = "gzip";
             } else {
-                $fileContents = file_get_contents($file);
-                $first_line = '';
-                $comments = '';
-                $data = '';
-                $compression = '';
-                $this->_handle_bytes_data($fileContents, $first_line, $comments, $data, $compression);
+                $fileContents = file_get_contents($file);                
+                $read_data = $this->_handle_bytes_data($fileContents);
             }
         } elseif (is_string($file)) {
-            $fileContents = $file;
-            $first_line = '';
-            $comments = '';
-            $data = '';
-            $compression = '';
-            $this->_handle_bytes_data($fileContents, $first_line, $comments, $data, $compression);
+            $fileContents = $file;            
+            $read_data = $this->_handle_bytes_data($fileContents);
         } else {
             return $d;
         }
+        
+        $first_line = $read_data["first_line"] ?? '';
+        $comments = $read_data["comments"] ?? '';
+        $data = $read_data["data"] ?? '';
+        echo "first_line: $first_line\n";
+
+        if (strpos($first_line, "23andMe") !== false) {
+            // Some 23andMe files have separate alleles
+            if (
+                substr($comments, -32) === "# rsid\tchromosome\tposition\tallele1\tallele2\n" ||
+                substr($comments, -33) === "# rsid\tchromosome\tposition\tallele1\tallele2\r\n"
+            ) {
+                $d = $this->read_23andme($file, $compression, false);
+            }
+            // Some 23andMe files have a combined genotype
+            elseif (
+                substr($comments, -26) === "# rsid\tchromosome\tposition\tgenotype\n" ||
+                substr($comments, -27) === "# rsid\tchromosome\tposition\tgenotype\r\n"
+            ) {
+                $d = $this->read_23andme($file, $compression, true);
+            }
+            // Something we haven't seen before and can't handle
+            else {
+                return $d;
+            }
+        }
+
 
         // Detect build from comments if build was not already detected from `read` method
         if (!$d["build"]) {
@@ -169,6 +188,7 @@ class Reader
     private function _handle_bytes_data($file, $include_data = false)
     {
         $compression = "infer";
+        $data = [];
         if ($this->is_zip($file)) {
             $compression = "zip";
             $z = new ZipArchive();
@@ -187,34 +207,24 @@ class Reader
             } else {
                 $filename = $namelist[0];
             }
-
             $fileContents = $z->getFromName($filename);
-            $z->close();
-            $first_line = '';
-            $comments = '';
-            $data = '';
-            $this->_extract_comments($fileContents, true, $include_data, $first_line, $comments, $data);
+            $z->close();           
+            $data = $this->_extract_comments($fileContents, true, $include_data);
         } elseif ($this->is_gzip($file)) {
             $compression = "gzip";
-            $fileContents = gzdecode($file);
-            $first_line = '';
-            $comments = '';
-            $data = '';
-            $this->_extract_comments($fileContents, true, $include_data, $first_line, $comments, $data);
+            $fileContents = gzdecode($file);            
+            $data = $this->_extract_comments($fileContents, true, $include_data);
         } else {
             $compression = null;
             $fileHandle = fopen('php://memory', 'r+');
             fwrite($fileHandle, $file);
-            rewind($fileHandle);
-            $first_line = '';
-            $comments = '';
-            $data = '';
-            $this->_extract_comments($fileHandle, true, $include_data, $first_line, $comments, $data);
+            rewind($fileHandle);            
+            $data = $this->_extract_comments($fileHandle, true, $include_data);
             fseek($fileHandle, 0);
             fclose($fileHandle);
         }
 
-        return array($first_line, $comments, $data, $compression);
+        return array_merge($data, [$compression]);
     }
 
     /**
