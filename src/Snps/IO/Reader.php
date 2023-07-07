@@ -5,6 +5,15 @@ namespace Dna\Snps\IO;
 use Dna\Snps\SNPsResources;
 use ZipArchive;
 
+
+function get_empty_snps_dataframe()
+{
+    $columns = array("rsid", "chrom", "pos", "genotype");
+    $df = array();
+    $df[] = $columns;
+    return $df;
+}
+
 /**
  * Class for reading and parsing raw data / genotype files.
  */
@@ -41,13 +50,66 @@ class Reader
      */
     public function read(): array
     {
-        echo "Reading file: $this->file\n";
-        $f = fopen($this->file, "r");
-        echo static::readLine($f, false);
-        return [];
+        $file = $this->file;
+        $compression = "infer";
+        $d = array(
+            "snps" => get_empty_snps_dataframe(),
+            "source" => "",
+            "phased" => false,
+            "build" => 0,
+        );
+
+        // Peek into files to determine the data format
+        if (is_string($file) && file_exists($file)) {
+            if (strpos($file, ".zip") !== false) {
+                $zip = new ZipArchive();
+                if ($zip->open($file) === true) {
+                    $firstEntry = $zip->getNameIndex(0);
+                    $firstEntryFile = $zip->getStream($firstEntry);
+                    $first_line = '';
+                    $comments = '';
+                    $data = '';
+                    $this->_extract_comments($firstEntryFile, true, $first_line, $comments, $data);
+                    $compression = "zip";
+                    $zip->close();
+                }
+            } elseif (strpos($file, ".gz") !== false) {
+                $fileContents = file_get_contents($file);
+                $fileContents = gzdecode($fileContents);
+                $first_line = '';
+                $comments = '';
+                $data = '';
+                $this->_extract_comments($fileContents, false, $first_line, $comments, $data);
+                $compression = "gzip";
+            } else {
+                $fileContents = file_get_contents($file);
+                $first_line = '';
+                $comments = '';
+                $data = '';
+                $compression = '';
+                $this->_handle_bytes_data($fileContents, $first_line, $comments, $data, $compression);
+            }
+        } elseif (is_string($file)) {
+            $fileContents = $file;
+            $first_line = '';
+            $comments = '';
+            $data = '';
+            $compression = '';
+            $this->_handle_bytes_data($fileContents, $first_line, $comments, $data, $compression);
+        } else {
+            return $d;
+        }
+
+        // Detect build from comments if build was not already detected from `read` method
+        if (!$d["build"]) {
+            $d["build"] = $this->_detect_build_from_comments($comments, $d["source"]);
+        }
+
+        return $d;
     }
 
-    private function extractComments($f, $decode = false, $include_data = false)
+
+    private function _extract_comments($f, $decode = false, $include_data = false)
     {
         $line = $this->readLine($f, $decode);
 
@@ -95,6 +157,178 @@ class Reader
         }
 
         return array($first_line, $comments, $data);
+    }
+
+    /**
+     * Handle the bytes data file and extract comments based on the data format.
+     *
+     * @param string $file The bytes data file.
+     * @param bool $include_data Whether to include the data.
+     * @return array Returns an array containing the first line, comments, data, and compression.
+     */
+    private function _handle_bytes_data($file, $include_data = false)
+    {
+        $compression = "infer";
+        if ($this->is_zip($file)) {
+            $compression = "zip";
+            $z = new ZipArchive();
+            $z->open("data.zip");
+            $namelist = array();
+            for ($i = 0; $i < $z->numFiles; $i++) {
+                $namelist[] = $z->getNameIndex($i);
+            }
+            $key = "GFG_filtered_unphased_genotypes_23andMe.txt";
+            $key_search = array_map(function ($name) use ($key) {
+                return strpos($name, $key) !== false;
+            }, $namelist);
+
+            if (in_array(true, $key_search)) {
+                $filename = $namelist[array_search(true, $key_search)];
+            } else {
+                $filename = $namelist[0];
+            }
+
+            $fileContents = $z->getFromName($filename);
+            $z->close();
+            $first_line = '';
+            $comments = '';
+            $data = '';
+            $this->_extract_comments($fileContents, true, $include_data, $first_line, $comments, $data);
+        } elseif ($this->is_gzip($file)) {
+            $compression = "gzip";
+            $fileContents = gzdecode($file);
+            $first_line = '';
+            $comments = '';
+            $data = '';
+            $this->_extract_comments($fileContents, true, $include_data, $first_line, $comments, $data);
+        } else {
+            $compression = null;
+            $fileHandle = fopen('php://memory', 'r+');
+            fwrite($fileHandle, $file);
+            rewind($fileHandle);
+            $first_line = '';
+            $comments = '';
+            $data = '';
+            $this->_extract_comments($fileHandle, true, $include_data, $first_line, $comments, $data);
+            fseek($fileHandle, 0);
+            fclose($fileHandle);
+        }
+
+        return array($first_line, $comments, $data, $compression);
+    }
+
+    private function _detect_build_from_comments($comments, $source)
+    {
+        // If it's a VCF, parse it properly
+        if ($source === "vcf") {
+            $lines = explode("\n", $comments);
+            foreach ($lines as $line) {
+                $line = trim($line);
+                if ($line === "") {
+                    // Skip blanks
+                    continue;
+                }
+                if (!str_starts_with($line, "##")) {
+                    // Skip comments but not preamble
+                    continue;
+                }
+                if (strpos($line, "=") === false) {
+                    // Skip lines without key/value
+                    continue;
+                }
+                $line = substr($line, 2);
+                list($key, $value) = explode("=", $line, 2);
+                $key = trim($key);
+                $value = trim($value);
+                if (strtolower($key) === "contig") {
+                    $parts = explode(",", substr($value, 1, -1));
+                    foreach ($parts as $part) {
+                        list($part_key, $part_value) = explode("=", $part, 2);
+                        $part_key = trim($part_key);
+                        $part_value = trim($part_value);
+                        if (strtolower($part_key) === "assembly") {
+                            if (strpos($part_value, "36") !== false) {
+                                return 36;
+                            } elseif (strpos($part_value, "37") !== false || strpos($part_value, "hg19") !== false) {
+                                return 37;
+                            } elseif (strpos($part_value, "38") !== false) {
+                                return 38;
+                            }
+                        } elseif (strtolower($part_key) === "length") {
+                            if ($part_value === "249250621") {
+                                return 37; // Length of chromosome 1
+                            } elseif ($part_value === "248956422") {
+                                return 38; // Length of chromosome 1
+                            }
+                        }
+                    }
+                }
+            }
+            // Couldn't find anything
+            return 0;
+        } else {
+            // Not a VCF
+            $comments = strtolower($comments);
+            if (str_starts_with($comments, "build 36")) {
+                return 36;
+            } elseif (str_starts_with($comments, "build 37")) {
+                return 37;
+            } elseif (str_starts_with($comments, "build 38")) {
+                return 38;
+            } elseif (str_starts_with($comments, "grch38")) {
+                return 38;
+            } elseif (str_starts_with($comments, "grch37")) {
+                return 37;
+            } elseif (str_starts_with($comments, "249250621")) {
+                return 37; // Length of chromosome 1
+            } elseif (str_starts_with($comments, "248956422")) {
+                return 38; // Length of chromosome 1
+            } else {
+                return 0;
+            }
+        }
+    }
+
+
+    /**
+     * Check whether or not a bytes_data file is a valid Zip file.
+     *
+     * @param string $bytes_data The bytes data to check.
+     * @return bool Returns true if the bytes data is a valid Zip file, false otherwise.
+     */
+    public static function is_zip($bytes_data)
+    {
+        $file = tmpfile();
+        fwrite($file, $bytes_data);
+        $meta_data = stream_get_meta_data($file);
+        $file_path = $meta_data['uri'];
+
+        $is_zip = false;
+        if (class_exists('ZipArchive')) {
+            $zip = new ZipArchive();
+            if ($zip->open($file_path) === true) {
+                $is_zip = true;
+                $zip->close();
+            }
+        }
+
+        fclose($file);
+        return $is_zip;
+    }
+
+    /**
+     * Check whether or not a bytes_data file is a valid gzip file.
+     *
+     * @param string $bytes_data The bytes data to check.
+     * @return bool Returns true if the bytes data is a valid gzip file, false otherwise.
+     */
+    public static function is_gzip($bytes_data)
+    {
+        $is_gzip = false;
+        if (substr(bin2hex($bytes_data), 0, 4) === "1f8b") {
+            $is_gzip = true;
+        }
+        return $is_gzip;
     }
 
 
