@@ -24,7 +24,7 @@ class Reader
      *
      * @param string $file
      *   Path to file to load or bytes to load.
-     * @param bool $onlyDetectSource
+     * @param bool $_only_detect_source
      *   Flag to indicate if only detecting the source of the data.
      * @param SNPsResources|null $resources
      *   Instance of Resources.
@@ -33,7 +33,7 @@ class Reader
      */
     public function __construct(
         private string $file = '',
-        private bool $onlyDetectSource = false,
+        private bool $_only_detect_source = false,
         private ?SNPsResources $resources = null,
         private array $rsids = []
     ) {
@@ -217,6 +217,47 @@ class Reader
         return array($first_line, $comments, $data, $compression);
     }
 
+    /**
+     * Generic method to help read files.
+     *
+     * @param string $source The name of the data source.
+     * @param callable $parser The parsing function, which returns a tuple with the following items:
+     *                         0. array The parsed SNPs (empty if only detecting source).
+     *                         1. bool|null Optional. Flag indicating if SNPs are phased.
+     *                         2. int|null Optional. Detected build of SNPs.
+     * @return array Returns an array with the following items:
+     *               'snps' (array) The parsed SNPs.
+     *               'source' (string) The detected source of SNPs.
+     *               'phased' (bool) Flag indicating if SNPs are phased.
+     *               'build' (int) The detected build of SNPs.
+     */
+    private function read_helper($source, $parser)
+    {
+        $phased = false;
+        $build = 0;
+
+        if ($this->_only_detect_source) {
+            $snps = array();
+        } else {
+            list($snps, $phased, $build) = $parser();
+
+            if ($phased === null) {
+                $phased = false;
+            }
+            if ($build === null) {
+                $build = 0;
+            }
+        }
+
+        return array(
+            'snps' => $snps,
+            'source' => $source,
+            'phased' => $phased,
+            'build' => $build
+        );
+    }
+
+
     private function _detect_build_from_comments($comments, $source)
     {
         // If it's a VCF, parse it properly
@@ -352,5 +393,108 @@ class Reader
         } else {
             return fgets($f);
         }
+    }
+
+    /**
+     * Read and parse 23andMe file.
+     *
+     * @param string $file The path to the file.
+     * @param string|null $compression The compression type (e.g., "zip", "gzip"). Defaults to null.
+     * @param bool $joined Indicates whether the file has joined columns. Defaults to true.
+     * @return array Returns the result of `read_helper`.
+     */
+    private function read_23andme($file, $compression = null, $joined = true)
+    {
+        $mapping = array(
+            "1" => "1",
+            "2" => "2",
+            "3" => "3",
+            "4" => "4",
+            "5" => "5",
+            "6" => "6",
+            "7" => "7",
+            "8" => "8",
+            "9" => "9",
+            "10" => "10",
+            "11" => "11",
+            "12" => "12",
+            "13" => "13",
+            "14" => "14",
+            "15" => "15",
+            "16" => "16",
+            "17" => "17",
+            "18" => "18",
+            "19" => "19",
+            "20" => "20",
+            "21" => "21",
+            "22" => "22",
+            1 => "1",
+            2 => "2",
+            3 => "3",
+            4 => "4",
+            5 => "5",
+            6 => "6",
+            7 => "7",
+            8 => "8",
+            9 => "9",
+            10 => "10",
+            11 => "11",
+            12 => "12",
+            13 => "13",
+            14 => "14",
+            15 => "15",
+            16 => "16",
+            17 => "17",
+            18 => "18",
+            19 => "19",
+            20 => "20",
+            21 => "21",
+            22 => "22",
+            "X" => "X",
+            "Y" => "Y",
+            "MT" => "MT"
+        );
+
+        $parser = function () use ($file, $joined, $compression, $mapping) {
+            if ($joined) {
+                $columnnames = ["rsid", "chrom", "pos", "genotype"];
+            } else {
+                $columnnames = ["rsid", "chrom", "pos", "allele1", "allele2"];
+            }
+
+            $lines = file($file);
+            $df = [];
+
+
+
+
+            foreach ($lines as $line) {
+                $line = trim($line);
+                if ($line === "" || $line[0] === "#") {
+                    continue;
+                }
+                $data = explode("\t", $line);
+                $row = array_combine($columnnames, $data);
+                if (!$joined) {
+                    $row["genotype"] = $row["allele1"] . $row["allele2"];
+                    unset($row["allele1"], $row["allele2"]);
+                }
+                $df[] = $row;
+            }
+            $df = array_map(function ($row) use ($mapping) {
+                if (isset($row["chrom"]) && isset($mapping[$row["chrom"]])) {
+                    $row["chrom"] = $mapping[$row["chrom"]];
+                }
+                return $row;
+            }, $df);
+
+            $df = array_filter($df, function ($row) {
+                return isset($row["rsid"]) && isset($row["chrom"]) && isset($row["pos"]);
+            });
+
+            return [$df];
+        };
+
+        return $this->read_helper("23andMe", $parser);
     }
 }
