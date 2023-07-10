@@ -97,24 +97,24 @@ class Reader
         $comments = $read_data["comments"] ?? '';
         $data = $read_data["data"] ?? '';
         echo "first_line: $first_line\n";
+        print_r($read_data);
 
         if (strpos($first_line, "23andMe") !== false) {
+            echo "its a 23andMe\n";
             // Some 23andMe files have separate alleles
-            if (
-                substr($comments, -32) === "# rsid\tchromosome\tposition\tallele1\tallele2\n" ||
-                substr($comments, -33) === "# rsid\tchromosome\tposition\tallele1\tallele2\r\n"
-            ) {
+            if (str_ends_with(trim($comments), "# rsid\tchromosome\tposition\tallele1\tallele2")) {
+                echo "Option 1\n";
                 $d = $this->read_23andme($file, $compression, false);
             }
             // Some 23andMe files have a combined genotype
-            elseif (
-                substr($comments, -26) === "# rsid\tchromosome\tposition\tgenotype\n" ||
-                substr($comments, -27) === "# rsid\tchromosome\tposition\tgenotype\r\n"
-            ) {
+            elseif (str_ends_with(trim($comments), "# rsid\tchromosome\tposition\tgenotype" )) {
+                echo "Option 2\n";
                 $d = $this->read_23andme($file, $compression, true);
+                var_dump($d);
             }
             // Something we haven't seen before and can't handle
             else {
+                echo "Option 3\n";
                 return $d;
             }
         }
@@ -250,14 +250,10 @@ class Reader
         if ($this->_only_detect_source) {
             $snps = array();
         } else {
-            list($snps, $phased, $build) = $parser();
-
-            if ($phased === null) {
-                $phased = false;
-            }
-            if ($build === null) {
-                $build = 0;
-            }
+            $result = $parser();
+            $snps = $result[0];
+            $phased = $result[1] ?? false;
+            $build = $result[2] ?? 0;           
         }
 
         return array(
@@ -265,7 +261,7 @@ class Reader
             'source' => $source,
             'phased' => $phased,
             'build' => $build
-        );
+        );       
     }
 
 
@@ -416,6 +412,7 @@ class Reader
      */
     private function read_23andme($file, $compression = null, $joined = true)
     {
+        echo "READ 23";
         $mapping = array(
             "1" => "1",
             "2" => "2",
@@ -467,6 +464,7 @@ class Reader
         );
 
         $parser = function () use ($file, $joined, $compression, $mapping) {
+            echo "Inna d parser";
             if ($joined) {
                 $columnnames = ["rsid", "chrom", "pos", "genotype"];
             } else {
@@ -475,9 +473,6 @@ class Reader
 
             $lines = file($file);
             $df = [];
-
-
-
 
             foreach ($lines as $line) {
                 $line = trim($line);
@@ -492,6 +487,7 @@ class Reader
                 }
                 $df[] = $row;
             }
+
             $df = array_map(function ($row) use ($mapping) {
                 if (isset($row["chrom"]) && isset($mapping[$row["chrom"]])) {
                     $row["chrom"] = $mapping[$row["chrom"]];
@@ -502,10 +498,14 @@ class Reader
             $df = array_filter($df, function ($row) {
                 return isset($row["rsid"]) && isset($row["chrom"]) && isset($row["pos"]);
             });
-
+    
             return [$df];
         };
 
-        return $this->read_helper("23andMe", $parser);
+        $res = $this->read_helper("23andMe", $parser);
+        echo "res:";
+        var_dump($res);
+        return $res;
+
     }
 }
