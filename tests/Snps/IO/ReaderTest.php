@@ -20,10 +20,10 @@ final class ReaderTest extends BaseSNPsTestCase
         $this->run_parse_tests("tests/input/23andme_allele.txt", "23andMe");
     }
 
-    // def test_read_23andme_win(self):
-    //     # https://www.23andme.com
-    //     # windows line endings
-    //     self.run_parsing_tests("tests/input/23andme_win.txt", "23andMe")
+    public function testRead23AndMeWin()
+    {
+        $this->run_parse_tests("tests/input/23andme_win.txt", "23andMe");
+    }
 
     // def test_read_23andme_build36(self):
     //     self.run_build_detection_test(
@@ -34,6 +34,75 @@ final class ReaderTest extends BaseSNPsTestCase
     //         source="23andMe",
     //         comment_str="# {}\n",
     //     )
+
+    public function testRead23AndMeBuild36()
+    {
+        $this->run_build_detection_test(
+            array($this, 'run_parse_tests'),
+            "build 36",
+            36,
+            "tests/input/23andme.txt",
+            "23andMe",
+            "# %s\n"
+        );
+    }
+
+    // def run_build_detection_test(
+    //     self,
+    //     run_parsing_tests_func,
+    //     build_str,
+    //     build_int,
+    //     file="tests/input/testvcf.vcf",
+    //     source="vcf",
+    //     comment_str="##{}\n",
+    //     insertion_line=1,
+    // ):
+    //     with tempfile.TemporaryDirectory() as tmpdir:
+    //         s = ""
+    //         with open(file, "r") as f:
+    //             for i, line in enumerate(f.readlines()):
+    //                 s += line
+    //                 # insert comment from which to detect build
+    //                 if i == insertion_line:
+    //                     s += comment_str.format(build_str)
+
+    //         file_build_comment = os.path.join(tmpdir, os.path.basename(file))
+    //         with atomic_write(file_build_comment, mode="w") as f:
+    //             f.write(s)
+
+    //         run_parsing_tests_func(
+    //             file_build_comment, source, build=build_int, build_detected=True
+    //         )
+
+    protected function run_build_detection_test(
+        $run_parsing_tests_func,
+        $build_str,
+        $build_int,
+        $file="tests/input/testvcf.vcf",
+        $source="vcf",
+        $comment_str="##%s\n",
+        $insertion_line=1
+    ) {
+        $s = "";
+        $lines = file($file);
+        foreach ($lines as $i => $line) {
+            $s .= $line;
+            if ($i == $insertion_line) {
+                $s .= sprintf($comment_str, $build_str);
+            }
+        }
+
+        $file_build_comment = tempnam(sys_get_temp_dir(), basename($file));
+        file_put_contents($file_build_comment, $s);
+
+        call_user_func(
+            $run_parsing_tests_func,
+            $file_build_comment,
+            $source,
+            $build_int,
+            true
+        );
+    }
 
     // def test_read_23andme_build37(self):
     //     self.run_build_detection_test(
