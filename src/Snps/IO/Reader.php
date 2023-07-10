@@ -5,6 +5,7 @@ namespace Dna\Snps\IO;
 use Dna\Snps\SNPsResources;
 use ZipArchive;
 
+use function RectorPrefix20211020\print_node;
 
 function get_empty_snps_dataframe()
 {
@@ -82,7 +83,7 @@ class Reader
                 $read_data = $this->_extract_comments($fileContents);
                 $compression = "gzip";
             } else {
-                $fileContents = file_get_contents($file);                
+                $fileContents = file_get_contents($file);               
                 $read_data = $this->_handle_bytes_data($fileContents);
             }
         } elseif (is_string($file)) {
@@ -175,7 +176,7 @@ class Reader
             fseek($f, 0);
         }
 
-        return array($first_line, $comments, $data);
+        return compact('first_line', 'comments', 'data');
     }
 
     /**
