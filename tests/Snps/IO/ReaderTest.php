@@ -6,10 +6,6 @@ use DnaTest\Snps\BaseSNPsTestCase;
 
 final class ReaderTest extends BaseSNPsTestCase
 {
-
-    // def test_read_23andme(self):
-    //     # https://www.23andme.com
-    //     self.run_parsing_tests("tests/input/23andme.txt", "23andMe")
     public function testRead23AndMe()
     {
         $this->run_parse_tests("tests/input/23andme.txt", "23andMe");
@@ -98,31 +94,34 @@ final class ReaderTest extends BaseSNPsTestCase
         $this->run_parse_tests("tests/input/ancestry.txt", "AncestryDNA");
     }
 
-    // def test_read_ancestry_extra_tab(self):
-    //     # https://www.ancestry.com
+    public function testReadAncestryExtraTab()
+    {
+        $total_snps = 100;
+        $s = "#AncestryDNA\r\n";
+        $s .= "rsid\tchromosome\tposition\tallele1\tallele2\r\n";
+        // add extra tab separator in first line
+        $s .= "rs1\t1\t101\t\tA\tA\r\n";
+        // generate remainder of lines
+        for ($i = 1; $i < $total_snps; $i++) {
+            $s .= "rs" . (1 + $i) . "\t1\t" . (101 + $i) . "\tA\tA\r\n";
+        }
 
-    //     total_snps = 100
-    //     s = "#AncestryDNA\r\n"
-    //     s += "rsid\tchromosome\tposition\tallele1\tallele2\r\n"
-    //     # add extra tab separator in first line
-    //     s += "rs1\t1\t101\t\tA\tA\r\n"
-    //     # generate remainder of lines
-    //     for i in range(1, total_snps):
-    //         s += f"rs{1 + i}\t1\t{101 + i}\tA\tA\r\n"
+        $snps_df = $this->create_snp_df(
+            array_map(function ($i) {
+                return "rs" . (1 + $i);
+            }, range(0, $total_snps)),
+            "1",
+            array_map(function ($i) {
+                return 101 + $i;
+            }, range(0, $total_snps)),
+            "AA"
+        );
 
-    //     snps_df = self.create_snp_df(
-    //         rsid=[f"rs{1 + i}" for i in range(0, total_snps)],
-    //         chrom="1",
-    //         pos=[101 + i for i in range(0, total_snps)],
-    //         genotype="AA",
-    //     )
+        $path = tempnam(sys_get_temp_dir(), "ancestry_extra_tab.txt");
+        file_put_contents($path, $s);
 
-    //     with tempfile.TemporaryDirectory() as tmpdir:
-    //         path = os.path.join(tmpdir, "ancestry_extra_tab.txt")
-    //         with open(path, "w") as f:
-    //             f.write(s)
-
-    //         self.run_parsing_tests(path, "AncestryDNA", snps_df=snps_df)
+        $this->run_parse_tests($path, "AncestryDNA", $snps_df);
+    }
 
 
 }
