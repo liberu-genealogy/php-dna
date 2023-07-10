@@ -4,6 +4,8 @@
 namespace Dna\Snps;
 
 use Countable;
+use Dna\Snps\IO\IO;
+use Dna\Snps\IO\Reader;
 
     // You may need to find alternative libraries for numpy, pandas, and snps in PHP, as these libraries are specific to Python
     // For numpy, consider using a library such as MathPHP: https://github.com/markrogoyski/math-php
@@ -40,6 +42,10 @@ use Countable;
     {
 
         private $_source;
+        private array $_snps;
+        private $_build;
+        private $_phased;
+        private $_build_detected;
         
         /**
          * SNPs constructor.
@@ -59,11 +65,12 @@ use Countable;
      
         public function __construct(
             private $file,
-            private $rsids = []
+            private bool $only_detect_source = False,
+            private array $rsids = [], 
         ) //, $only_detect_source, $output_dir, $resources_dir, $parallelize, $processes)
         {
             // $this->_only_detect_source = $only_detect_source;
-            // $this->_snps = $this->get_empty_snps_dataframe();
+            $this->_snps = IO::get_empty_snps_dataframe();
             // $this->_duplicate = $this->get_empty_snps_dataframe();
             // $this->_discrepant_XY = $this->get_empty_snps_dataframe();
             // $this->_heterozygous_MT = $this->get_empty_snps_dataframe();
@@ -71,7 +78,7 @@ use Countable;
             // $this->_low_quality = $this->_snps->index;
             // $this->_discrepant_merge_positions = new DataFrame();
             // $this->_discrepant_merge_genotypes = new DataFrame();
-            $this->_source = ["23andMe"];
+            $this->_source = [];
             // $this->_phased = false;
             // $this->_build = 0;
             // $this->_build_detected = false;
@@ -82,7 +89,9 @@ use Countable;
             // $this->_chip = "";
             // $this->_chip_version = "";
 
-            // $this->initSnps();
+            if (!empty($file)) {
+                $this->readFile();
+            }
         }
 
         public function count(): int
@@ -117,7 +126,49 @@ use Countable;
             return null; // Or throw an exception for undefined properties
         }
 
+        protected function readFile() {
+            $d = $this->readRawData($this->file, $this->only_detect_source, $this->rsids);
+            $this->_snps = $d["snps"];
+            $this->_source = (strpos($d["source"], ", ") !== false) ? explode(", ", $d["source"]) : [$d["source"]];
+            $this->_phased = $d["phased"];
+            $this->_build = $d["build"] ?? null;
+            $this->_build_detected = $d["build_detected"] ?? false;
+            // $this->_cluster = $d["cluster"];
+            // $this->_chip = $d["chip"];
+            // $this->_chip_version = $d["chip_version"];
+        }
+
+        // def _read_raw_data(self, file, only_detect_source, rsids):
+        // r = Reader(file, only_detect_source, self._resources, rsids)
+        // return r.read()
+
+        protected function readRawData($file, $only_detect_source, $rsids = [])
+        {
+            $r = new Reader($file, $only_detect_source, $this->resources, $rsids);
+            return $r->read();
+        }
+
+        /**
+         * Get the SNPs as an array.
+         *
+         * @return array The SNPs array
+         */
+        public function getSnps(): array
+        {
+            return $this->_snps;
+        }
+
+        /**
+         * Check if the build was detected.
+         * 
+         * @return bool True if the build was detected, False otherwise
+         */
+        public function isBuildDetected(): bool
+        {   
+            return $this->_build_detected;
+        }
     }
+
         
 //         protected function initSnps() {
 //             if ($this->file) {
@@ -226,15 +277,7 @@ use Countable;
 //             return implode(", ", $this->_source);
 //         }
 
-//         /**
-//          * Get the SNPs as an array.
-//          *
-//          * @return array The SNPs array
-//          */
-//         public function getSnps(): array
-//         {
-//             return $this->_snps;
-//         }
+//         
 
 //         /**
 //          * Identify low quality SNPs.
@@ -375,16 +418,7 @@ use Countable;
 //             return $this->_build;
 //         }
         
-//         public function isBuildDetected(): bool
-//         {
-//             // Check if the build was detected.
-//             //
-//             // Returns
-//             // -------
-//             // bool
-//             //     True if the build was detected, False otherwise
-//             return $this->_build_detected;
-//         }
+//         
         
 //         public function getAssembly(): string
 //         {
