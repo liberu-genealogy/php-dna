@@ -47,33 +47,7 @@ final class ReaderTest extends BaseSNPsTestCase
         );
     }
 
-    // def run_build_detection_test(
-    //     self,
-    //     run_parsing_tests_func,
-    //     build_str,
-    //     build_int,
-    //     file="tests/input/testvcf.vcf",
-    //     source="vcf",
-    //     comment_str="##{}\n",
-    //     insertion_line=1,
-    // ):
-    //     with tempfile.TemporaryDirectory() as tmpdir:
-    //         s = ""
-    //         with open(file, "r") as f:
-    //             for i, line in enumerate(f.readlines()):
-    //                 s += line
-    //                 # insert comment from which to detect build
-    //                 if i == insertion_line:
-    //                     s += comment_str.format(build_str)
-
-    //         file_build_comment = os.path.join(tmpdir, os.path.basename(file))
-    //         with atomic_write(file_build_comment, mode="w") as f:
-    //             f.write(s)
-
-    //         run_parsing_tests_func(
-    //             file_build_comment, source, build=build_int, build_detected=True
-    //         )
-
+   
     protected function run_build_detection_test(
         $run_parsing_tests_func,
         $build_str,
