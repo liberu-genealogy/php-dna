@@ -4,6 +4,7 @@
 namespace Dna\Snps;
 
 use Countable;
+use Dna\Snps\IO\IO;
 use Dna\Snps\IO\Reader;
 
     // You may need to find alternative libraries for numpy, pandas, and snps in PHP, as these libraries are specific to Python
@@ -41,6 +42,10 @@ use Dna\Snps\IO\Reader;
     {
 
         private $_source;
+        private array $_snps;
+        private $_build;
+        private $_phased;
+        private $_build_detected;
         
         /**
          * SNPs constructor.
@@ -61,11 +66,11 @@ use Dna\Snps\IO\Reader;
         public function __construct(
             private $file,
             private bool $only_detect_source = False,
-            private array $rsids = []
+            private array $rsids = [], 
         ) //, $only_detect_source, $output_dir, $resources_dir, $parallelize, $processes)
         {
             // $this->_only_detect_source = $only_detect_source;
-            // $this->_snps = $this->get_empty_snps_dataframe();
+            $this->_snps = IO::get_empty_snps_dataframe();
             // $this->_duplicate = $this->get_empty_snps_dataframe();
             // $this->_discrepant_XY = $this->get_empty_snps_dataframe();
             // $this->_heterozygous_MT = $this->get_empty_snps_dataframe();
@@ -123,13 +128,13 @@ use Dna\Snps\IO\Reader;
 
         protected function readFile() {
             $d = $this->readRawData($this->file, $this->only_detect_source, $this->rsids);
-            echo $this->file;
-            print_r($d);
-            // $this->_snps = $d["snps"];
-            // $this->_source = (strpos($d["source"], ", ") !== false) ? explode(", ", $d["source"]) : [$d["source"]];
-            // $this->_phased = $d["phased"];
-            // $this->_build = $d["build"];
-            // $this->_build_detected = $d["build_detected"];
+            echo $this->file. PHP_EOL;
+            var_dump($d);
+            $this->_snps = $d["snps"];
+            $this->_source = (strpos($d["source"], ", ") !== false) ? explode(", ", $d["source"]) : [$d["source"]];
+            $this->_phased = $d["phased"];
+            $this->_build = $d["build"];
+            $this->_build_detected = $d["build_detected"];
             // $this->_cluster = $d["cluster"];
             // $this->_chip = $d["chip"];
             // $this->_chip_version = $d["chip_version"];
@@ -143,6 +148,26 @@ use Dna\Snps\IO\Reader;
         {
             $r = new Reader($file, $only_detect_source, $this->resources, $rsids);
             return $r->read();
+        }
+
+        /**
+         * Get the SNPs as an array.
+         *
+         * @return array The SNPs array
+         */
+        public function getSnps(): array
+        {
+            return $this->_snps;
+        }
+
+        /**
+         * Check if the build was detected.
+         * 
+         * @return bool True if the build was detected, False otherwise
+         */
+        public function isBuildDetected(): bool
+        {   
+            return $this->_build_detected;
         }
     }
 
@@ -254,15 +279,7 @@ use Dna\Snps\IO\Reader;
 //             return implode(", ", $this->_source);
 //         }
 
-//         /**
-//          * Get the SNPs as an array.
-//          *
-//          * @return array The SNPs array
-//          */
-//         public function getSnps(): array
-//         {
-//             return $this->_snps;
-//         }
+//         
 
 //         /**
 //          * Identify low quality SNPs.
@@ -403,16 +420,7 @@ use Dna\Snps\IO\Reader;
 //             return $this->_build;
 //         }
         
-//         public function isBuildDetected(): bool
-//         {
-//             // Check if the build was detected.
-//             //
-//             // Returns
-//             // -------
-//             // bool
-//             //     True if the build was detected, False otherwise
-//             return $this->_build_detected;
-//         }
+//         
         
 //         public function getAssembly(): string
 //         {

@@ -4,17 +4,6 @@ namespace Dna\Snps\IO;
 
 use Dna\Snps\SNPsResources;
 use ZipArchive;
-
-use function RectorPrefix20211020\print_node;
-
-function get_empty_snps_dataframe()
-{
-    $columns = array("rsid", "chrom", "pos", "genotype");
-    $df = array();
-    $df[] = $columns;
-    return $df;
-}
-
 /**
  * Class for reading and parsing raw data / genotype files.
  */
@@ -55,7 +44,7 @@ class Reader
         $compression = "infer";
         $read_data = [];
         $d = array(
-            "snps" => get_empty_snps_dataframe(),
+            "snps" => IO::get_empty_snps_dataframe(),
             "source" => "",
             "phased" => false,
             "build" => 0,
@@ -63,7 +52,6 @@ class Reader
 
         // Peek into files to determine the data format
         if (is_string($file) && file_exists($file)) {
-            echo "file exists\n";  
             if (strpos($file, ".zip") !== false) {
                 $zip = new ZipArchive();
                 if ($zip->open($file) === true) {
@@ -96,25 +84,18 @@ class Reader
         $first_line = $read_data["first_line"] ?? '';
         $comments = $read_data["comments"] ?? '';
         $data = $read_data["data"] ?? '';
-        echo "first_line: $first_line\n";
-        print_r($read_data);
 
         if (strpos($first_line, "23andMe") !== false) {
-            echo "its a 23andMe\n";
             // Some 23andMe files have separate alleles
             if (str_ends_with(trim($comments), "# rsid\tchromosome\tposition\tallele1\tallele2")) {
-                echo "Option 1\n";
                 $d = $this->read_23andme($file, $compression, false);
             }
             // Some 23andMe files have a combined genotype
             elseif (str_ends_with(trim($comments), "# rsid\tchromosome\tposition\tgenotype" )) {
-                echo "Option 2\n";
                 $d = $this->read_23andme($file, $compression, true);
-                var_dump($d);
             }
             // Something we haven't seen before and can't handle
             else {
-                echo "Option 3\n";
                 return $d;
             }
         }
@@ -412,7 +393,6 @@ class Reader
      */
     private function read_23andme($file, $compression = null, $joined = true)
     {
-        echo "READ 23";
         $mapping = array(
             "1" => "1",
             "2" => "2",
@@ -464,7 +444,6 @@ class Reader
         );
 
         $parser = function () use ($file, $joined, $compression, $mapping) {
-            echo "Inna d parser";
             if ($joined) {
                 $columnnames = ["rsid", "chrom", "pos", "genotype"];
             } else {
@@ -502,10 +481,6 @@ class Reader
             return [$df];
         };
 
-        $res = $this->read_helper("23andMe", $parser);
-        echo "res:";
-        var_dump($res);
-        return $res;
-
+        return $this->read_helper("23andMe", $parser);
     }
 }
