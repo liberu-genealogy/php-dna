@@ -152,16 +152,16 @@ class SNPsResources extends Singleton
         return [];
     }
 
-    /**
-     * Retrieves paths to reference sequences for the specified assembly and chromosomes
-     * @param string $assembly The assembly to retrieve reference sequence paths for
-     * @param array $chroms The chromosomes to retrieve reference sequence paths for
-     * @return array An array of paths to reference sequences
-     */
-    private function getPathsReferenceSequences(string $assembly, array $chroms): array {
-        // TODO: Implement reference sequence path retrieval
-        return [];
-    }
+    // /**
+    //  * Retrieves paths to reference sequences for the specified assembly and chromosomes
+    //  * @param string $assembly The assembly to retrieve reference sequence paths for
+    //  * @param array $chroms The chromosomes to retrieve reference sequence paths for
+    //  * @return array An array of paths to reference sequences
+    //  */
+    // private function getPathsReferenceSequences(string $assembly, array $chroms): array {
+    //     // TODO: Implement reference sequence path retrieval
+    //     return [];
+    // }
     
     /**
      * Get assembly mapping data.
