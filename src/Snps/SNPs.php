@@ -78,7 +78,7 @@ use Dna\Snps\IO\Reader;
             // $this->_low_quality = $this->_snps->index;
             // $this->_discrepant_merge_positions = new DataFrame();
             // $this->_discrepant_merge_genotypes = new DataFrame();
-            $this->_source = ["23andMe"];
+            $this->_source = [];
             // $this->_phased = false;
             // $this->_build = 0;
             // $this->_build_detected = false;
@@ -128,13 +128,11 @@ use Dna\Snps\IO\Reader;
 
         protected function readFile() {
             $d = $this->readRawData($this->file, $this->only_detect_source, $this->rsids);
-            echo $this->file. PHP_EOL;
-            var_dump($d);
             $this->_snps = $d["snps"];
             $this->_source = (strpos($d["source"], ", ") !== false) ? explode(", ", $d["source"]) : [$d["source"]];
             $this->_phased = $d["phased"];
-            $this->_build = $d["build"];
-            $this->_build_detected = $d["build_detected"];
+            $this->_build = $d["build"] ?? null;
+            $this->_build_detected = $d["build_detected"] ?? false;
             // $this->_cluster = $d["cluster"];
             // $this->_chip = $d["chip"];
             // $this->_chip_version = $d["chip_version"];
