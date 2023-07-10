@@ -4,6 +4,7 @@ namespace Dna\Snps\IO;
 
 use Dna\Snps\SNPsResources;
 use ZipArchive;
+
 /**
  * Class for reading and parsing raw data / genotype files.
  */
@@ -67,20 +68,20 @@ class Reader
             } elseif (strpos($file, ".gz") !== false) {
                 $fileContents = file_get_contents($file);
                 $fileContents = gzdecode($fileContents);
-               
+
                 $read_data = $this->_extract_comments($fileContents);
                 $compression = "gzip";
             } else {
-                $fileContents = file_get_contents($file);               
+                $fileContents = file_get_contents($file);
                 $read_data = $this->_handle_bytes_data($fileContents);
             }
         } elseif (is_string($file)) {
-            $fileContents = $file;            
+            $fileContents = $file;
             $read_data = $this->_handle_bytes_data($fileContents);
         } else {
             return $d;
         }
-        
+
         $first_line = $read_data["first_line"] ?? '';
         $comments = $read_data["comments"] ?? '';
         $data = $read_data["data"] ?? '';
@@ -91,13 +92,16 @@ class Reader
                 $d = $this->read_23andme($file, $compression, false);
             }
             // Some 23andMe files have a combined genotype
-            elseif (str_ends_with(trim($comments), "# rsid\tchromosome\tposition\tgenotype" )) {
+            elseif (str_ends_with(trim($comments), "# rsid\tchromosome\tposition\tgenotype")) {
                 $d = $this->read_23andme($file, $compression, true);
             }
             // Something we haven't seen before and can't handle
             else {
                 return $d;
             }
+        } 
+        else if (strpos($first_line, 'AncestryDNA') !== false) {
+            $d = $this->read_ancestry($file, $compression);
         }
 
 
@@ -190,17 +194,17 @@ class Reader
                 $filename = $namelist[0];
             }
             $fileContents = $z->getFromName($filename);
-            $z->close();           
+            $z->close();
             $data = $this->_extract_comments($fileContents, true, $include_data);
         } elseif ($this->is_gzip($file)) {
             $compression = "gzip";
-            $fileContents = gzdecode($file);            
+            $fileContents = gzdecode($file);
             $data = $this->_extract_comments($fileContents, true, $include_data);
         } else {
             $compression = null;
             $fileHandle = fopen('php://memory', 'r+');
             fwrite($fileHandle, $file);
-            rewind($fileHandle);            
+            rewind($fileHandle);
             $data = $this->_extract_comments($fileHandle, true, $include_data);
             fseek($fileHandle, 0);
             fclose($fileHandle);
@@ -234,7 +238,7 @@ class Reader
             $result = $parser();
             $snps = $result[0];
             $phased = $result[1] ?? false;
-            $build = $result[2] ?? 0;           
+            $build = $result[2] ?? 0;
         }
 
         return array(
@@ -242,7 +246,7 @@ class Reader
             'source' => $source,
             'phased' => $phased,
             'build' => $build
-        );       
+        );
     }
 
 
@@ -477,10 +481,117 @@ class Reader
             $df = array_filter($df, function ($row) {
                 return isset($row["rsid"]) && isset($row["chrom"]) && isset($row["pos"]);
             });
-    
+
             return [$df];
         };
 
         return $this->read_helper("23andMe", $parser);
+    }
+
+    // def read_ancestry(self, file, compression):
+    //     """Read and parse Ancestry.com file.
+
+    //     http://www.ancestry.com
+
+    //     Parameters
+    //     ----------
+    //     file : str
+    //         path to file
+
+    //     Returns
+    //     -------
+    //     dict
+    //         result of `read_helper`
+    //     """
+
+    //     def parser():
+    //         df = pd.read_csv(
+    //             file,
+    //             comment="#",
+    //             header=0,
+    //             engine="c",
+    //             sep=r"\s+",
+    //             # delim_whitespace=True,  # https://stackoverflow.com/a/15026839
+    //             na_values=0,
+    //             names=["rsid", "chrom", "pos", "allele1", "allele2"],
+    //             index_col=0,
+    //             dtype=TWO_ALLELE_DTYPES,
+    //             compression=compression,
+    //         )
+
+    //         # create genotype column from allele columns
+    //         df["genotype"] = df["allele1"] + df["allele2"]
+
+    //         # delete allele columns
+    //         # http://stackoverflow.com/a/13485766
+    //         del df["allele1"]
+    //         del df["allele2"]
+
+    //         # https://redd.it/5y90un
+    //         df.iloc[np.where(df["chrom"] == "23")[0], 0] = "X"
+    //         df.iloc[np.where(df["chrom"] == "24")[0], 0] = "Y"
+    //         df.iloc[np.where(df["chrom"] == "25")[0], 0] = "PAR"
+    //         df.iloc[np.where(df["chrom"] == "26")[0], 0] = "MT"
+
+    //         return (df,)
+
+    //     return self.read_helper("AncestryDNA", parser)
+    /**
+     * Read and parse Ancestry.com file.
+     *
+     * @param string $file         Path to the file
+     * @param string $compression  Compression type (e.g., gzip)
+     *
+     * @return array  Result of `read_helper`
+     */
+    function read_ancestry($file, $compression)
+    {
+        $parser = function () use ($file, $compression) {
+
+            $data = [];
+            $lines = file($file);
+
+            foreach ($lines as $line) {
+                $line = trim($line);
+
+                if (strpos($line, '#') === 0) {
+                    continue;
+                }
+
+                $columns = preg_split('/\s+/', $line);
+                $rsid = $columns[0];
+                $chrom = $columns[1];
+                $pos = $columns[2];
+                $allele1 = $columns[3];
+                $allele2 = $columns[4];
+
+                $genotype = $allele1 . $allele2;
+
+                // Create an associative array for each line
+                $data[] = [
+                    'rsid' => $rsid,
+                    'chrom' => $chrom,
+                    'pos' => $pos,
+                    'genotype' => $genotype
+                ];
+            }
+
+            // https://redd.it/5y90un
+            foreach ($data as &$row) {
+                if ($row['chrom'] == '23') {
+                    $row['chrom'] = 'X';
+                } elseif ($row['chrom'] == '24') {
+                    $row['chrom'] = 'Y';
+                } elseif ($row['chrom'] == '25') {
+                    $row['chrom'] = 'PAR';
+                } elseif ($row['chrom'] == '26') {
+                    $row['chrom'] = 'MT';
+                }
+            }
+
+            return [$data];
+        };
+
+        return $this->read_helper("AncestryDNA", $parser);
     }
 }

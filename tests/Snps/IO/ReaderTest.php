@@ -25,29 +25,6 @@ final class ReaderTest extends BaseSNPsTestCase
         $this->run_parse_tests("tests/input/23andme_win.txt", "23andMe");
     }
 
-    // def test_read_23andme_build36(self):
-    //     self.run_build_detection_test(
-    //         self.run_parsing_tests,
-    //         "build 36",
-    //         36,
-    //         file="tests/input/23andme.txt",
-    //         source="23andMe",
-    //         comment_str="# {}\n",
-    //     )
-
-    public function testRead23AndMeBuild36()
-    {
-        $this->run_build_detection_test(
-            array($this, 'run_parse_tests'),
-            "build 36",
-            36,
-            "tests/input/23andme.txt",
-            "23andMe",
-            "# %s\n"
-        );
-    }
-
-   
     protected function run_build_detection_test(
         $run_parsing_tests_func,
         $build_str,
@@ -78,19 +55,48 @@ final class ReaderTest extends BaseSNPsTestCase
         );
     }
 
-    // def test_read_23andme_build37(self):
-    //     self.run_build_detection_test(
-    //         self.run_parsing_tests,
-    //         "build 37",
-    //         37,
-    //         file="tests/input/23andme.txt",
-    //         source="23andMe",
-    //         comment_str="# {}\n",
-    //     )
+    public function testRead23AndMeBuild36()
+    {
+        $this->run_build_detection_test(
+            array($this, 'run_parse_tests'),
+            "build 36",
+            36,
+            "tests/input/23andme.txt",
+            "23andMe",
+            "# %s\n"
+        );
+    }
 
-    // def test_read_ancestry(self):
-    //     # https://www.ancestry.com
-    //     self.run_parsing_tests("tests/input/ancestry.txt", "AncestryDNA")
+   
+    public function testRead23AndMeBuild37()
+    {
+        $this->run_build_detection_test(
+            array($this, 'run_parse_tests'),
+            "build 37",
+            37,
+            "tests/input/23andme.txt",
+            "23andMe",
+            "# %s\n"
+        );
+    }
+
+    public function testRead23AndMeBuild38()
+    {
+        $this->run_build_detection_test(
+            array($this, 'run_parse_tests'),
+            "build 38",
+            38,
+            "tests/input/23andme.txt",
+            "23andMe",
+            "# %s\n"
+        );
+    }
+
+    public function testReadAncestry()
+    {
+        // https://www.ancestry.com
+        $this->run_parse_tests("tests/input/ancestry.txt", "AncestryDNA");
+    }
 
     // def test_read_ancestry_extra_tab(self):
     //     # https://www.ancestry.com
