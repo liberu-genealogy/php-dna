@@ -138,10 +138,6 @@ use Dna\Snps\IO\Reader;
             // $this->_chip_version = $d["chip_version"];
         }
 
-        // def _read_raw_data(self, file, only_detect_source, rsids):
-        // r = Reader(file, only_detect_source, self._resources, rsids)
-        // return r.read()
-
         protected function readRawData($file, $only_detect_source, $rsids = [])
         {
             $r = new Reader($file, $only_detect_source, $this->resources, $rsids);
@@ -266,17 +262,6 @@ use Dna\Snps\IO\Reader;
 //                 return "SNPs(<bytes>)";
 //             }
 //         }
-        
-//         /**
-//          * Get the source as a string.
-//          *
-//          * @return string The source string
-//          */
-//         public function getSource(): string
-//         {
-//             return implode(", ", $this->_source);
-//         }
-
 //         
 
 //         /**
