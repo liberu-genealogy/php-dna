@@ -5,11 +5,11 @@
  *
  * tools for genetic genealogy and the analysis of consumer DNA test results
  *
- * @author          Devmanateam <devmanateam@outlook.com>
- * @copyright       Copyright (c) 2020-2023, Devmanateam
+ * @author          Laravel Software Ltd <support@laravel-liberu.com>
+ * @copyright       Copyright (c) 2020-2023, Laravel Software Ltd
  * @license         MIT
  *
- * @link            http://github.com/familytree365/php-dna
+ * @link            http://github.com/laravel-liberu/php-dna
  */
 
 namespace Dna;
