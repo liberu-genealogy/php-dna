@@ -39,7 +39,7 @@ class SNPsResources extends Singleton
     public function __construct(string $resources_dir = "resources") {
         $this->_resources_dir = realpath($resources_dir);
         $this->_ensembl_rest_client = new EnsemblRestClient();
-        $this->_init_resource_attributes();
+        $this->init_resource_attributes();
     }
 
     public function getResourcesDir(): string {
@@ -91,7 +91,11 @@ class SNPsResources extends Singleton
      * @var array|null
      */
     private ?array $_low_quality_snps;
-    private function _init_resource_attributes(): void {
+
+    /**
+     * Initializes the resource attributes
+     */
+    public function init_resource_attributes(): void {
       $this->_reference_sequences = [];
       $this->_gsa_rsid_map = null;
       $this->_gsa_chrpos_map = null;

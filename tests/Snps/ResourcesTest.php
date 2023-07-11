@@ -4,6 +4,7 @@ namespace DnaTest\Snps;
 
 use Dna\Resources;
 use Dna\Snps\SNPs;
+use PHPUnit\Framework\TestResult;
 
 class ResourcesTest extends BaseSNPsTestCase
 {
@@ -16,10 +17,11 @@ class ResourcesTest extends BaseSNPsTestCase
     }
 
     private function _reset_resource() {
-        $this->resource->_init_resource_attributes();
+        $this->resource->init_resource_attributes();
     }
 
-    public function runTest($result = null) {
+    public function run($result = null) : TestResult
+    {
         // Set resources directory based on if downloads are being performed
         // https://stackoverflow.com/a/11180583
 
@@ -27,13 +29,14 @@ class ResourcesTest extends BaseSNPsTestCase
         $this->_reset_resource();
         if ($this->downloads_enabled) {
             $this->resource->setResourcesDir("resources");
-            parent::run($result);
+            return parent::run($result);
         } else {
             // Use a temporary directory for test resource data
             $tmpdir = sys_get_temp_dir();
             $this->resource->setResourcesDir($tmpdir);
-            parent::run($result);
+            $res = parent::run($result);
             $this->resource->setResourcesDir("resources");
+            return $res;
         }
     }
 
