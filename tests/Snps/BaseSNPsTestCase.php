@@ -197,4 +197,100 @@ abstract class BaseSNPsTestCase extends TestCase
         return new SNPs($file, rsids: $rsids);
     }
 
+    protected function _get_test_assembly_mapping_data($source, $target, $strands, $mappings) {
+        return [
+            "1" => [
+                "mappings" => [
+                    [
+                        "original" => [
+                            "seq_region_name" => "1",
+                            "strand" => $strands[0] ?? "",
+                            "start" => $mappings[0] ?? "",
+                            "end" => $mappings[0] ?? "",
+                            "assembly" => $source,
+                        ],
+                        "mapped" => [
+                            "seq_region_name" => "1",
+                            "strand" => $strands[1] ?? "",
+                            "start" => $mappings[1] ?? "",
+                            "end" => $mappings[1] ?? "",
+                            "assembly" => $target,
+                        ],
+                    ],
+                    [
+                        "original" => [
+                            "seq_region_name" => "1",
+                            "strand" => $strands[2] ?? "",
+                            "start" => $mappings[2] ?? "",
+                            "end" => $mappings[2] ?? "",
+                            "assembly" => $source,
+                        ],
+                        "mapped" => [
+                            "seq_region_name" => "1",
+                            "strand" => $strands[3] ?? "",
+                            "start" => $mappings[3] ?? "",
+                            "end" => $mappings[3] ?? "",
+                            "assembly" => $target,
+                        ],
+                    ],
+                    [
+                        "original" => [
+                            "seq_region_name" => "1",
+                            "strand" => $strands[4] ?? "",
+                            "start" => $mappings[4] ?? "",
+                            "end" => $mappings[4] ?? "",
+                            "assembly" => $source,
+                        ],
+                        "mapped" => [
+                            "seq_region_name" => "1",
+                            "strand" => $strands[5] ?? "",
+                            "start" => $mappings[5] ?? "",
+                            "end" => $mappings[5] ?? "",
+                            "assembly" => $target,
+                        ],
+                    ],
+                ],
+            ],
+            "3" => [
+                "mappings" => [
+                    [
+                        "original" => [
+                            "seq_region_name" => "3",
+                            "strand" => $strands[6] ?? "",
+                            "start" => $mappings[6] ?? "",
+                            "end" => $mappings[6] ?? "",
+                            "assembly" => $source,
+                        ],
+                        "mapped" => [
+                            "seq_region_name" => "3",
+                            "strand" => $strands[7] ?? "",
+                            "start" => $mappings[7] ?? "",
+                            "end" => $mappings[7] ?? "",
+                            "assembly" => $target,
+                        ],
+                    ],
+                ],
+            ],
+        ];
+    }
+    
+
+    protected function NCBI36_GRCh37() {
+        return $this->_get_test_assembly_mapping_data(
+            "NCBI36",
+            "GRCh37",
+            [1, 1, 1, 1, 1, 1, 1, -1],
+            [
+                742429,
+                752566,
+                143649677,
+                144938320,
+                143649678,
+                144938321,
+                50908372,
+                50927009,
+            ]
+        );
+    }
+
 }

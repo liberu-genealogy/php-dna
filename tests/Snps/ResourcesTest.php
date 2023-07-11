@@ -40,4 +40,54 @@ class ResourcesTest extends BaseSNPsTestCase
         }
     }
 
+    // def test_get_assembly_mapping_data(self):
+    //     def f():
+    //         effects = [{"mappings": []} for _ in range(1, 26)]
+    //         for k, v in self.NCBI36_GRCh37().items():
+    //             effects[int(k) - 1] = v
+    //         mock = Mock(side_effect=effects)
+    //         with patch("snps.ensembl.EnsemblRestClient.perform_rest_action", mock):
+    //             return self.resource.get_assembly_mapping_data("NCBI36", "GRCh37")
+
+    //     assembly_mapping_data = (
+    //         self.resource.get_assembly_mapping_data("NCBI36", "GRCh37")
+    //         if self.downloads_enabled
+    //         else f()
+    //     )
+
+    //     self.assertEqual(len(assembly_mapping_data), 25)
+
+    public function testGetAssemblyMappingData(): void {
+        $f = function() {
+            $effects = array_fill(0, 25, ["mappings" => []]);
+            foreach ($this->NCBI36_GRCh37() as $k => $v) {
+                $effects[intval($k) - 1] = $v;
+            }
+            $mock = $this->getMockBuilder(EnsemblRestClient::class)
+                ->disableOriginalConstructor()
+                ->getMock();
+            $mock->expects($this->any())
+                ->method("perform_rest_action")
+                ->will($this->onConsecutiveCalls(...$effects));
+            
+            $this->resource = new Resources();
+            $this->resource->setRestClient($mock);
+            return $this->resource->get_assembly_mapping_data("NCBI36", "GRCh37");
+        };
+
+        $assembly_mapping_data = ($this->downloads_enabled) ?
+            $this->resource->get_assembly_mapping_data("NCBI36", "GRCh37") :
+            $f();
+
+        $this->assertCount(25, $assembly_mapping_data);
+    }
+    
+    private function NCBI36_GRCh37(): array {
+        // Define the NCBI36_GRCh37() function logic here
+        // Return the desired data structure
+    }
+}
+?>
+
+
 }
