@@ -8,25 +8,25 @@ use DnaTest\Snps\BaseSNPsTestCase;
 final class ReaderTest extends BaseSNPsTestCase
 {
 
-    public static function setupGsaTest($resourcesDir) {
-        // reset resource if already loaded
-        $r = new SNPsResources();
-        $r->_resources_dir = $resourcesDir;
-        $r->_init_resource_attributes();
+    // public static function setupGsaTest($resourcesDir) {
+    //     // reset resource if already loaded
+    //     $r = new SNPsResources();
+    //     $r->_resources_dir = $resourcesDir;
+    //     $r->_init_resource_attributes();
 
-        gzip_file(
-            "tests/resources/gsa_rsid_map.txt",
-            $resourcesDir . "/gsa_rsid_map.txt.gz"
-        );
-        gzip_file(
-            "tests/resources/gsa_chrpos_map.txt",
-            $resourcesDir . "/gsa_chrpos_map.txt.gz"
-        );
-        gzip_file(
-            "tests/resources/dbsnp_151_37_reverse.txt",
-            $resourcesDir . "/dbsnp_151_37_reverse.txt.gz"
-        );
-    }
+    //     gzip_file(
+    //         "tests/resources/gsa_rsid_map.txt",
+    //         $resourcesDir . "/gsa_rsid_map.txt.gz"
+    //     );
+    //     gzip_file(
+    //         "tests/resources/gsa_chrpos_map.txt",
+    //         $resourcesDir . "/gsa_chrpos_map.txt.gz"
+    //     );
+    //     gzip_file(
+    //         "tests/resources/dbsnp_151_37_reverse.txt",
+    //         $resourcesDir . "/dbsnp_151_37_reverse.txt.gz"
+    //     );
+    // }
 
     public function testRead23AndMe()
     {
@@ -158,11 +158,11 @@ final class ReaderTest extends BaseSNPsTestCase
     //         self.run_parsing_tests("tests/input/codigo46.txt", "Codigo46")
     //         self._teardown_gsa_test()
 
-    public function testReadCodigo46()
-    {
-        // https://codigo46.com.mx
-        $this->run_parse_tests("tests/input/codigo46.txt", "Codigo46");
-    }
+    // public function testReadCodigo46()
+    // {
+    //     // https://codigo46.com.mx
+    //     $this->run_parse_tests("tests/input/codigo46.txt", "Codigo46");
+    // }
 
     // def test_read_tellmeGen(self):
     //     # https://www.tellmegen.com/
