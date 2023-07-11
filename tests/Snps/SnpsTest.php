@@ -11,8 +11,6 @@ class SnpsTest extends BaseSNPsTestCase
     protected function setUp(): void
     {
         // parent::setUp();
-
-        
     }
 
     // def test___len__(self):

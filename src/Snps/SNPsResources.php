@@ -42,6 +42,14 @@ class SNPsResources extends Singleton
         $this->_init_resource_attributes();
     }
 
+    public function getResourcesDir(): string {
+        return $this->_resources_dir;
+    }
+
+    public function setResourcesDir(string $resources_dir): void {
+        $this->_resources_dir = $resources_dir;
+    }
+
     /**
      * An array of reference sequences
      * @var array
