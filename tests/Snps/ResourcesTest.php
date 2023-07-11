@@ -29,14 +29,14 @@ class ResourcesTest extends BaseSNPsTestCase
         $this->resource = new Resources();
         $this->_reset_resource();
         if ($this->downloads_enabled) {
-            $this->resource->setResourcesDir("resources");
+            $this->resource->setResourcesDir("./resources");
             return parent::run($result);
         } else {
             // Use a temporary directory for test resource data
             $tmpdir = sys_get_temp_dir();
             $this->resource->setResourcesDir($tmpdir);
             $res = parent::run($result);
-            $this->resource->setResourcesDir("resources");
+            $this->resource->setResourcesDir(__DIR__."resources");
             return $res;
         }
     }
@@ -72,7 +72,6 @@ class ResourcesTest extends BaseSNPsTestCase
                 ->method("perform_rest_action")
                 ->will($this->onConsecutiveCalls(...$effects));
             
-            $this->resource = new Resources();
             $this->resource->setRestClient($mock);
             return $this->resource->getAssemblyMappingData("NCBI36", "GRCh37");
         };
@@ -84,8 +83,4 @@ class ResourcesTest extends BaseSNPsTestCase
         $this->assertCount(25, $assembly_mapping_data);
     }
     
-}
-?>
-
-
 }

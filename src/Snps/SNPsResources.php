@@ -15,6 +15,11 @@
 namespace Dna\Snps;
 
 use Exception;
+use PharData;
+use Phar;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
+use ZipArchive;
 /**
  * Class SNPsResources.
  */
@@ -31,6 +36,9 @@ class SNPsResources extends Singleton
      * @var EnsemblRestClient
      */
     private EnsemblRestClient $_ensembl_rest_client;
+
+
+    private $logger = null;
 
     /**
      * Constructor for the ResourceManager class
@@ -205,10 +213,10 @@ class SNPsResources extends Singleton
       $paths = [];
 
       // Download 23andMe example dataset.
-      $paths[] = $this->_download_file("https://opensnp.org/data/662.23andme.340", "662.23andme.340.txt.gz", true);
+      $paths[] = $this->download_file("https://opensnp.org/data/662.23andme.340", "662.23andme.340.txt.gz", true);
 
       // Download FTDNA Illumina example dataset.
-      $paths[] = $this->_download_file("https://opensnp.org/data/662.ftdna-illumina.341", "662.ftdna-illumina.341.csv.gz", true);
+      $paths[] = $this->download_file("https://opensnp.org/data/662.ftdna-illumina.341", "662.ftdna-illumina.341.csv.gz", true);
 
       return $paths;
   }  
@@ -324,7 +332,7 @@ class SNPsResources extends Singleton
     // If the chip clusters data has not been loaded yet, download and process it.
     if ($this->_chip_clusters === null) {
         // Download the chip clusters file.
-        $chip_clusters_path = $this->_download_file(
+        $chip_clusters_path = $this->download_file(
             "https://supfam.mrc-lmb.cam.ac.uk/GenomePrep/datadir/the_list.tsv.gz",
             "chip_clusters.tsv.gz"
         );
@@ -372,7 +380,7 @@ class SNPsResources extends Singleton
       // If the low quality SNPs data has not been loaded yet, download and process it.
       if ($this->_lowQualitySnps === null) {
           // Download the low quality SNPs file.
-          $lowQualitySnpsPath = $this->downloadFile(
+          $lowQualitySnpsPath = $this->download_file(
               "https://supfam.mrc-lmb.cam.ac.uk/GenomePrep/datadir/badalleles.tsv.gz",
               "low_quality_snps.tsv.gz"
           );
@@ -633,7 +641,7 @@ class SNPsResources extends Singleton
 
       // Generate the name of the assembly mapping data file and its destination path.
       $assembly_mapping_data = $source_assembly . "_" . $target_assembly;
-      $destination = $this->resources_dir . DIRECTORY_SEPARATOR . $assembly_mapping_data . ".tar.gz";
+      $destination = $this->_resources_dir . DIRECTORY_SEPARATOR . $assembly_mapping_data . ".tar.gz";
 
       // If the assembly mapping data file does not exist, download it.
       if (!file_exists($destination)) {
