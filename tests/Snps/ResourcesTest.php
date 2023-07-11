@@ -3,6 +3,7 @@
 namespace DnaTest\Snps;
 
 use Dna\Resources;
+use Dna\Snps\EnsemblRestClient;
 use Dna\Snps\SNPs;
 use PHPUnit\Framework\TestResult;
 
@@ -73,7 +74,7 @@ class ResourcesTest extends BaseSNPsTestCase
             
             $this->resource = new Resources();
             $this->resource->setRestClient($mock);
-            return $this->resource->get_assembly_mapping_data("NCBI36", "GRCh37");
+            return $this->resource->getAssemblyMappingData("NCBI36", "GRCh37");
         };
 
         $assembly_mapping_data = ($this->downloads_enabled) ?

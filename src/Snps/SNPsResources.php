@@ -14,6 +14,7 @@
 
 namespace Dna\Snps;
 
+use Exception;
 /**
  * Class SNPsResources.
  */
@@ -49,6 +50,10 @@ class SNPsResources extends Singleton
     public function setResourcesDir(string $resources_dir): void {
         $this->_resources_dir = $resources_dir;
     }
+
+    public function setRestClient($rest_client): void {
+        $this->_ensembl_rest_client = $rest_client;
+    } 
 
     /**
      * An array of reference sequences
@@ -615,7 +620,7 @@ class SNPsResources extends Singleton
   public function getPathAssemblyMappingData(string $source_assembly, string $target_assembly, int $retries = 10): string
   {
       // Create the resources directory if it does not exist.
-      if (!$this->createDir($this->resources_dir)) {
+      if (!$this->create_dir($this->_resources_dir)) {
           return "";
       }
 
@@ -664,7 +669,7 @@ class SNPsResources extends Singleton
         $response = null;
         $retry = 0;
         while ($response === null && $retry < $retries) {
-            $response = $this->ensemblRestClient->performRestAction($mapEndpoint);
+            $response = $this->_ensembl_rest_client->perform_rest_action($mapEndpoint);
             $retry++;
         }
 
@@ -827,7 +832,7 @@ class SNPsResources extends Singleton
    *
    * @return bool True if the directory exists or was successfully created, false otherwise.
    */
-  private function create_dir(string $path): bool {
+  public function create_dir(string $path): bool {
     // Check if the directory already exists or if it was successfully created.
     return !(!is_dir($path) && !mkdir($path) && !is_dir($path));
   }
