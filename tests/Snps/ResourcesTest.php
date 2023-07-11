@@ -57,7 +57,8 @@ class ResourcesTest extends BaseSNPsTestCase
 
     //     self.assertEqual(len(assembly_mapping_data), 25)
 
-    public function testGetAssemblyMappingData(): void {
+    public function testGetAssemblyMappingData(): void 
+    {
         $f = function() {
             $effects = array_fill(0, 25, ["mappings" => []]);
             foreach ($this->NCBI36_GRCh37() as $k => $v) {
@@ -82,10 +83,6 @@ class ResourcesTest extends BaseSNPsTestCase
         $this->assertCount(25, $assembly_mapping_data);
     }
     
-    private function NCBI36_GRCh37(): array {
-        // Define the NCBI36_GRCh37() function logic here
-        // Return the desired data structure
-    }
 }
 ?>
 
