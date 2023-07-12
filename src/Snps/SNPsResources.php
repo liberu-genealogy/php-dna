@@ -336,51 +336,70 @@ class SNPsResources extends Singleton
     }
 
     /**
-     * Get the chip clusters data.
+     * Get resource for identifying deduced genotype / chip array based on chip clusters.
      *
-     * @return DataFrame The chip clusters data.
+     * @return array
+     *
+     * @references
+     *  - Chang Lu, Bastian Greshake Tzovaras, Julian Gough, A survey of
+     *    direct-to-consumer genotype data, and quality control tool
+     *    (GenomePrep) for research, Computational and Structural
+     *    Biotechnology Journal, Volume 19, 2021, Pages 3747-3754, ISSN
+     *    2001-0370, https://doi.org/10.1016/j.csbj.2021.06.040.
      */
     public function get_chip_clusters()
     {
-        // If the chip clusters data has not been loaded yet, download and process it.
         if ($this->_chip_clusters === null) {
-            // Download the chip clusters file.
             $chip_clusters_path = $this->download_file(
                 "https://supfam.mrc-lmb.cam.ac.uk/GenomePrep/datadir/the_list.tsv.gz",
                 "chip_clusters.tsv.gz"
             );
 
-            // Load the chip clusters file into a DataFrame.
-            $df = \DataFrame::from_csv($chip_clusters_path, [
-                'sep' => "\t",
-                'names' => ["locus", "clusters"],
-                'dtypes' => [
-                    "locus" => 'string', "clusters" => \CategoricalDtype::create(['ordered' => false])
-                ]
-            ]);
+            $fileContents = file_get_contents($chip_clusters_path);
 
-            // Split the locus column into separate columns for chromosome and position.
-            $clusters = $df['clusters'];
-            $locus = $df['locus']->str_split(":", ['expand' => true]);
-            $locus->rename(['chrom', 'pos'], ['axis' => 1, 'inplace' => true]);
+            // Check if the file is gzipped
+            if (substr($fileContents, 0, 2) === "\x1f\x8b") {
+                $fileContents = gzdecode($fileContents);
+            }
 
-            // Convert the position column to an unsigned 32-bit integer.
-            $locus['pos'] = $locus['pos']->astype('uint32');
+            $csv = Reader::createFromString($fileContents);
+            $csv->setDelimiter("\t");
+            $csv->setHeaderOffset(0);
 
-            // Convert the chromosome column to a categorical data type.
-            $locus['chrom'] = $locus['chrom']->astype(\CategoricalDtype::create(['ordered' => false]));
+            $stmt = (new Statement())->offset(0)->limit(1);
+            $records = $stmt->process($csv);
+            $header = $records->getHeader();
 
-            // Add the clusters column to the locus DataFrame.
-            $locus['clusters'] = $clusters;
+            $stmt = new Statement();
+            $data = $stmt->process($csv);
 
-            // Save the processed chip clusters data to the object.
-            $this->_chip_clusters = $locus;
+            $clusters = [];
+            $chroms = [];
+            $poss = [];
+
+            foreach ($data as $row) {
+                $locus = isset($row[0]) ? $row[0] : "";
+                $cluster = isset($row[1]) ? $row[1] : "";
+
+                list($chrom, $pos) = explode(':', $locus);
+                $pos = (int) $pos;
+
+                $clusters[] = $cluster;
+                $chroms[] = $chrom;
+                $poss[] = $pos;
+            }
+
+            $chip_clusters = [
+                'chrom' => $chroms,
+                'pos' => $poss,
+                'clusters' => $clusters,
+            ];
+
+            $this->_chip_clusters = $chip_clusters;
         }
 
-        // Return the chip clusters data.
         return $this->_chip_clusters;
     }
-
     /**
      * Get the low quality SNPs data.
      *

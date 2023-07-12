@@ -105,12 +105,12 @@ class ResourcesTest extends BaseSNPsTestCase
         for ($i = 1; $i <= 665608; $i++) {
             $s .= "rs{$i}\t1\t{$i}\t0.0000\n";
         }
-        $mockChrpos = $this->getMockBuilder('stdClass')
-            ->addMethods(['read'])
-            ->getMock();
-        $mockChrpos->expects($this->any())
-            ->method('read')
-            ->willReturn(gzcompress($s));
+        // $mockChrpos = $this->getMockBuilder('stdClass')
+        //     ->addMethods(['download_file'])
+        //     ->getMock();
+        // $mockChrpos->expects($this->any())
+        //     ->method('download_file')
+        //     ->willReturn(gzcompress($s));
         $this->resource->getGsaChrpos();
 
         $s = "# comment\n";
@@ -125,5 +125,61 @@ class ResourcesTest extends BaseSNPsTestCase
             ->method('read')
             ->willReturn(gzcompress($s));
         $this->resource->get_dbsnp_151_37_reverse();
+    }
+
+
+    // function testGetAllResources()
+    // {
+    //     $f = function () {
+    //         // mock download of test data for each resource
+    //         $this->_generateTestGsaResources();
+    //         $this->_generate_test_chip_clusters();
+    //         $this->_generate_test_low_quality_snps();
+
+    //         // generate test data for permutations of remapping data
+    //         $effects = array_fill(0, 25, array("mappings" => array()));
+    //         foreach ($this->NCBI36_GRCh37() as $k => $v) {
+    //             $effects[(int)$k - 1] = $v;
+    //         }
+
+    //         $mock = $this->getMockBuilder(EnsemblRestClient::class)
+    //             ->getMock();
+    //         $mock->method("perform_rest_action")
+    //             ->willReturnOnConsecutiveCalls(...array_fill(0, 6, $effects));
+
+    //         return $this->resource->get_all_resources();
+    //     };
+
+    //     $resources = $this->downloads_enabled ? $this->resource->get_all_resources() : $f();
+
+    //     foreach ($resources as $k => $v) {
+    //         $this->assertGreaterThanOrEqual(0, count($v));
+    //     }
+    // }
+
+    protected function _generate_test_chip_clusters(): void
+{
+    $s = str_repeat("1:1\tc1\n", 2135214);
+    $mock = $this->getMockBuilder('stdClass')
+        ->addMethods(['read'])
+        ->getMock();
+    $mock->expects($this->any())
+        ->method('read')
+        ->willReturn(gzcompress($s));
+
+    $this->resource->get_chip_clusters();
+}
+    
+    public function test_get_chip_clusters() {
+        $f = function () {
+            // mock download of test data for chip clusters
+            $this->_generate_test_chip_clusters();
+            // load test resource
+            return $this->resource->get_chip_clusters();
+        };
+    
+        $chip_clusters = $this->downloads_enabled ? $this->resource->get_chip_clusters() : $f();
+    
+        $this->assertEquals(count($chip_clusters), 2135214);
     }
 }

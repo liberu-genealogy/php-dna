@@ -32,6 +32,17 @@ class Resources extends \Dna\Snps\SNPsResources {
         parent::__construct($resources_dir = $resources_dir);
     }
 
+    // public function get_all_resources() 
+    // {
+    //     $resources = array( );
+    //     $resources[
+    //         "genetic_map_HapMapII_GRCh37"
+    //     ] = $this->get_genetic_map_HapMapII_GRCh37();
+    //     $resources["cytoBand_hg19"] = $this->get_cytoBand_hg19();
+    //     $resources["knownGene_hg19"] = $this->get_knownGene_hg19();
+    //     $resources["kgXref_hg19"] = $this->get_kgXref_hg19();
+    //     return $resources;
+    // }
     // /**
     //  * Function to get a genetic map based on the given map name
     //  *
@@ -453,17 +464,7 @@ class Resources extends \Dna\Snps\SNPsResources {
     //     );
     // }    
 
-    // public function get_all_resources() 
-    // {
-    //     $resources = array( );
-    //     $resources[
-    //         "genetic_map_HapMapII_GRCh37"
-    //     ] = $this->get_genetic_map_HapMapII_GRCh37();
-    //     $resources["cytoBand_hg19"] = $this->get_cytoBand_hg19();
-    //     $resources["knownGene_hg19"] = $this->get_knownGene_hg19();
-    //     $resources["kgXref_hg19"] = $this->get_kgXref_hg19();
-    //     return $resources;
-    // }
+    
 
     // public function download_example_datasets() : array
     // {
