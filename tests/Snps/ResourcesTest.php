@@ -63,7 +63,7 @@ class ResourcesTest extends BaseSNPsTestCase
         };
 
         $assembly_mapping_data = ($this->downloads_enabled) ?
-            $this->resource->get_assembly_mapping_data("NCBI36", "GRCh37") :
+            $this->resource->getAssemblyMappingData("NCBI36", "GRCh37") :
             $f();
 
         $this->assertCount(25, $assembly_mapping_data);
