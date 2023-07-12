@@ -439,46 +439,64 @@ class SNPsResources extends Singleton
     }
 
     /**
-     * Get the dbsnp 151 37 reverse data.
+     * Get and load RSIDs that are on the reference reverse (-) strand in dbSNP 151 and lower.
      *
-     * @return array|null The dbsnp 151 37 reverse data.
+     * @return array An array of RSIDs that are on the reference reverse (-) strand in dbSNP 151 and lower.
+     *
+     * References:
+     * 1. Sherry ST, Ward MH, Kholodov M, Baker J, Phan L, Smigielski EM, Sirotkin K.
+     *    dbSNP: the NCBI database of genetic variation. Nucleic Acids Res. 2001 Jan 1;
+     *    29(1):308-11.
+     * 2. Database of Single Nucleotide Polymorphisms (dbSNP). Bethesda (MD): National Center
+     *    for Biotechnology Information, National Library of Medicine. (dbSNP Build ID: 151).
+     *    Available from: http://www.ncbi.nlm.nih.gov/SNP/
      */
     public function get_dbsnp_151_37_reverse(): ?array
     {
         // If the dbsnp 151 37 reverse data has not been loaded yet, download and process it.
         if ($this->_dbsnp_151_37_reverse === null) {
-            // Download the dbsnp 151 37 reverse file.
+            // download the file from the cloud, if not done already
             $dbsnp_rev_path = $this->download_file(
                 "https://sano-public.s3.eu-west-2.amazonaws.com/dbsnp151.b37.snps_reverse.txt.gz",
                 "dbsnp_151_37_reverse.txt.gz"
             );
 
-            // Load the dbsnp 151 37 reverse file into an array.
+            $fileContents = file_get_contents($dbsnp_rev_path);
+
+            // Check if the file is gzipped
+            if (substr($fileContents, 0, 2) === "\x1f\x8b") {
+                $fileContents = gzdecode($fileContents);
+            }
+
+            // load into pandas
+            $header = array(
+                "dbsnp151revrsid",
+                "dbsnp151freqa",
+                "dbsnp151freqt",
+                "dbsnp151freqc",
+                "dbsnp151freqg"
+            );
+
             $rsids = array();
-            $file_handle = fopen($dbsnp_rev_path, "r");
-            while (!feof($file_handle)) {
-                $line = fgets($file_handle);
-                if ($line[0] !== "#") {
-                    $tokens = explode(" ", trim($line));
-                    if (count($tokens) === 5) {
-                        $rsid = array(
-                            "dbsnp151revrsid" => $tokens[0],
-                            "dbsnp151freqa" => (float)$tokens[1],
-                            "dbsnp151freqt" => (float)$tokens[2],
-                            "dbsnp151freqc" => (float)$tokens[3],
-                            "dbsnp151freqg" => (float)$tokens[4]
-                        );
-                        $rsids[] = $rsid;
-                    }
+            $lines = explode("\n", $fileContents);
+            foreach ($lines as $line) {
+                if (!empty($line) && $line[0] !== "#") {  // skip the first row
+                    $row = explode(" ", trim($line));
+                    $rsid = array(
+                        "dbsnp151revrsid" => isset($row[0]) ? $row[0] : '',
+                        "dbsnp151freqa" => isset($row[1]) ? (float)$row[1] : 0.0,
+                        "dbsnp151freqt" => isset($row[2]) ? (float)$row[2] : 0.0,
+                        "dbsnp151freqc" => isset($row[3]) ? (float)$row[3] : 0.0,
+                        "dbsnp151freqg" => isset($row[4]) ? (float)$row[4] : 0.0
+                    );
+                    $rsids[] = $rsid;
                 }
             }
-            fclose($file_handle);
 
-            // Save the processed dbsnp 151 37 reverse data to the object.
+            // store in memory so we don't have to load again
             $this->_dbsnp_151_37_reverse = $rsids;
         }
 
-        // Return the dbsnp 151 37 reverse data.
         return $this->_dbsnp_151_37_reverse;
     }
 
@@ -751,7 +769,7 @@ class SNPsResources extends Singleton
         return $this->_gsa_rsid_map;
     }
 
-    
+
 
     /**
      * Get the GSA chrpos map.

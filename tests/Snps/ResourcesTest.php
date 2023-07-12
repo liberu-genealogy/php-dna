@@ -84,7 +84,7 @@ class ResourcesTest extends BaseSNPsTestCase
 
         $this->assertCount(618540, $gsa_resources["rsid_map"]);
         $this->assertCount(665608, $gsa_resources["chrpos_map"]);
-        // $this->assertCount(2393418, $gsa_resources["dbsnp_151_37_reverse"]);
+        $this->assertCount(2393418, $gsa_resources["dbsnp_151_37_reverse"]);
     }
 
     protected function _generateTestGsaResources(): void
