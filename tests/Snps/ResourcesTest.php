@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace DnaTest\Snps;
 
@@ -17,11 +19,12 @@ class ResourcesTest extends BaseSNPsTestCase
         parent::setUp();
     }
 
-    private function _reset_resource() {
+    private function _reset_resource()
+    {
         $this->resource->init_resource_attributes();
     }
 
-    public function run($result = null) : TestResult
+    public function run($result = null): TestResult
     {
         // Set resources directory based on if downloads are being performed
         // https://stackoverflow.com/a/11180583
@@ -36,31 +39,14 @@ class ResourcesTest extends BaseSNPsTestCase
             $tmpdir = sys_get_temp_dir();
             $this->resource->setResourcesDir($tmpdir);
             $res = parent::run($result);
-            $this->resource->setResourcesDir(__DIR__."resources");
+            $this->resource->setResourcesDir(__DIR__ . "resources");
             return $res;
         }
     }
 
-    // def test_get_assembly_mapping_data(self):
-    //     def f():
-    //         effects = [{"mappings": []} for _ in range(1, 26)]
-    //         for k, v in self.NCBI36_GRCh37().items():
-    //             effects[int(k) - 1] = v
-    //         mock = Mock(side_effect=effects)
-    //         with patch("snps.ensembl.EnsemblRestClient.perform_rest_action", mock):
-    //             return self.resource.get_assembly_mapping_data("NCBI36", "GRCh37")
-
-    //     assembly_mapping_data = (
-    //         self.resource.get_assembly_mapping_data("NCBI36", "GRCh37")
-    //         if self.downloads_enabled
-    //         else f()
-    //     )
-
-    //     self.assertEqual(len(assembly_mapping_data), 25)
-
-    public function testGetAssemblyMappingData(): void 
+    public function testGetAssemblyMappingData(): void
     {
-        $f = function() {
+        $f = function () {
             $effects = array_fill(0, 25, ["mappings" => []]);
             foreach ($this->NCBI36_GRCh37() as $k => $v) {
                 $effects[intval($k) - 1] = $v;
@@ -71,7 +57,7 @@ class ResourcesTest extends BaseSNPsTestCase
             $mock->expects($this->any())
                 ->method("perform_rest_action")
                 ->will($this->onConsecutiveCalls(...$effects));
-            
+
             $this->resource->setRestClient($mock);
             return $this->resource->getAssemblyMappingData("NCBI36", "GRCh37");
         };
@@ -82,5 +68,56 @@ class ResourcesTest extends BaseSNPsTestCase
 
         $this->assertCount(25, $assembly_mapping_data);
     }
-    
+
+    public function testGetGsaResources(): void
+    {
+        $f = function () {
+            // mock download of test data for each resource
+            $this->_generateTestGsaResources();
+            // load test resources saved to `tmpdir`
+            return $this->resource->getGsaResources();
+        };
+
+        $gsa_resources = ($this->downloads_enabled) ?
+            $this->resource->getGsaResources() :
+            $f();
+
+        $this->assertCount(618540, $gsa_resources["rsid_map"]);
+        $this->assertCount(665608, $gsa_resources["chrpos_map"]);
+        $this->assertCount(2393418, $gsa_resources["dbsnp_151_37_reverse"]);
+    }
+
+    protected function _generateTestGsaResources(): void
+    {
+        $s = "Name\tRsID\n";
+        for ($i = 1; $i <= 618540; $i++) {
+            $s .= "rs{$i}\trs{$i}\n";
+        }
+        $mockRsid = $this->getMockBuilder('stdClass')
+            ->addMethods(['read'])
+            ->getMock();
+        $mockRsid->method('read')->willReturn(gzcompress($s));
+        $this->resource->setGsaRsid($mockRsid);
+
+        $s = "Name\tChr\tMapInfo\tdeCODE(cM)\n";
+        for ($i = 1; $i <= 665608; $i++) {
+            $s .= "rs{$i}\t1\t{$i}\t0.0000\n";
+        }
+        $mockChrpos = $this->getMockBuilder('stdClass')
+            ->addMethods(['read'])
+            ->getMock();
+        $mockChrpos->method('read')->willReturn(gzcompress($s));
+        $this->resource->setGsaChrpos($mockChrpos);
+
+        $s = "# comment\n";
+        $s .= "rs1 0.0 0.0 0.0 0.0\n";
+        for ($i = 2; $i <= 2393418; $i++) {
+            $s .= "rs{$i}\n";
+        }
+        $mockDbsnp = $this->getMockBuilder('stdClass')
+            ->addMethods(['read'])
+            ->getMock();
+        $mockDbsnp->method('read')->willReturn(gzcompress($s));
+        $this->resource->setDbsnp15137Reverse($mockDbsnp);
+    }
 }
