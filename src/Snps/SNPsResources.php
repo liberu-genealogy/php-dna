@@ -774,6 +774,7 @@ class SNPsResources extends Singleton
             // Load the uncompressed file into an array.
             $csv = Reader::createFromString($csvContent);
             $csv->setDelimiter("\t");
+            $csv->setHeaderOffset(0);
             $chrposData = $csv->getRecords(["gsaname_chrpos", "gsachr", "gsapos", "gsacm"]);
 
             // Process and store the data in an array.

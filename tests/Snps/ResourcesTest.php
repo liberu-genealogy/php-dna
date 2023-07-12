@@ -11,7 +11,7 @@ use PHPUnit\Framework\TestResult;
 
 class ResourcesTest extends BaseSNPsTestCase
 {
-    private $resource;
+    private Resources $resource;
     private $downloads_enabled = false;
 
     protected function setUp(): void
@@ -83,7 +83,7 @@ class ResourcesTest extends BaseSNPsTestCase
             $f();
 
         $this->assertCount(618540, $gsa_resources["rsid_map"]);
-        // $this->assertCount(665608, $gsa_resources["chrpos_map"]);
+        $this->assertCount(665608, $gsa_resources["chrpos_map"]);
         // $this->assertCount(2393418, $gsa_resources["dbsnp_151_37_reverse"]);
     }
 
