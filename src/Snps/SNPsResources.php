@@ -386,29 +386,23 @@ class SNPsResources extends Singleton
 
             $stmt = new Statement();
             $data = $stmt->process($csv);
+            $chip_clusters = [];
 
-            $clusters = [];
-            $chroms = [];
-            $poss = [];
-
-
-            foreach ($data as $i => $row) {
+            foreach ($data as $row) {
                 $locus = isset($row[0]) ? $row[0] : ":";
                 $cluster = isset($row[1]) ? $row[1] : "";
 
                 list($chrom, $pos) = explode(':', $locus);
                 $pos = (int) $pos;
 
-                $clusters[] = $cluster;
-                $chroms[] = $chrom;
-                $poss[] = $pos;
+                $chip_clusters[] = [
+                    'chrom' => $chrom,
+                    'pos' => $pos,
+                    'clusters' => $cluster,
+                ];
             }
 
-            $chip_clusters = [
-                'chrom' => $chroms,
-                'pos' => $poss,
-                'clusters' => $clusters,
-            ];
+
 
             $this->_chip_clusters = $chip_clusters;
         }

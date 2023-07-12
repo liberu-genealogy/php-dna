@@ -8,6 +8,8 @@ use Dna\Snps\SNPs;
 use PHPUnit\Framework\TestCase;
 use GuzzleHttp\Client;
 use GuzzleHttp\Handler\MockHandler;
+use GuzzleHttp\HandlerStack;
+
 use GuzzleHttp\Psr7\Response;
 
 abstract class BaseSNPsTestCase extends TestCase
@@ -286,7 +288,8 @@ abstract class BaseSNPsTestCase extends TestCase
             $httpClientOptions['headers'] = ['Content-Encoding' => 'gzip'];
         }
 
-        return new Client(['handler' => $mockHandler, 'http_errors' => false] + $httpClientOptions);
+        $handlerStack = HandlerStack::create($mockHandler);
+        return new Client(['handler' => $handlerStack, 'http_errors' => false] + $httpClientOptions);
     }
     
 
