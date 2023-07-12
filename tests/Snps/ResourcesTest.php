@@ -96,8 +96,10 @@ class ResourcesTest extends BaseSNPsTestCase
         $mockRsid = $this->getMockBuilder('stdClass')
             ->addMethods(['read'])
             ->getMock();
-        $mockRsid->method('read')->willReturn(gzcompress($s));
-        $this->resource->setGsaRsid($mockRsid);
+        $mockRsid->expects($this->any())
+            ->method('read')
+            ->willReturn(gzcompress($s));
+        $this->resource->getGsaRsid();
 
         $s = "Name\tChr\tMapInfo\tdeCODE(cM)\n";
         for ($i = 1; $i <= 665608; $i++) {
@@ -106,8 +108,10 @@ class ResourcesTest extends BaseSNPsTestCase
         $mockChrpos = $this->getMockBuilder('stdClass')
             ->addMethods(['read'])
             ->getMock();
-        $mockChrpos->method('read')->willReturn(gzcompress($s));
-        $this->resource->setGsaChrpos($mockChrpos);
+        $mockChrpos->expects($this->any())
+            ->method('read')
+            ->willReturn(gzcompress($s));
+        $this->resource->getGsaChrpos();
 
         $s = "# comment\n";
         $s .= "rs1 0.0 0.0 0.0 0.0\n";
@@ -117,7 +121,9 @@ class ResourcesTest extends BaseSNPsTestCase
         $mockDbsnp = $this->getMockBuilder('stdClass')
             ->addMethods(['read'])
             ->getMock();
-        $mockDbsnp->method('read')->willReturn(gzcompress($s));
-        $this->resource->setDbsnp15137Reverse($mockDbsnp);
+        $mockDbsnp->expects($this->any())
+            ->method('read')
+            ->willReturn(gzcompress($s));
+        $this->resource->getDbsnp15137Reverse();
     }
 }
