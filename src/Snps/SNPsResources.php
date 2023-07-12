@@ -23,6 +23,8 @@ use League\Csv\Statement;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use ZipArchive;
+use GuzzleHttp\Client;
+use GuzzleHttp\GuzzleException;
 
 /**
  * Class SNPsResources.
@@ -42,6 +44,7 @@ class SNPsResources extends Singleton
     private EnsemblRestClient $_ensembl_rest_client;
 
 
+
     private $logger = null;
 
     /**
@@ -49,8 +52,10 @@ class SNPsResources extends Singleton
      * @param string $resources_dir The directory where the resources are located
      */
 
-    public function __construct(string $resources_dir = "resources")
-    {
+    public function __construct(
+        string $resources_dir = "resources",
+        private Client $httpClient = new Client()
+    ) {
         $this->_resources_dir = realpath($resources_dir);
         $this->_ensembl_rest_client = new EnsemblRestClient();
         $this->init_resource_attributes();
@@ -270,7 +275,7 @@ class SNPsResources extends Singleton
         $resources["gsa_resources"] = $this->getGsaResources();
 
         // Get chip clusters.
-        $resources["chip_clusters"] = $this->getChipClusters();
+        $resources["chip_clusters"] = $this->get_chip_clusters();
 
         // Get low quality SNPs.
         $resources["low_quality_snps"] = $this->getLowQualitySnps();
@@ -307,7 +312,7 @@ class SNPsResources extends Singleton
             $this->getReferenceSequences($assembly, ...$args);
         }
 
-        return $this->reference_sequences;
+        return $this->_reference_sequences;
     }
 
     /**
@@ -364,7 +369,6 @@ class SNPsResources extends Singleton
 
             $csv = Reader::createFromString($fileContents);
             $csv->setDelimiter("\t");
-            $csv->setHeaderOffset(0);
 
             $stmt = (new Statement())->offset(0)->limit(1);
             $records = $stmt->process($csv);
@@ -377,8 +381,9 @@ class SNPsResources extends Singleton
             $chroms = [];
             $poss = [];
 
-            foreach ($data as $row) {
-                $locus = isset($row[0]) ? $row[0] : "";
+
+            foreach ($data as $i => $row) {
+                $locus = isset($row[0]) ? $row[0] : ":";
                 $cluster = isset($row[1]) ? $row[1] : "";
 
                 list($chrom, $pos) = explode(':', $locus);
@@ -872,14 +877,18 @@ class SNPsResources extends Singleton
         if (!file_exists($destination)) {
             try {
                 // Set the timeout for the download.
-                $opts = ['http' => ['timeout' => $timeout]];
-                $context = stream_context_create($opts);
+                $httpClientOptions = [
+                    'timeout' => $timeout,
+                ];
 
-                // Download the file.
-                $response = file_get_contents($url, false, $context);
+                // Download the file using Guzzle HTTP client.
+                $response = $this->httpClient->get($url, $httpClientOptions);
+
+                // Get the response body.
+                $data = $response->getBody()->getContents();
 
                 // If the download failed, throw an exception.
-                if ($response === false) {
+                if ($response->getStatusCode() !== 200) {
                     throw new Exception("Error downloading {$url}");
                 }
 
@@ -887,7 +896,6 @@ class SNPsResources extends Singleton
                 $this->print_download_msg($destination);
 
                 // Save the downloaded data to a file.
-                $data = $response;
                 $file = fopen($destination, 'wb');
                 if ($compress) {
                     $this->write_data_to_gzip($file, $data);
@@ -904,6 +912,7 @@ class SNPsResources extends Singleton
                 }
             }
         }
+
 
         // Return the path to the downloaded file.
         return $destination;
