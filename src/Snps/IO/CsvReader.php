@@ -13,7 +13,7 @@ class CsvReader
     public function __construct($filePath)
     {
         $this->filePath = $filePath;
-        $this->separator = "\s+";
+        $this->separator = ',';
         $this->header = false;
         $this->columnNames = [];
         $this->columnTypes = [];
@@ -50,6 +50,7 @@ class CsvReader
 
             while (($row = fgetcsv($handle, 0, $this->separator)) !== false) {
                 if (!empty($this->columnNames)) {
+                    print_r($row);
                     $row = array_combine($this->columnNames, $row);
                 }
 
