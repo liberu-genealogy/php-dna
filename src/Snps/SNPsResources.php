@@ -71,6 +71,16 @@ class SNPsResources extends Singleton
         $this->_resources_dir = $resources_dir;
     }
 
+    public function getHttpClient(): Client
+    {
+        return $this->httpClient;
+    }
+
+    public function setHttpClient(Client $httpClient): void
+    {
+        $this->httpClient = $httpClient;
+    }
+
     public function setRestClient($rest_client): void
     {
         $this->_ensembl_rest_client = $rest_client;

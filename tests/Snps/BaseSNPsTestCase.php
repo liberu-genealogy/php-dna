@@ -6,6 +6,9 @@ use Dna\Snps\SNPs;
 // use Dna\Utils\gzip_file;
 // use Dna\Utils\zip_file;
 use PHPUnit\Framework\TestCase;
+use GuzzleHttp\Client;
+use GuzzleHttp\Handler\MockHandler;
+use GuzzleHttp\Psr7\Response;
 
 abstract class BaseSNPsTestCase extends TestCase
 {
@@ -272,6 +275,18 @@ abstract class BaseSNPsTestCase extends TestCase
                 ],
             ],
         ];
+    }
+
+    public function createMockHttpClient(array $mockResponses, bool $compress = false): Client
+    {
+        $mockHandler = new MockHandler($mockResponses);
+
+        $httpClientOptions = [];
+        if ($compress) {
+            $httpClientOptions['headers'] = ['Content-Encoding' => 'gzip'];
+        }
+
+        return new Client(['handler' => $mockHandler, 'http_errors' => false] + $httpClientOptions);
     }
     
 

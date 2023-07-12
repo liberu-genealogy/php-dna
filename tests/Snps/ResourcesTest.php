@@ -7,6 +7,9 @@ namespace DnaTest\Snps;
 use Dna\Resources;
 use Dna\Snps\EnsemblRestClient;
 use Dna\Snps\SNPs;
+use GuzzleHttp\Client;
+use GuzzleHttp\Handler\MockHandler;
+use GuzzleHttp\Psr7\Response;
 use PHPUnit\Framework\TestResult;
 
 class ResourcesTest extends BaseSNPsTestCase
@@ -157,15 +160,17 @@ class ResourcesTest extends BaseSNPsTestCase
     //     }
     // }
 
+    
+
     protected function _generate_test_chip_clusters(): void
 {
     $s = str_repeat("1:1\tc1\n", 2135214);
-    $mock = $this->getMockBuilder('stdClass')
-        ->addMethods(['read'])
-        ->getMock();
-    $mock->expects($this->any())
-        ->method('read')
-        ->willReturn(gzcompress($s));
+    $responseContent = "1:1\tc1\n" . str_repeat("1:1\tc1\n", 2135213);
+        $mockResponse = new Response(200, [], $responseContent);
+
+        $httpClient = $this->createMockHttpClient([$mockResponse], true);
+
+        $this->resource->setHttpClient($httpClient);
 
     $this->resource->get_chip_clusters();
 }
@@ -180,6 +185,6 @@ class ResourcesTest extends BaseSNPsTestCase
     
         $chip_clusters = $this->downloads_enabled ? $this->resource->get_chip_clusters() : $f();
     
-        $this->assertEquals(count($chip_clusters), 2135214);
+        $this->assertEquals(2135214, count($chip_clusters));
     }
 }
