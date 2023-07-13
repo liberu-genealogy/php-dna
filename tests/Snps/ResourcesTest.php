@@ -144,6 +144,7 @@ class ResourcesTest extends BaseSNPsTestCase
             $mock->method("perform_rest_action")
                 ->willReturnOnConsecutiveCalls(...array_fill(0, 6, $effects));
 
+            $this->resource->setRestClient($mock);
             return $this->resource->getAllResources();
         };
 
@@ -163,8 +164,6 @@ class ResourcesTest extends BaseSNPsTestCase
         $mockResponse = new Response(200, [], $responseContent);
         $httpClient = $this->createMockHttpClient([$mockResponse], true);
         $this->resource->setHttpClient($httpClient);
-
-        $this->resource->get_chip_clusters();
     }
 
     public function testGetChipClusters()
