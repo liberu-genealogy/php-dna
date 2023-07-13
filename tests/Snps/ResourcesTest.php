@@ -125,34 +125,34 @@ class ResourcesTest extends BaseSNPsTestCase
     }
 
 
-    // function testGetAllResources()
-    // {
-    //     $f = function () {
-    //         // mock download of test data for each resource
-    //         $this->_generateTestGsaResources();
-    //         $this->_generate_test_chip_clusters();
-    //         $this->_generate_test_low_quality_snps();
+    public function testGetAllResources()
+    {
+        $f = function () {
+            // mock download of test data for each resource
+            $this->_generateTestGsaResources();
+            $this->_generate_test_chip_clusters();
+            $this->_generate_test_low_quality_snps();
 
-    //         // generate test data for permutations of remapping data
-    //         $effects = array_fill(0, 25, array("mappings" => array()));
-    //         foreach ($this->NCBI36_GRCh37() as $k => $v) {
-    //             $effects[(int)$k - 1] = $v;
-    //         }
+            // generate test data for permutations of remapping data
+            $effects = array_fill(0, 25, array("mappings" => array()));
+            foreach ($this->NCBI36_GRCh37() as $k => $v) {
+                $effects[(int)$k - 1] = $v;
+            }
 
-    //         $mock = $this->getMockBuilder(EnsemblRestClient::class)
-    //             ->getMock();
-    //         $mock->method("perform_rest_action")
-    //             ->willReturnOnConsecutiveCalls(...array_fill(0, 6, $effects));
+            $mock = $this->getMockBuilder(EnsemblRestClient::class)
+                ->getMock();
+            $mock->method("perform_rest_action")
+                ->willReturnOnConsecutiveCalls(...array_fill(0, 6, $effects));
 
-    //         return $this->resource->getAllResources();
-    //     };
+            return $this->resource->getAllResources();
+        };
 
-    //     $resources = $this->downloads_enabled ? $this->resource->getAllResources() : $f();
+        $resources = $this->downloads_enabled ? $this->resource->getAllResources() : $f();
 
-    //     foreach ($resources as $k => $v) {
-    //         $this->assertGreaterThanOrEqual(0, count($v));
-    //     }
-    // }
+        foreach ($resources as $k => $v) {
+            $this->assertGreaterThanOrEqual(0, count($v));
+        }
+    }
 
 
 
@@ -167,7 +167,7 @@ class ResourcesTest extends BaseSNPsTestCase
         $this->resource->get_chip_clusters();
     }
 
-    public function test_get_chip_clusters()
+    public function testGetChipClusters()
     {
         $f = function () {
             // mock download of test data for chip clusters

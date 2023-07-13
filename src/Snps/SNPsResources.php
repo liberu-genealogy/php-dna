@@ -587,7 +587,7 @@ class SNPsResources extends Singleton
 
             // If the file is a JSON file, load its contents into an array and add it to the assembly mapping data.
             if (str_contains($member_name, ".json")) {
-                $tarfile = $tar->offsetGet($member_name)->getContent();
+                $tarfile = file_get_contents($tarinfo->getPathname());
                 $tar_bytes = $tarfile;
                 $assembly_mapping_data[explode(".", $member_name)[0]] = json_decode($tar_bytes, true);
             }
