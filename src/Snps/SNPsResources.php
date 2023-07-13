@@ -402,8 +402,6 @@ class SNPsResources extends Singleton
                 ];
             }
 
-
-
             $this->_chip_clusters = $chip_clusters;
         }
 
@@ -450,7 +448,7 @@ class SNPsResources extends Singleton
             $transformedData = [];
 
             foreach ($clusterDfs as $clusterDf) {
-                [$chrom, $pos] = explode(':', $clusterDf['locus']);
+                [$chrom, $pos] = array_pad(explode(':', $clusterDf['locus']), 2, '');
                 $transformedData[] = [
                     'cluster' => $clusterDf['cluster'],
                     'chrom' => $chrom,
