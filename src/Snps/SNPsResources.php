@@ -282,14 +282,20 @@ class SNPsResources extends Singleton
         }
 
         // Get GSA resources.
+        function getmem($memory_size) {
+            $memory_unit = array('Bytes','KB','MB','GB','TB','PB');
+            return round($memory_size/pow(1024,($x=floor(log($memory_size,1024)))),2).' '.$memory_unit[$x];
+        }
+        echo PHP_EOL;
+        error_log(sprintf("F: %s used\n", getmem(memory_get_usage())));
         $resources["gsa_resources"] = $this->getGsaResources();
-
+        error_log(sprintf("G: %s used\n", getmem(memory_get_usage())));
         // Get chip clusters.
         $resources["chip_clusters"] = $this->get_chip_clusters();
-
+        error_log(sprintf("H: %s used\n", getmem(memory_get_usage())));
         // Get low quality SNPs.
         $resources["low_quality_snps"] = $this->getLowQualitySnps();
-
+        error_log(sprintf("I: %s used\n", getmem(memory_get_usage())));
         return $resources;
     }
 
