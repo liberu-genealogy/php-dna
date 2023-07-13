@@ -155,8 +155,6 @@ class ResourcesTest extends BaseSNPsTestCase
         }
     }
 
-
-
     protected function _generate_test_chip_clusters(): void
     {
         $responseContent = "1:1\tc1\n" . str_repeat("1:1\tc1\n", 2135213);
@@ -201,5 +199,41 @@ class ResourcesTest extends BaseSNPsTestCase
         $lowQualitySnps = ($this->downloads_enabled) ? $this->resource->getLowQualitySNPs() : $f();
 
         $this->assertEquals(56025, count($lowQualitySnps));
+    }
+
+    // make public to use in test
+    protected function testDownloadExampleDatasets()
+    {
+        $f = function () {
+            $mockResponse = new Response(200, [], '');
+            $httpClient = $this->createMockHttpClient([$mockResponse]);
+            $this->resource->setHttpClient($httpClient);
+            return $this->resource->download_example_datasets();
+        };
+
+        $paths = ($this->downloads_enabled) ? $this->resource->download_example_datasets() : $f();
+
+        foreach ($paths as $path) {
+            if (empty($path) || !file_exists($path)) {
+                echo "Example dataset(s) not currently available\n";
+                return;
+            }
+        }
+    }
+
+    public function testGetPathsReferenceSequencesInvalidAssembly()
+    {
+        [$assembly, $chroms, $urls, $paths] = $this->resource->getPathsReferenceSequences(
+            assembly: "36"
+        );
+
+        $chroms = $chroms;
+        $urls = $urls;
+        $paths = $paths;
+
+        $this->assertEmpty($assembly);
+        $this->assertEmpty($chroms);
+        $this->assertEmpty($urls);
+        $this->assertEmpty($paths);
     }
 }

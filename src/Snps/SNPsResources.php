@@ -639,8 +639,7 @@ class SNPsResources extends Singleton
         );
 
         // Download the reference sequences and return the assembly, chromosomes, URLs, and local filenames.
-        $downloads = array_map([$this, "downloadFile"], $urls, $local_filenames);
-
+        $downloads = array_map([$this, "download_file"], $urls, $local_filenames);
         return [$assembly, $chroms, $urls, $downloads];
     }
 
