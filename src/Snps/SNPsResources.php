@@ -426,6 +426,12 @@ class SNPsResources extends Singleton
 
             // Load the low quality SNPs file into an array.
             $fileContents = file_get_contents($lowQualitySnpsPath);
+
+            // Check if the file is gzipped
+            if (substr($fileContents, 0, 2) === "\x1f\x8b") {
+                $fileContents = gzdecode($fileContents);
+            }
+
             $rows = explode("\n", $fileContents);
 
             // Process the low quality SNPs data into an array of arrays.

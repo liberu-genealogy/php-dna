@@ -187,7 +187,7 @@ class ResourcesTest extends BaseSNPsTestCase
 
         $mockResponse = new Response(200, ['Content-Encoding' => 'gzip'], gzcompress($mockResponseContent));
         $httpClient = $this->createMockHttpClient([$mockResponse]);
-        $this->resource->setHttpClient($httpClient);
+        // $this->resource->setHttpClient($httpClient);
 
         $this->resource->getLowQualitySNPs();
     }
