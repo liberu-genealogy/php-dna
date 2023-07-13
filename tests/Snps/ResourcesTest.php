@@ -236,4 +236,55 @@ class ResourcesTest extends BaseSNPsTestCase
         $this->assertEmpty($urls);
         $this->assertEmpty($paths);
     }
+
+    protected function runReferenceSequencesTest(callable $f, string $assembly = "GRCh37")
+    {
+        if ($this->downloads_enabled) {
+            $f();
+        } else {
+            $s = ">MT dna:chromosome chromosome:{$assembly}:MT:1:16569:1 REF\n";
+            for ($i = 0; $i < 276; $i++) {
+                $s .= str_repeat("A", 60);
+                $s .= "\n";
+            }
+            $s .= str_repeat("A", 9);
+            $s .= "\n";
+
+            $mockResponse = new Response(200, ['Content-Encoding' => 'gzip'], gzcompress($s));
+            $httpClient = $this->createMockHttpClient([$mockResponse]);
+            $this->resource->setHttpClient($httpClient);
+
+            $f();
+        }
+    }
+
+    protected function runCreateReferenceSequencesTest(string $assemblyExpect, string $urlExpect)
+    {
+        $f = function () use ($assemblyExpect, $urlExpect) {
+            [$assembly, $chroms, $urls, $paths] = $this->resource->getPathsReferenceSequences($assemblyExpect, ["MT"]);
+            $seqs = $this->resource->create_reference_sequences($assembly, $chroms, $urls, $paths);
+
+            $this->assertCount(1, $seqs);
+            $this->assertEquals($seqs["MT"]->__toString(), "ReferenceSequence(assembly='{$assemblyExpect}', ID='MT')");
+            $this->assertEquals($seqs["MT"]->ID, "MT");
+            $this->assertEquals($seqs["MT"]->chrom, "MT");
+            $this->assertEquals($seqs["MT"]->url, $urlExpect);
+            $this->assertEquals($seqs["MT"]->path, $this->resource->relativePathToFasta($assemblyExpect, basename($urlExpect)));
+            $this->assertTrue(file_exists($seqs["MT"]->path));
+            $this->assertEquals($seqs["MT"]->assembly, $assemblyExpect);
+            $this->assertEquals($seqs["MT"]->build, "B" . substr($assemblyExpect, -2));
+            $this->assertEquals($seqs["MT"]->species, "Homo sapiens");
+            $this->assertEquals($seqs["MT"]->taxonomy, "x");
+        };
+
+        $this->runReferenceSequencesTest($f, $assemblyExpect);
+    }
+
+    public function testCreateReferenceSequencesNCBI36()
+    {
+        $this->runCreateReferenceSequencesTest(
+            "NCBI36",
+            "ftp://ftp.ensembl.org/pub/release-54/fasta/homo_sapiens/dna/Homo_sapiens.NCBI36.54.dna.chromosome.MT.fa.gz"
+        );
+    }
 }
