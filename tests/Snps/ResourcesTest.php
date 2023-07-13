@@ -127,11 +127,21 @@ class ResourcesTest extends BaseSNPsTestCase
 
     public function testGetAllResources()
     {
+        function getmem($memory_size) {
+            $memory_unit = array('Bytes','KB','MB','GB','TB','PB');
+            return round($memory_size/pow(1024,($x=floor(log($memory_size,1024)))),2).' '.$memory_unit[$x];
+        }
+        echo PHP_EOL;
+        error_log(sprintf("F: %s used\n", getmem(memory_get_usage())));
         $f = function () {
             // mock download of test data for each resource
+            error_log(sprintf("A: %s used\n", getmem(memory_get_usage())));
             $this->_generateTestGsaResources();
+            error_log(sprintf("B: %s used\n", getmem(memory_get_usage())));
             $this->_generate_test_chip_clusters();
+            error_log(sprintf("C: %s used\n", getmem(memory_get_usage())));
             $this->_generate_test_low_quality_snps();
+            error_log(sprintf("D: %s used\n", getmem(memory_get_usage())));
 
             // generate test data for permutations of remapping data
             $effects = array_fill(0, 25, array("mappings" => array()));
