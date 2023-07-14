@@ -17,34 +17,31 @@ class ResourcesTest extends BaseSNPsTestCase
     private Resources $resource;
     private $downloads_enabled = false;
 
-    protected function setUp(): void
-    {
-        parent::setUp();
-    }
-
     private function _reset_resource()
     {
         $this->resource->init_resource_attributes();
     }
 
-    public function run($result = null): TestResult
+    public function setUp($result = null) : void
     {
         // Set resources directory based on if downloads are being performed
         // https://stackoverflow.com/a/11180583
-
         $this->resource = new Resources();
         $this->_reset_resource();
         if ($this->downloads_enabled) {
             $this->resource->setResourcesDir("./resources");
-            return parent::run($result);
         } else {
             // Use a temporary directory for test resource data
             $tmpdir = sys_get_temp_dir();
-            $this->resource->setResourcesDir($tmpdir);
-            $res = parent::run($result);
-            $this->resource->setResourcesDir(__DIR__ . "resources");
-            return $res;
+            $this->resource->setResourcesDir($tmpdir); 
         }
+        parent::setUp($result);
+    }
+
+    public function tearDown(): void
+    {
+        $this->_reset_resource();
+        unset($this->resource);
     }
 
     public function testGetAssemblyMappingData(): void
@@ -126,22 +123,12 @@ class ResourcesTest extends BaseSNPsTestCase
 
 
     public function testGetAllResources()
-    {
-        function getmem($memory_size) {
-            $memory_unit = array('Bytes','KB','MB','GB','TB','PB');
-            return round($memory_size/pow(1024,($x=floor(log($memory_size,1024)))),2).' '.$memory_unit[$x];
-        }
-        echo PHP_EOL;
-        error_log(sprintf("F: %s used\n", getmem(memory_get_usage())));
+    {        
         $f = function () {
             // mock download of test data for each resource
-            error_log(sprintf("A: %s used\n", getmem(memory_get_usage())));
             $this->_generateTestGsaResources();
-            error_log(sprintf("B: %s used\n", getmem(memory_get_usage())));
             $this->_generate_test_chip_clusters();
-            error_log(sprintf("C: %s used\n", getmem(memory_get_usage())));
             $this->_generate_test_low_quality_snps();
-            error_log(sprintf("D: %s used\n", getmem(memory_get_usage())));
 
             // generate test data for permutations of remapping data
             $effects = array_fill(0, 25, array("mappings" => array()));
@@ -159,7 +146,6 @@ class ResourcesTest extends BaseSNPsTestCase
         };
 
         $resources = $this->downloads_enabled ? $this->resource->getAllResources() : $f();
-
         foreach ($resources as $k => $v) {
             $this->assertGreaterThanOrEqual(0, count($v));
         }
@@ -194,7 +180,7 @@ class ResourcesTest extends BaseSNPsTestCase
 
         $mockResponse = new Response(200, ['Content-Encoding' => 'gzip'], gzcompress($mockResponseContent));
         $httpClient = $this->createMockHttpClient([$mockResponse]);
-        // $this->resource->setHttpClient($httpClient);
+        $this->resource->setHttpClient($httpClient);
 
         $this->resource->getLowQualitySNPs();
     }

@@ -286,16 +286,11 @@ class SNPsResources extends Singleton
             $memory_unit = array('Bytes','KB','MB','GB','TB','PB');
             return round($memory_size/pow(1024,($x=floor(log($memory_size,1024)))),2).' '.$memory_unit[$x];
         }
-        echo PHP_EOL;
-        error_log(sprintf("F: %s used\n", getmem(memory_get_usage())));
         $resources["gsa_resources"] = $this->getGsaResources();
-        error_log(sprintf("G: %s used\n", getmem(memory_get_usage())));
         // Get chip clusters.
         $resources["chip_clusters"] = $this->get_chip_clusters();
-        error_log(sprintf("H: %s used\n", getmem(memory_get_usage())));
         // Get low quality SNPs.
         $resources["low_quality_snps"] = $this->getLowQualitySnps();
-        error_log(sprintf("I: %s used\n", getmem(memory_get_usage())));
         return $resources;
     }
 
@@ -369,50 +364,42 @@ class SNPsResources extends Singleton
      *    2001-0370, https://doi.org/10.1016/j.csbj.2021.06.040.
      */
     public function get_chip_clusters()
-    {
-        if ($this->_chip_clusters === null) {
-            $chip_clusters_path = $this->download_file(
-                "https://supfam.mrc-lmb.cam.ac.uk/GenomePrep/datadir/the_list.tsv.gz",
-                "chip_clusters.tsv.gz"
-            );
+{
+    if ($this->_chip_clusters === null) {
+        $chip_clusters_path = $this->download_file(
+            "https://supfam.mrc-lmb.cam.ac.uk/GenomePrep/datadir/the_list.tsv.gz",
+            "chip_clusters.tsv.gz"
+        );
 
-            $fileContents = file_get_contents($chip_clusters_path);
+        $csv = Reader::createFromPath($chip_clusters_path, 'r');
+        $csv->setDelimiter("\t");
 
-            // Check if the file is gzipped
-            if (substr($fileContents, 0, 2) === "\x1f\x8b") {
-                $fileContents = gzdecode($fileContents);
-            }
+        $stmt = (new Statement())->offset(0)->limit(1);
+        $header = $stmt->process($csv)->getHeader();
 
-            $csv = Reader::createFromString($fileContents);
-            $csv->setDelimiter("\t");
+        $stmt = new Statement();
+        $chip_clusters = [];
 
-            $stmt = (new Statement())->offset(0)->limit(1);
-            $records = $stmt->process($csv);
-            $header = $records->getHeader();
+        foreach ($stmt->process($csv) as $row) {
+            $locus = $row[0] ?? ":";
+            $cluster = $row[1] ?? "";
 
-            $stmt = new Statement();
-            $data = $stmt->process($csv);
-            $chip_clusters = [];
+            [$chrom, $pos] = array_pad(explode(':', $locus), 2, '');
+            $pos = (int) $pos;
 
-            foreach ($data as $row) {
-                $locus = isset($row[0]) ? $row[0] : ":";
-                $cluster = isset($row[1]) ? $row[1] : "";
-
-                list($chrom, $pos) = explode(':', $locus);
-                $pos = (int) $pos;
-
-                $chip_clusters[] = [
-                    'chrom' => $chrom,
-                    'pos' => $pos,
-                    'clusters' => $cluster,
-                ];
-            }
-
-            $this->_chip_clusters = $chip_clusters;
+            $chip_clusters[] = [
+                'chrom' => $chrom,
+                'pos' => $pos,
+                'clusters' => $cluster,
+            ];
         }
 
-        return $this->_chip_clusters;
+        $this->_chip_clusters = $chip_clusters;
     }
+
+    return $this->_chip_clusters;
+}
+
     /**
      * Get the low quality SNPs data.
      *
@@ -774,37 +761,34 @@ class SNPsResources extends Singleton
      * @return array|null The GSA rsid map.
      */
     public function getGsaRsid(): array | null
-    {
-        if ($this->_gsa_rsid_map === null) {
-            // download the file from the cloud, if not done already
-            $url = "https://sano-public.s3.eu-west-2.amazonaws.com/gsa_rsid_map.txt.gz";
-            $destination = "gsa_rsid_map.txt.gz";
-            $rsidPath = $this->download_file($url, $destination);
+{
+    if ($this->_gsa_rsid_map === null) {
+        // download the file from the cloud, if not done already
+        $url = "https://sano-public.s3.eu-west-2.amazonaws.com/gsa_rsid_map.txt.gz";
+        $destination = "gsa_rsid_map.txt.gz";
 
+        $rsidPath = $this->download_file($url, $destination);
 
-            $csvContent = gzdecode(file_get_contents($rsidPath));
+        $csv = Reader::createFromPath($rsidPath, 'r');
+        $csv->setDelimiter("\t");
+        $csv->setHeaderOffset(0);
 
-            $csv = Reader::createFromString($csvContent);
-            $csv->setDelimiter("\t");
-            $csv->setHeaderOffset(0);
+        $stmt = (new Statement())->offset(0)->limit(1); // Set header offset to 0
+        $header = $stmt->process($csv)->getHeader();
 
-            $stmt = (new Statement())->offset(0)->limit(1); // Set header offset to 0
-            $records = $stmt->process($csv);
-            $header = $records->getHeader();
+        $stmt = new Statement();
+        $rsids = [];
 
-            $stmt = new Statement();
-            $data = $stmt->process($csv);
-
-            $rsids = [];
-            foreach ($data as $row) {
-                $rsids[] = array_combine($header, $row);
-            }
-
-            $this->_gsa_rsid_map = $rsids;
+        foreach ($stmt->process($csv) as $row) {
+            $rsids[] = array_combine($header, $row);
         }
 
-        return $this->_gsa_rsid_map;
+        $this->_gsa_rsid_map = $rsids;
     }
+
+    return $this->_gsa_rsid_map;
+}
+
 
 
 
@@ -824,7 +808,11 @@ class SNPsResources extends Singleton
             );
 
             // Uncompress the gzipped file.
-            $csvContent = gzdecode(file_get_contents($chrposPath));
+            $csvContent = file_get_contents($chrposPath);
+
+            if (substr($csvContent, 0, 2) === "\x1f\x8b") {
+                $csvContent = gzdecode($csvContent);
+            }
 
             // Load the uncompressed file into an array.
             $csv = Reader::createFromString($csvContent);
