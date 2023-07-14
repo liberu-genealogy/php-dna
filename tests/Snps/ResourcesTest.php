@@ -22,7 +22,7 @@ class ResourcesTest extends BaseSNPsTestCase
         $this->resource->init_resource_attributes();
     }
 
-    public function setUp($result = null) : void
+    public function setUp($result = null): void
     {
         // Set resources directory based on if downloads are being performed
         // https://stackoverflow.com/a/11180583
@@ -33,7 +33,7 @@ class ResourcesTest extends BaseSNPsTestCase
         } else {
             // Use a temporary directory for test resource data
             $tmpdir = sys_get_temp_dir();
-            $this->resource->setResourcesDir($tmpdir); 
+            $this->resource->setResourcesDir($tmpdir);
         }
         parent::setUp($result);
     }
@@ -123,7 +123,7 @@ class ResourcesTest extends BaseSNPsTestCase
 
 
     public function testGetAllResources()
-    {        
+    {
         $f = function () {
             // mock download of test data for each resource
             $this->_generateTestGsaResources();
@@ -151,25 +151,22 @@ class ResourcesTest extends BaseSNPsTestCase
         }
     }
 
-    protected function _generate_test_chip_clusters(): void
+    protected function _generate_test_chip_clusters()
     {
         $responseContent = "1:1\tc1\n" . str_repeat("1:1\tc1\n", 2135213);
 
         $mockResponse = new Response(200, [], $responseContent);
         $httpClient = $this->createMockHttpClient([$mockResponse], true);
         $this->resource->setHttpClient($httpClient);
+
+        return $this->resource->get_chip_clusters();
     }
 
     public function testGetChipClusters()
     {
-        $f = function () {
-            // mock download of test data for chip clusters
-            $this->_generate_test_chip_clusters();
-            // load test resource
-            return $this->resource->get_chip_clusters();
-        };
-
-        $chip_clusters = $this->downloads_enabled ? $this->resource->get_chip_clusters() : $f();
+        $chip_clusters = $this->downloads_enabled
+            ? $this->resource->get_chip_clusters()
+            : $this->_generate_test_chip_clusters();
 
         $this->assertEquals(2135214, count($chip_clusters));
     }
@@ -178,18 +175,18 @@ class ResourcesTest extends BaseSNPsTestCase
     {
         $mockResponseContent = "c1\t" . str_repeat("1:1,", 56024) . "1:1\n";
 
-        $mockResponse = new Response(200, ['Content-Encoding' => 'gzip'], gzcompress($mockResponseContent));
+        $mockResponse = new Response(200, ['Content-Encoding' => 'gzip'], gzencode($mockResponseContent));
         $httpClient = $this->createMockHttpClient([$mockResponse]);
         $this->resource->setHttpClient($httpClient);
 
-        $this->resource->getLowQualitySNPs();
+        return $this->resource->getLowQualitySNPs();
     }
 
     public function testGetLowQualitySNPs()
     {
         $f = function () {
-            $this->_generate_test_low_quality_snps();
-            return $this->resource->getLowQualitySNPs();
+            return $this->_generate_test_low_quality_snps();
+            // return $this->resource->getLowQualitySNPs();
         };
 
         $lowQualitySnps = ($this->downloads_enabled) ? $this->resource->getLowQualitySNPs() : $f();

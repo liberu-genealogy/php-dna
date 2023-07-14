@@ -282,10 +282,6 @@ class SNPsResources extends Singleton
         }
 
         // Get GSA resources.
-        function getmem($memory_size) {
-            $memory_unit = array('Bytes','KB','MB','GB','TB','PB');
-            return round($memory_size/pow(1024,($x=floor(log($memory_size,1024)))),2).' '.$memory_unit[$x];
-        }
         $resources["gsa_resources"] = $this->getGsaResources();
         // Get chip clusters.
         $resources["chip_clusters"] = $this->get_chip_clusters();
@@ -364,41 +360,41 @@ class SNPsResources extends Singleton
      *    2001-0370, https://doi.org/10.1016/j.csbj.2021.06.040.
      */
     public function get_chip_clusters()
-{
-    if ($this->_chip_clusters === null) {
-        $chip_clusters_path = $this->download_file(
-            "https://supfam.mrc-lmb.cam.ac.uk/GenomePrep/datadir/the_list.tsv.gz",
-            "chip_clusters.tsv.gz"
-        );
+    {
+        if ($this->_chip_clusters === null) {
+            $chip_clusters_path = $this->download_file(
+                "https://supfam.mrc-lmb.cam.ac.uk/GenomePrep/datadir/the_list.tsv.gz",
+                "chip_clusters.tsv.gz"
+            );
 
-        $csv = Reader::createFromPath($chip_clusters_path, 'r');
-        $csv->setDelimiter("\t");
+            $csv = Reader::createFromPath($chip_clusters_path, 'r');
+            $csv->setDelimiter("\t");
 
-        $stmt = (new Statement())->offset(0)->limit(1);
-        $header = $stmt->process($csv)->getHeader();
+            $stmt = (new Statement())->offset(0)->limit(1);
+            $header = $stmt->process($csv)->getHeader();
 
-        $stmt = new Statement();
-        $chip_clusters = [];
+            $stmt = new Statement();
+            $chip_clusters = [];
 
-        foreach ($stmt->process($csv) as $row) {
-            $locus = $row[0] ?? ":";
-            $cluster = $row[1] ?? "";
+            foreach ($stmt->process($csv) as $row) {
+                $locus = $row[0] ?? ":";
+                $cluster = $row[1] ?? "";
 
-            [$chrom, $pos] = array_pad(explode(':', $locus), 2, '');
-            $pos = (int) $pos;
+                [$chrom, $pos] = array_pad(explode(':', $locus), 2, '');
+                $pos = (int) $pos;
 
-            $chip_clusters[] = [
-                'chrom' => $chrom,
-                'pos' => $pos,
-                'clusters' => $cluster,
-            ];
+                $chip_clusters[] = [
+                    'chrom' => $chrom,
+                    'pos' => $pos,
+                    'clusters' => $cluster,
+                ];
+            }
+
+            $this->_chip_clusters = $chip_clusters;
         }
 
-        $this->_chip_clusters = $chip_clusters;
+        return $this->_chip_clusters;
     }
-
-    return $this->_chip_clusters;
-}
 
     /**
      * Get the low quality SNPs data.
@@ -435,7 +431,7 @@ class SNPsResources extends Singleton
                     continue;
                 }
 
-                [$cluster, $loci] = explode("\t", $row);
+                [$cluster, $loci] = array_pad(explode("\t", $row), 2, '');
                 $lociSplit = explode(",", $loci);
 
                 foreach ($lociSplit as $locus) {
@@ -454,7 +450,7 @@ class SNPsResources extends Singleton
                     'pos' => intval($pos)
                 ];
             }
-
+            
             // Save the processed low quality SNPs data to the object.
             $this->_lowQualitySnps = $transformedData;
         }
@@ -761,33 +757,33 @@ class SNPsResources extends Singleton
      * @return array|null The GSA rsid map.
      */
     public function getGsaRsid(): array | null
-{
-    if ($this->_gsa_rsid_map === null) {
-        // download the file from the cloud, if not done already
-        $url = "https://sano-public.s3.eu-west-2.amazonaws.com/gsa_rsid_map.txt.gz";
-        $destination = "gsa_rsid_map.txt.gz";
+    {
+        if ($this->_gsa_rsid_map === null) {
+            // download the file from the cloud, if not done already
+            $url = "https://sano-public.s3.eu-west-2.amazonaws.com/gsa_rsid_map.txt.gz";
+            $destination = "gsa_rsid_map.txt.gz";
 
-        $rsidPath = $this->download_file($url, $destination);
+            $rsidPath = $this->download_file($url, $destination);
 
-        $csv = Reader::createFromPath($rsidPath, 'r');
-        $csv->setDelimiter("\t");
-        $csv->setHeaderOffset(0);
+            $csv = Reader::createFromPath($rsidPath, 'r');
+            $csv->setDelimiter("\t");
+            $csv->setHeaderOffset(0);
 
-        $stmt = (new Statement())->offset(0)->limit(1); // Set header offset to 0
-        $header = $stmt->process($csv)->getHeader();
+            $stmt = (new Statement())->offset(0)->limit(1); // Set header offset to 0
+            $header = $stmt->process($csv)->getHeader();
 
-        $stmt = new Statement();
-        $rsids = [];
+            $stmt = new Statement();
+            $rsids = [];
 
-        foreach ($stmt->process($csv) as $row) {
-            $rsids[] = array_combine($header, $row);
+            foreach ($stmt->process($csv) as $row) {
+                $rsids[] = array_combine($header, $row);
+            }
+
+            $this->_gsa_rsid_map = $rsids;
         }
 
-        $this->_gsa_rsid_map = $rsids;
+        return $this->_gsa_rsid_map;
     }
-
-    return $this->_gsa_rsid_map;
-}
 
 
 
@@ -880,6 +876,7 @@ class SNPsResources extends Singleton
                 // Set the timeout for the download.
                 $httpClientOptions = [
                     'timeout' => $timeout,
+                    'decode_content' => true,
                 ];
 
                 // Download the file using Guzzle HTTP client.
@@ -887,6 +884,13 @@ class SNPsResources extends Singleton
 
                 // Get the response body.
                 $data = $response->getBody()->getContents();
+
+                // check if the file is gzipped
+                if (substr($data, 0, 2) === "\x1f\x8b") {
+                    $data = gzdecode($data);
+                    $compress = true;
+                }
+
 
                 // If the download failed, throw an exception.
                 if ($response->getStatusCode() !== 200) {
