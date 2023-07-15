@@ -152,7 +152,7 @@ class SNPsResources extends Singleton
      * Retrieves reference sequences for the specified assembly and chromosomes
      * @param string $assembly The assembly to retrieve reference sequences for
      * @param array $chroms The chromosomes to retrieve reference sequences for
-     * @return array An array of reference sequences
+     * @return ReferenceSequence[] An array of reference sequences
      */
     public function getReferenceSequences(
         string $assembly = "GRCh37",
@@ -170,8 +170,15 @@ class SNPsResources extends Singleton
         }
 
         if (!$this->referenceChromsAvailable($assembly, $chroms)) {
+            [$assembly, $chroms, $urls, $paths] = $this->getPathsReferenceSequences(
+                assembly: $assembly,
+                chroms: $chroms
+            );
             $this->referenceSequences[$assembly] = $this->createReferenceSequences(
-                ...$this->getPathsReferenceSequences(assembly: $assembly, chroms: $chroms)
+                assembly: $assembly,
+                chroms: $chroms,
+                urls: $urls,
+                paths: $paths
             );
         }
 
@@ -197,11 +204,38 @@ class SNPsResources extends Singleton
      * @param string $dictPath The path to the dictionary file
      * @return array An array of reference sequences
      */
-    private function createReferenceSequences(string $fastaPath, string $faiPath, string $dictPath): array
-    {
-        // TODO: Implement reference sequence creation
-        return [];
+    protected function createReferenceSequences($assembly, $chroms, $urls, $paths)
+{
+    // https://samtools.github.io/hts-specs/VCFv4.2.pdf
+    $seqs = [];
+
+    foreach ($paths as $i => $path) {
+        if (!$path) {
+            continue;
+        }
+
+        $d = [
+            "ID" => $chroms[$i],
+            "url" => $urls[$i],
+            "path" => realpath($path),
+            "assembly" => $assembly,
+            "species" => "Homo sapiens",
+            "taxonomy" => "x",
+        ];
+
+        $seqs[$chroms[$i]] = new ReferenceSequence(
+            $d["ID"],
+            $d["url"],
+            $d["path"],
+            $d["assembly"],
+            $d["species"],
+            $d["taxonomy"]
+        );
     }
+
+    return $seqs;
+}
+
 
     // /**
     //  * Retrieves paths to reference sequences for the specified assembly and chromosomes

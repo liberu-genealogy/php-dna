@@ -13,6 +13,7 @@ use GuzzleHttp\Psr7\Response;
 use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Psr7\Request;
 use PHPUnit\Framework\TestResult;
+use Psr\Http\Message\UriInterface;
 
 class ResourcesTest extends BaseSNPsTestCase
 {
@@ -323,8 +324,8 @@ class ResourcesTest extends BaseSNPsTestCase
     {
         $mockHandler = new MockHandler([
             new RequestException(
-                "Request timeout", 
-                new Request('GET', 'http://url'), 
+                "Request timeout",
+                new Request('GET', 'http://url'),
                 previous: new \Exception("Timeout")
             ),
         ]);
@@ -336,5 +337,60 @@ class ResourcesTest extends BaseSNPsTestCase
 
         $path = $this->resource->download_file("http://url", "test.txt");
         $this->assertEquals("", $path);
+    }
+
+    public function testDownloadFileURLError()
+    {
+        $httpClient = new Client([
+            'handler' => function (Request $request, array $options) {
+                $url = $request->getUri();
+                if ($url instanceof UriInterface) {
+                    $url = $url->__toString();
+                }
+                if (strpos($url, 'http://') === 0) {
+                    throw new RequestException("test error", $request);
+                }
+                if (strpos($url, 'ftp://') === 0) {
+                    throw new RequestException("test error", $request);
+                }
+            },
+            'http_errors' => false,
+        ]);
+        $this->resource->setHttpClient($httpClient);
+
+        $path1 = $this->resource->download_file("http://url", "test.txt");
+        $path2 = $this->resource->download_file("ftp://url", "test.txt");
+
+        $this->assertEquals("", $path1);
+        $this->assertEquals("", $path2);
+    }
+
+    public function testGetReferenceSequences()
+    {
+        $this->runReferenceSequencesTest(function () {
+            $seqs = $this->resource->getReferenceSequences(
+                chroms: ['MT']
+            );
+            $this->assertCount(1, $seqs);
+            $this->assertEquals(
+                $seqs['MT']->__toString(),
+                "ReferenceSequence(assembly=GRCh37, ID=MT)"
+            );
+            $this->assertEquals($seqs['MT']->getID(), 'MT');
+            $this->assertEquals($seqs['MT']->getChrom(), 'MT');
+            $this->assertEquals(
+                $seqs['MT']->getUrl(),
+                'ftp://ftp.ensembl.org/pub/grch37/release-96/fasta/homo_sapiens/dna/Homo_sapiens.GRCh37.dna.chromosome.MT.fa.gz'
+            );
+            $this->assertEquals(
+                $seqs['MT']->getPath(),
+                $this->resource->relativePathToSubdir('fasta', 'GRCh37', 'Homo_sapiens.GRCh37.dna.chromosome.MT.fa.gz')
+            );
+            $this->assertTrue(file_exists($seqs['MT']->getPath()));
+            $this->assertEquals($seqs['MT']->getAssembly(), 'GRCh37');
+            $this->assertEquals($seqs['MT']->getBuild(), 'B37');
+            $this->assertEquals($seqs['MT']->getSpecies(), 'Homo sapiens');
+            $this->assertEquals($seqs['MT']->getTaxonomy(), 'x');
+        });
     }
 }
