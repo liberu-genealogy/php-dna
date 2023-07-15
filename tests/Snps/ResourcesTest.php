@@ -261,16 +261,20 @@ class ResourcesTest extends BaseSNPsTestCase
             $seqs = $this->resource->create_reference_sequences($assembly, $chroms, $urls, $paths);
 
             $this->assertCount(1, $seqs);
-            $this->assertEquals($seqs["MT"]->__toString(), "ReferenceSequence(assembly='{$assemblyExpect}', ID='MT')");
-            $this->assertEquals($seqs["MT"]->ID, "MT");
-            $this->assertEquals($seqs["MT"]->chrom, "MT");
-            $this->assertEquals($seqs["MT"]->url, $urlExpect);
-            $this->assertEquals($seqs["MT"]->path, $this->resource->relativePathToFasta($assemblyExpect, basename($urlExpect)));
-            $this->assertTrue(file_exists($seqs["MT"]->path));
-            $this->assertEquals($seqs["MT"]->assembly, $assemblyExpect);
-            $this->assertEquals($seqs["MT"]->build, "B" . substr($assemblyExpect, -2));
-            $this->assertEquals($seqs["MT"]->species, "Homo sapiens");
-            $this->assertEquals($seqs["MT"]->taxonomy, "x");
+            $this->assertEquals($seqs["MT"]->__toString(), "ReferenceSequence(assembly={$assemblyExpect}, ID=MT)");
+            $this->assertEquals($seqs["MT"]->getID(), "MT");
+            $this->assertEquals($seqs["MT"]->getChrom(), "MT");
+            $this->assertEquals($seqs["MT"]->getUrl(), $urlExpect);
+            $this->assertEquals($seqs["MT"]->getPath(), $this->resource->relativePathToSubdir(
+                "fasta",
+                assembly: $assemblyExpect, 
+                filename: basename($urlExpect)
+            ));
+            $this->assertTrue(file_exists($seqs["MT"]->getPath()));
+            $this->assertEquals($seqs["MT"]->getAssembly(), $assemblyExpect);
+            $this->assertEquals($seqs["MT"]->getBuild(), "B" . substr($assemblyExpect, -2));
+            $this->assertEquals($seqs["MT"]->getSpecies(), "Homo sapiens");
+            $this->assertEquals($seqs["MT"]->getTaxonomy(), "x");
         };
 
         $this->runReferenceSequencesTest($f, $assemblyExpect);

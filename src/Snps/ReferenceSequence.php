@@ -202,35 +202,56 @@ class ReferenceSequence
     }
 
     private function loadSequence(): void
-    {
-        if (!count($this->sequence)) {
-            // Decompress and read file
-            $data = gzdecode(file_get_contents($this->path));
+{
+    if (!count($this->sequence)) {
+        // Decompress and read file
+        $data = file_get_contents($this->_path);
 
-            // Convert bytes to str and split lines
-            $data = explode(PHP_EOL, utf8_encode($data));
-
-            // Parse the first line
-            [$this->start, $this->end] = $this->parseFirstLine($data[0]);
-
-            // Convert str (FASTA sequence) to bytes
-            $data = utf8_decode(implode("", array_slice($data, 1)));
-
-            // Get MD5 of FASTA sequence
-            $this->md5 = md5($data);
-
-            // Store FASTA sequence as an array of integers
-            $this->sequence = array_map('ord', str_split($data));
+        // check if file is gzipped
+        if (substr($data, 0, 2) === "\x1f\x8b") {
+            // Decompress the file
+            $data = gzdecode($data);
         }
+
+        // Detect character encoding
+        $encoding = mb_detect_encoding($data);
+
+        // Convert to UTF-8 if not already
+        if (!empty($encoding) && $encoding !== 'UTF-8') {
+            $data = mb_convert_encoding($data, 'UTF-8', $encoding);
+        }
+
+        // Split lines
+        $lines = explode(PHP_EOL, $data);
+
+        // Parse the first line
+        [$this->start, $this->end] = array_pad(
+            $this->parseFirstLine($lines[0]),
+            2,
+            ""
+        );
+
+        // Convert str (FASTA sequence) to bytes
+        $fastaSequence = implode("", array_slice($lines, 1));
+
+        // Get MD5 of FASTA sequence
+        $this->md5 = md5($fastaSequence);
+
+        // Store FASTA sequence as an array of integers
+        $this->sequence = array_map('ord', mb_str_split($fastaSequence, 1, 'UTF-8'));
     }
+}
+
 
     private function parseFirstLine(string $firstLine): array
     {
         $items = explode(":", $firstLine);
-        $index = array_search($this->ID, $items);
+        $index = array_search($this->_ID, $items);
+        $item1 = $items[$index + 1] ?? "";
+        $item2 = $items[$index + 2] ?? "";
         return [
-            intval($items[$index + 1]),
-            intval($items[$index + 2])
+            intval($item1),
+            intval($item2)
         ];
     }
 }

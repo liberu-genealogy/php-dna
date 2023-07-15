@@ -635,6 +635,15 @@ class SNPsResources extends Singleton
         return [$assembly, $chroms, $urls, $downloads];
     }
 
+    public function relativePathToSubdir(string $subdir = "fasta", string $assembly, string $filename): string
+    {
+        return rtrim($this->_resources_dir, DIRECTORY_SEPARATOR)
+            . DIRECTORY_SEPARATOR . $subdir
+            . DIRECTORY_SEPARATOR . $assembly
+            . DIRECTORY_SEPARATOR . basename($filename);
+    }
+
+
     /**
      * Create reference sequences from downloaded files.
      *
@@ -642,9 +651,9 @@ class SNPsResources extends Singleton
      * @param array $chroms The chromosomes of the reference sequences.
      * @param array $urls The URLs of the reference sequences.
      * @param array $paths The paths of the downloaded reference sequence files.
-     * @return array An array of ReferenceSequence objects.
+     * @return ReferenceSequence[] An array of ReferenceSequence objects.
      */
-    public function create_reference_sequences($assembly, $chroms, $urls, $paths)
+    public function create_reference_sequences($assembly, $chroms, $urls, $paths) : array
     {
         // Initialize an empty array to store the reference sequences.
         $seqs = [];
@@ -656,9 +665,7 @@ class SNPsResources extends Singleton
                 continue;
             }
 
-            // Create a dictionary to store information about the reference sequence.
             $d = [];
-
             // Add the chromosome, URL, path, assembly, species, and taxonomy to the dictionary.
             $d["ID"] = $chroms[$i];
             $d["url"] = $urls[$i];
@@ -668,7 +675,14 @@ class SNPsResources extends Singleton
             $d["taxonomy"] = "x";
 
             // Create a new ReferenceSequence object from the dictionary and add it to the array of reference sequences.
-            $seqs[$chroms[$i]] = new ReferenceSequence($d);
+            $seqs[$chroms[$i]] = new ReferenceSequence(
+                $d["ID"],
+                $d["url"],
+                $d["path"],
+                $d["assembly"],
+                $d["species"],
+                $d["taxonomy"]
+            );
         }
 
         // Return the array of reference sequences.
@@ -968,4 +982,3 @@ class SNPsResources extends Singleton
         fwrite($file, gzencode($data));
     }
 }
-
