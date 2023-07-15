@@ -303,4 +303,17 @@ class ResourcesTest extends BaseSNPsTestCase
             "ftp://ftp.ensembl.org/pub/release-96/fasta/homo_sapiens/dna/Homo_sapiens.GRCh38.dna.chromosome.MT.fa.gz"
         );
     }
+
+    public function testCreateReferenceSequencesInvalidPath()
+    {
+        $this->runReferenceSequencesTest(function () {
+            list($assembly, $chroms, $urls, $paths) = $this->resource->getPathsReferenceSequences(
+                assembly: "GRCh37",
+                chroms: ["MT"]
+            );
+            $paths[0] = "";
+            $seqs = $this->resource->create_reference_sequences($assembly, $chroms, $urls, $paths);
+            $this->assertCount(0, $seqs);
+        });
+    }
 }
