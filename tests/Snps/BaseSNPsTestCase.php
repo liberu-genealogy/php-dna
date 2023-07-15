@@ -311,4 +311,5 @@ abstract class BaseSNPsTestCase extends TestCase
         );
     }
 
+
 }

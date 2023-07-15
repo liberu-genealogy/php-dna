@@ -10,6 +10,8 @@ use Dna\Snps\SNPs;
 use GuzzleHttp\Client;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\Psr7\Response;
+use GuzzleHttp\Exception\RequestException;
+use GuzzleHttp\Psr7\Request;
 use PHPUnit\Framework\TestResult;
 
 class ResourcesTest extends BaseSNPsTestCase
@@ -315,5 +317,24 @@ class ResourcesTest extends BaseSNPsTestCase
             $seqs = $this->resource->create_reference_sequences($assembly, $chroms, $urls, $paths);
             $this->assertCount(0, $seqs);
         });
+    }
+
+    public function testDownloadFileSocketTimeout()
+    {
+        $mockHandler = new MockHandler([
+            new RequestException(
+                "Request timeout", 
+                new Request('GET', 'http://url'), 
+                previous: new \Exception("Timeout")
+            ),
+        ]);
+        $httpClient = new Client([
+            'handler' => $mockHandler,
+            'http_errors' => false,
+        ]);
+        $this->resource->setHttpClient($httpClient);
+
+        $path = $this->resource->download_file("http://url", "test.txt");
+        $this->assertEquals("", $path);
     }
 }
