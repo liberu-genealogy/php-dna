@@ -143,12 +143,6 @@ class SNPsResources extends Singleton
     }
 
     /**
-     * An array of reference sequences
-     * @var array
-     */
-    private $referenceSequences = [];
-
-    /**
      * Retrieves reference sequences for the specified assembly and chromosomes
      * @param string $assembly The assembly to retrieve reference sequences for
      * @param array $chroms The chromosomes to retrieve reference sequences for
@@ -174,7 +168,7 @@ class SNPsResources extends Singleton
                 assembly: $assembly,
                 chroms: $chroms
             );
-            $this->referenceSequences[$assembly] = $this->createReferenceSequences(
+            $this->_reference_sequences[$assembly] = $this->createReferenceSequences(
                 assembly: $assembly,
                 chroms: $chroms,
                 urls: $urls,
@@ -182,7 +176,7 @@ class SNPsResources extends Singleton
             );
         }
 
-        return $this->referenceSequences[$assembly];
+        return $this->_reference_sequences[$assembly];
     }
 
     /**
@@ -205,36 +199,36 @@ class SNPsResources extends Singleton
      * @return array An array of reference sequences
      */
     protected function createReferenceSequences($assembly, $chroms, $urls, $paths)
-{
-    // https://samtools.github.io/hts-specs/VCFv4.2.pdf
-    $seqs = [];
+    {
+        // https://samtools.github.io/hts-specs/VCFv4.2.pdf
+        $seqs = [];
 
-    foreach ($paths as $i => $path) {
-        if (!$path) {
-            continue;
+        foreach ($paths as $i => $path) {
+            if (!$path) {
+                continue;
+            }
+
+            $d = [
+                "ID" => $chroms[$i],
+                "url" => $urls[$i],
+                "path" => realpath($path),
+                "assembly" => $assembly,
+                "species" => "Homo sapiens",
+                "taxonomy" => "x",
+            ];
+
+            $seqs[$chroms[$i]] = new ReferenceSequence(
+                $d["ID"],
+                $d["url"],
+                $d["path"],
+                $d["assembly"],
+                $d["species"],
+                $d["taxonomy"]
+            );
         }
 
-        $d = [
-            "ID" => $chroms[$i],
-            "url" => $urls[$i],
-            "path" => realpath($path),
-            "assembly" => $assembly,
-            "species" => "Homo sapiens",
-            "taxonomy" => "x",
-        ];
-
-        $seqs[$chroms[$i]] = new ReferenceSequence(
-            $d["ID"],
-            $d["url"],
-            $d["path"],
-            $d["assembly"],
-            $d["species"],
-            $d["taxonomy"]
-        );
+        return $seqs;
     }
-
-    return $seqs;
-}
 
 
     // /**
@@ -350,6 +344,7 @@ class SNPsResources extends Singleton
 
         // Loop through all assemblies and get their reference sequences.
         foreach ($assemblies as $assembly) {
+
             $this->getReferenceSequences($assembly, ...$args);
         }
 
@@ -687,7 +682,7 @@ class SNPsResources extends Singleton
      * @param array $paths The paths of the downloaded reference sequence files.
      * @return ReferenceSequence[] An array of ReferenceSequence objects.
      */
-    public function create_reference_sequences($assembly, $chroms, $urls, $paths) : array
+    public function create_reference_sequences($assembly, $chroms, $urls, $paths): array
     {
         // Initialize an empty array to store the reference sequences.
         $seqs = [];

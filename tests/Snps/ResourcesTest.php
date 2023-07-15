@@ -393,4 +393,30 @@ class ResourcesTest extends BaseSNPsTestCase
             $this->assertEquals($seqs['MT']->getTaxonomy(), 'x');
         });
     }
+
+    public function testGetAllReferenceSequences()
+    {
+        $this->runReferenceSequencesTest(function () {
+            $seqs = $this->resource->getAllReferenceSequences(['MT']);
+            $this->assertCount(3, $seqs);
+
+            $this->assertCount(1, $seqs['NCBI36']);
+            $this->assertEquals(
+                $seqs['NCBI36']['MT']->getPath(),
+                $this->resource->relativePathToSubdir('fasta', 'NCBI36', 'Homo_sapiens.NCBI36.54.dna.chromosome.MT.fa.gz')
+            );
+
+            $this->assertCount(1, $seqs['GRCh37']);
+            $this->assertEquals(
+                $seqs['GRCh37']['MT']->getPath(),
+                $this->resource->relativePathToSubdir('fasta', 'GRCh37', 'Homo_sapiens.GRCh37.dna.chromosome.MT.fa.gz')
+            );
+
+            $this->assertCount(1, $seqs['GRCh38']);
+            $this->assertEquals(
+                $seqs['GRCh38']['MT']->getPath(),
+                $this->resource->relativePathToSubdir('fasta', 'GRCh38', 'Homo_sapiens.GRCh38.dna.chromosome.MT.fa.gz')
+            );
+        });
+    }
 }
