@@ -419,4 +419,10 @@ class ResourcesTest extends BaseSNPsTestCase
             );
         });
     }
+
+    public function testGetReferenceSequencesInvalidAssembly()
+    {
+        $seqs = $this->resource->getReferenceSequences(assembly: '36');
+        $this->assertCount(0, $seqs);
+    }
 }
