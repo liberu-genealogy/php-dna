@@ -48,11 +48,11 @@ class ReferenceSequence
         $this->_assembly = $assembly;
         $this->_species = $species;
         $this->_taxonomy = $taxonomy;
-        $this->_sequence = array();
-        $this->_md5 = "";
-        $this->_start = 0;
-        $this->_end = 0;
-        $this->_length = 0;
+        $this->sequence = array();
+        $this->md5 = "";
+        $this->start = 0;
+        $this->end = 0;
+        $this->length = 0;
         $this->clear(); // Initialize the object with default values
         $this->loadSequence();
     }
