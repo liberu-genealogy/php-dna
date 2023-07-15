@@ -255,7 +255,7 @@ class ResourcesTest extends BaseSNPsTestCase
     {
         $f = function () use ($assemblyExpect, $urlExpect) {
             [$assembly, $chroms, $urls, $paths] = $this->resource->getPathsReferenceSequences(
-                assembly: $assemblyExpect, 
+                assembly: $assemblyExpect,
                 chroms: ["MT"]
             );
             $seqs = $this->resource->create_reference_sequences($assembly, $chroms, $urls, $paths);
@@ -267,7 +267,7 @@ class ResourcesTest extends BaseSNPsTestCase
             $this->assertEquals($seqs["MT"]->getUrl(), $urlExpect);
             $this->assertEquals($seqs["MT"]->getPath(), $this->resource->relativePathToSubdir(
                 "fasta",
-                assembly: $assemblyExpect, 
+                assembly: $assemblyExpect,
                 filename: basename($urlExpect)
             ));
             $this->assertTrue(file_exists($seqs["MT"]->getPath()));
@@ -285,6 +285,22 @@ class ResourcesTest extends BaseSNPsTestCase
         $this->runCreateReferenceSequencesTest(
             "NCBI36",
             "ftp://ftp.ensembl.org/pub/release-54/fasta/homo_sapiens/dna/Homo_sapiens.NCBI36.54.dna.chromosome.MT.fa.gz"
+        );
+    }
+
+    public function testCreateReferenceSequencesGRCh37()
+    {
+        $this->runCreateReferenceSequencesTest(
+            "GRCh37",
+            "ftp://ftp.ensembl.org/pub/grch37/release-96/fasta/homo_sapiens/dna/Homo_sapiens.GRCh37.dna.chromosome.MT.fa.gz"
+        );
+    }
+
+    public function testCreateReferenceSequencesGRCh38()
+    {
+        $this->runCreateReferenceSequencesTest(
+            "GRCh38",
+            "ftp://ftp.ensembl.org/pub/release-96/fasta/homo_sapiens/dna/Homo_sapiens.GRCh38.dna.chromosome.MT.fa.gz"
         );
     }
 }
