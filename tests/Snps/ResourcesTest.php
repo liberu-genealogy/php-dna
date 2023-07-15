@@ -254,7 +254,10 @@ class ResourcesTest extends BaseSNPsTestCase
     protected function runCreateReferenceSequencesTest(string $assemblyExpect, string $urlExpect)
     {
         $f = function () use ($assemblyExpect, $urlExpect) {
-            [$assembly, $chroms, $urls, $paths] = $this->resource->getPathsReferenceSequences($assemblyExpect, ["MT"]);
+            [$assembly, $chroms, $urls, $paths] = $this->resource->getPathsReferenceSequences(
+                assembly: $assemblyExpect, 
+                chroms: ["MT"]
+            );
             $seqs = $this->resource->create_reference_sequences($assembly, $chroms, $urls, $paths);
 
             $this->assertCount(1, $seqs);

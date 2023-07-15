@@ -450,7 +450,7 @@ class SNPsResources extends Singleton
                     'pos' => intval($pos)
                 ];
             }
-            
+
             // Save the processed low quality SNPs data to the object.
             $this->_lowQualitySnps = $transformedData;
         }
@@ -628,7 +628,10 @@ class SNPsResources extends Singleton
         );
 
         // Download the reference sequences and return the assembly, chromosomes, URLs, and local filenames.
-        $downloads = array_map([$this, "download_file"], $urls, $local_filenames);
+        $downloads = array_map(function ($url, $localFilename) {
+            return $this->download_file($url, $localFilename);
+        }, $urls, $local_filenames);
+        
         return [$assembly, $chroms, $urls, $downloads];
     }
 
@@ -933,7 +936,11 @@ class SNPsResources extends Singleton
     public function create_dir(string $path): bool
     {
         // Check if the directory already exists or if it was successfully created.
-        return !(!is_dir($path) && !mkdir($path) && !is_dir($path));
+        if (!is_dir($path) && !mkdir($path, 0777, true) && !is_dir($path)) {
+            return false;
+        }
+
+        return true;
     }
 
     /**
