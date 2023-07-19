@@ -6,6 +6,7 @@ namespace DnaTest\Snps;
 
 use Dna\Resources;
 use Dna\Snps\EnsemblRestClient;
+use Dna\Snps\ReferenceSequence;
 use Dna\Snps\SNPs;
 use GuzzleHttp\Client;
 use GuzzleHttp\Handler\MockHandler;
@@ -19,6 +20,7 @@ class ResourcesTest extends BaseSNPsTestCase
 {
     private Resources $resource;
     private $downloads_enabled = false;
+    private $originalHttp = null;
 
     private function _reset_resource()
     {
@@ -30,6 +32,7 @@ class ResourcesTest extends BaseSNPsTestCase
         // Set resources directory based on if downloads are being performed
         // https://stackoverflow.com/a/11180583
         $this->resource = new Resources();
+        $this->originalHttp = $this->resource->getHttpClient();
         $this->_reset_resource();
         if ($this->downloads_enabled) {
             $this->resource->setResourcesDir("./resources");
@@ -424,5 +427,127 @@ class ResourcesTest extends BaseSNPsTestCase
     {
         $seqs = $this->resource->getReferenceSequences(assembly: '36');
         $this->assertCount(0, $seqs);
+    }
+
+    public function testGetReferenceSequencesChromNotAvailable()
+    {
+        $this->runReferenceSequencesTest(function () {
+            $this->resource->getReferenceSequences(chroms: ['MT']);
+            unset($this->resource->getReferenceSequences()['GRCh37']['MT']);
+            $seqs = $this->resource->getReferenceSequences(chroms: ['MT']);
+            $this->assertCount(1, $seqs);
+            $this->assertEquals(
+                $seqs['MT']->__toString(),
+                "ReferenceSequence(assembly=GRCh37, ID=MT)"
+            );
+            $this->assertEquals($seqs['MT']->getID(), 'MT');
+            $this->assertEquals($seqs['MT']->getChrom(), 'MT');
+            $this->assertEquals(
+                $seqs['MT']->getUrl(),
+                'ftp://ftp.ensembl.org/pub/grch37/release-96/fasta/homo_sapiens/dna/Homo_sapiens.GRCh37.dna.chromosome.MT.fa.gz'
+            );
+            $this->assertEquals(
+                $seqs['MT']->getPath(),
+                $this->resource->relativePathToSubdir('fasta', 'GRCh37', 'Homo_sapiens.GRCh37.dna.chromosome.MT.fa.gz')
+            );
+            $this->assertTrue(file_exists($seqs['MT']->getPath()));
+            $this->assertEquals($seqs['MT']->getAssembly(), 'GRCh37');
+            $this->assertEquals($seqs['MT']->getBuild(), 'B37');
+            $this->assertEquals($seqs['MT']->getSpecies(), 'Homo sapiens');
+            $this->assertEquals($seqs['MT']->getTaxonomy(), 'x');
+        });
+    }
+
+    protected function runReferenceSequenceLoadSequenceTest(string $hash)
+{
+    $callback = function () use ($hash) {
+        $seqs = $this->resource->getReferenceSequences(chroms: ['MT']);
+        $this->assertCount(16569, $seqs['MT']->getSequence());
+        $this->assertEquals($hash, $seqs['MT']->getMd5());
+        $this->assertEquals(1, $seqs['MT']->getStart());
+        $this->assertEquals(16569, $seqs['MT']->getEnd());
+        $this->assertEquals(16569, $seqs['MT']->getLength());
+
+        $seqs['MT']->clear();
+        $this->assertEquals(0, $seqs['MT']->getLength());
+        $this->assertEquals('', $seqs['MT']->getMd5());
+        $this->assertEquals(0, $seqs['MT']->getStart());
+        $this->assertEquals(0, $seqs['MT']->getEnd());
+        $this->assertEquals(0, $seqs['MT']->getLength());
+
+        $this->assertCount(16569, $seqs['MT']->getSequence());
+        $this->assertEquals($hash, $seqs['MT']->getMd5());
+        $this->assertEquals(1, $seqs['MT']->getStart());
+        $this->assertEquals(16569, $seqs['MT']->getEnd());
+        $this->assertEquals(16569, $seqs['MT']->getLength());
+    };
+
+    $this->runReferenceSequencesTest($callback);
+}
+
+
+    public function testReferenceSequenceLoadSequence()
+    {
+        $hash = $this->downloads_enabled
+            ? "c68f52674c9fb33aef52dcf399755519"
+            : "d432324413a21aa9247321c56c300ad3";
+
+        $this->runReferenceSequenceLoadSequenceTest($hash);
+    }
+
+    public function testReferenceSequenceGenericLoadSequence()
+    {
+        $tmpdir = sys_get_temp_dir();
+        $dest = $tmpdir . DIRECTORY_SEPARATOR . "generic.fa.gz";
+        gzip_file("tests/input/generic.fa", $dest);
+
+        $seq = new ReferenceSequence("1", $dest);
+        $this->assertEquals($seq->ID, "1");
+        $this->assertEquals($seq->chrom, "1");
+        $this->assertEquals($seq->path, $dest);
+        $this->assertEquals(
+            $seq->sequence,
+            new \SplFixedArray([
+                "NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNAGGCCGGACNNNNNNNN"
+            ])
+        );
+        $this->assertEquals(
+            str_split("AGGCCGGAC"),
+            array_map('chr', array_slice($seq->sequence->toArray(), 100, 9))
+        );
+        $this->assertEquals($seq->md5, "6ac6176535ad0e38aba2d05d786c39b6");
+        $this->assertEquals($seq->start, 1);
+        $this->assertEquals($seq->end, 117);
+        $this->assertEquals($seq->length, 117);
+    }
+
+    public function testLoadOpenSnpDatadumpFile()
+    {
+        $tmpdir = sys_get_temp_dir();
+        $this->resource->setResourcesDir($tmpdir);
+
+        // Write test openSNP datadump zip
+        $zipPath = $tmpdir . DIRECTORY_SEPARATOR . "opensnp_datadump.current.zip";
+        $zip = new \ZipArchive();
+        $zip->open($zipPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE);
+        $zip->addFile("tests/input/generic.csv", "generic1.csv");
+        $zip->addFile("tests/input/generic.csv", "generic2.csv");
+        $zip->close();
+
+        $snps1 = new SNPs($this->resource->loadOpenSnpDatadumpFile("generic1.csv"));
+        $snps2 = new SNPs($this->resource->loadOpenSnpDatadumpFile("generic2.csv"));
+
+        $this->assertDataFrameEquals(
+            $snps1->snps,
+            $this->genericSnps(),
+            true
+        );
+        $this->assertDataFrameEquals(
+            $snps2->snps,
+            $this->genericSnps(),
+            true
+        );
+
+        $this->resource->setResourcesDir("resources");
     }
 }

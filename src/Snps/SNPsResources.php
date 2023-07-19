@@ -176,6 +176,7 @@ class SNPsResources extends Singleton
             );
         }
 
+        print_r($this->_reference_sequences);
         return $this->_reference_sequences[$assembly];
     }
 
