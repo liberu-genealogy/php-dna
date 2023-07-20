@@ -17,7 +17,7 @@ use GuzzleHttp\Psr7\Request;
 use PHPUnit\Framework\TestResult;
 use Psr\Http\Message\UriInterface;
 use ReflectionClass;
-
+use ZipArchive;
 
 class ResourcesTest extends BaseSNPsTestCase
 {
@@ -538,6 +538,29 @@ class ResourcesTest extends BaseSNPsTestCase
         $this->assertEquals($seq->getStart(), 1);
         $this->assertEquals($seq->getEnd(), 117);
         $this->assertEquals($seq->getLength(), 117);
+    }
+
+    public function testGetOpenSNPDatadumpFilenames()
+    {
+        $tmpdir = sys_get_temp_dir();
+
+        // temporarily set resources dir to tests
+        $this->resource->setResourcesDir($tmpdir);
+
+        // write test openSNP datadump zip
+        $zipPath = $tmpdir . DIRECTORY_SEPARATOR . "opensnp_datadump.current.zip";
+        $zip = new ZipArchive();
+        $zip->open($zipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE);
+        $zip->addFile("tests/input/generic.csv", "generic1.csv");
+        $zip->addFile("tests/input/generic.csv", "generic2.csv");
+        $zip->close();
+
+        $filenames = $this->resource->getOpenSNPDatadumpFilenames();
+
+        $this->assertEquals(["generic1.csv", "generic2.csv"], $filenames);
+
+        // Reset resources_dir to its original value after the test
+        $this->resource->setResourcesDir("./resources");
     }
 
     // public function testLoadOpenSnpDatadumpFile()
