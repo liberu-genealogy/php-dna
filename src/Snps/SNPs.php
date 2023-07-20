@@ -7,163 +7,189 @@ use Countable;
 use Dna\Snps\IO\IO;
 use Dna\Snps\IO\Reader;
 
-    // You may need to find alternative libraries for numpy, pandas, and snps in PHP, as these libraries are specific to Python
-    // For numpy, consider using a library such as MathPHP: https://github.com/markrogoyski/math-php
-    // For pandas, you can use DataFrame from https://github.com/aberenyi/php-dataframe, though it is not as feature-rich as pandas
-    // For snps, you'll need to find a suitable PHP alternative or adapt the Python code to PHP
+// You may need to find alternative libraries for numpy, pandas, and snps in PHP, as these libraries are specific to Python
+// For numpy, consider using a library such as MathPHP: https://github.com/markrogoyski/math-php
+// For pandas, you can use DataFrame from https://github.com/aberenyi/php-dataframe, though it is not as feature-rich as pandas
+// For snps, you'll need to find a suitable PHP alternative or adapt the Python code to PHP
 
-    // import copy // In PHP, you don't need to import the 'copy' module, as objects are automatically copied when assigned to variables
+// import copy // In PHP, you don't need to import the 'copy' module, as objects are automatically copied when assigned to variables
 
-    // from itertools import groupby, count // PHP has built-in support for array functions that can handle these operations natively
+// from itertools import groupby, count // PHP has built-in support for array functions that can handle these operations natively
 
-    // import logging // For logging in PHP, you can use Monolog: https://github.com/Seldaek/monolog
-    // use Monolog\Logger;
-    // use Monolog\Handler\StreamHandler;
+// import logging // For logging in PHP, you can use Monolog: https://github.com/Seldaek/monolog
+// use Monolog\Logger;
+// use Monolog\Handler\StreamHandler;
 
-    // import os, re, warnings
-    // PHP has built-in support for file operations, regex, and error handling, so no need to import these modules
+// import os, re, warnings
+// PHP has built-in support for file operations, regex, and error handling, so no need to import these modules
 
-    // import numpy as np // See the note above about using MathPHP or another PHP library for numerical operations
-    // import pandas as pd // See the note above about using php-dataframe or another PHP library for data manipulation
+// import numpy as np // See the note above about using MathPHP or another PHP library for numerical operations
+// import pandas as pd // See the note above about using php-dataframe or another PHP library for data manipulation
 
-    // from pandas.api.types import CategoricalDtype // If using php-dataframe, check documentation for similar functionality
+// from pandas.api.types import CategoricalDtype // If using php-dataframe, check documentation for similar functionality
 
-    // For snps.ensembl, snps.resources, snps.io, and snps.utils, you'll need to find suitable PHP alternatives or adapt the Python code
-    // from snps.ensembl import EnsemblRestClient
-    // from snps.resources import Resources
-    // from snps.io import Reader, Writer, get_empty_snps_dataframe
-    // from snps.utils import Parallelizer
+// For snps.ensembl, snps.resources, snps.io, and snps.utils, you'll need to find suitable PHP alternatives or adapt the Python code
+// from snps.ensembl import EnsemblRestClient
+// from snps.resources import Resources
+// from snps.io import Reader, Writer, get_empty_snps_dataframe
+// from snps.utils import Parallelizer
 
-    // Set up logging
-    // $logger = new Logger('my_logger');
-    // $logger->pushHandler(new StreamHandler('php://stderr', Logger::DEBUG));
+// Set up logging
+// $logger = new Logger('my_logger');
+// $logger->pushHandler(new StreamHandler('php://stderr', Logger::DEBUG));
 
-    class SNPs implements Countable
+class SNPs implements Countable
+{
+
+    private $_source;
+    private array $_snps;
+    private $_build;
+    private $_phased;
+    private $_build_detected;
+
+    /**
+     * SNPs constructor.
+     *
+     * @param string $file                Input file path
+     * @param bool   $only_detect_source  Flag to indicate whether to only detect the source
+     * @param bool   $assign_par_snps     Flag to indicate whether to assign par_snps
+     * @param string $output_dir          Output directory path
+     * @param string $resources_dir       Resources directory path
+     * @param bool   $deduplicate         Flag to indicate whether to deduplicate
+     * @param bool   $deduplicate_XY_chrom Flag to indicate whether to deduplicate XY chromosome
+     * @param bool   $deduplicate_MT_chrom Flag to indicate whether to deduplicate MT chromosome
+     * @param bool   $parallelize         Flag to indicate whether to parallelize
+     * @param int    $processes           Number of processes to use for parallelization
+     * @param array  $rsids               Array of rsids
+     */
+
+    public function __construct(
+        private $file,
+        private bool $only_detect_source = False,
+        private array $rsids = [],
+    ) //, $only_detect_source, $output_dir, $resources_dir, $parallelize, $processes)
     {
+        // $this->_only_detect_source = $only_detect_source;
+        $this->_snps = IO::get_empty_snps_dataframe();
+        // $this->_duplicate = $this->get_empty_snps_dataframe();
+        // $this->_discrepant_XY = $this->get_empty_snps_dataframe();
+        // $this->_heterozygous_MT = $this->get_empty_snps_dataframe();
+        // $this->_discrepant_vcf_position = $this->get_empty_snps_dataframe();
+        // $this->_low_quality = $this->_snps->index;
+        // $this->_discrepant_merge_positions = new DataFrame();
+        // $this->_discrepant_merge_genotypes = new DataFrame();
+        $this->_source = [];
+        // $this->_phased = false;
+        // $this->_build = 0;
+        // $this->_build_detected = false;
+        // $this->_output_dir = $output_dir;
+        // $this->_resources = new Resources($resources_dir);
+        // $this->_parallelizer = new Parallelizer($parallelize, $processes);
+        // $this->_cluster = "";
+        // $this->_chip = "";
+        // $this->_chip_version = "";
 
-        private $_source;
-        private array $_snps;
-        private $_build;
-        private $_phased;
-        private $_build_detected;
-        
-        /**
-         * SNPs constructor.
-         *
-         * @param string $file                Input file path
-         * @param bool   $only_detect_source  Flag to indicate whether to only detect the source
-         * @param bool   $assign_par_snps     Flag to indicate whether to assign par_snps
-         * @param string $output_dir          Output directory path
-         * @param string $resources_dir       Resources directory path
-         * @param bool   $deduplicate         Flag to indicate whether to deduplicate
-         * @param bool   $deduplicate_XY_chrom Flag to indicate whether to deduplicate XY chromosome
-         * @param bool   $deduplicate_MT_chrom Flag to indicate whether to deduplicate MT chromosome
-         * @param bool   $parallelize         Flag to indicate whether to parallelize
-         * @param int    $processes           Number of processes to use for parallelization
-         * @param array  $rsids               Array of rsids
-         */
-     
-        public function __construct(
-            private $file,
-            private bool $only_detect_source = False,
-            private array $rsids = [], 
-        ) //, $only_detect_source, $output_dir, $resources_dir, $parallelize, $processes)
-        {
-            // $this->_only_detect_source = $only_detect_source;
-            $this->_snps = IO::get_empty_snps_dataframe();
-            // $this->_duplicate = $this->get_empty_snps_dataframe();
-            // $this->_discrepant_XY = $this->get_empty_snps_dataframe();
-            // $this->_heterozygous_MT = $this->get_empty_snps_dataframe();
-            // $this->_discrepant_vcf_position = $this->get_empty_snps_dataframe();
-            // $this->_low_quality = $this->_snps->index;
-            // $this->_discrepant_merge_positions = new DataFrame();
-            // $this->_discrepant_merge_genotypes = new DataFrame();
-            $this->_source = [];
-            // $this->_phased = false;
-            // $this->_build = 0;
-            // $this->_build_detected = false;
-            // $this->_output_dir = $output_dir;
-            // $this->_resources = new Resources($resources_dir);
-            // $this->_parallelizer = new Parallelizer($parallelize, $processes);
-            // $this->_cluster = "";
-            // $this->_chip = "";
-            // $this->_chip_version = "";
-
-            if (!empty($file)) {
-                $this->readFile();
-            }
-        }
-
-        public function count(): int
-        {
-            return 8;
-        }
-
-        /**
-         * Get the value of the source property.
-         *
-         * @return string
-         *   Data source(s) for this `SNPs` object, separated by ", ".
-         */
-        public function getSource(): string {
-            return implode(", ", $this->_source);
-        }
-
-        /**
-         * Magic method to handle property access.
-         *
-         * @param string $name
-         *   The name of the property.
-         *
-         * @return mixed
-         *   The value of the property.
-         */
-        public function __get(string $name) {
-            $getter = 'get' . ucfirst($name);
-            if (method_exists($this, $getter)) {
-                return $this->$getter();
-            }
-            return null; // Or throw an exception for undefined properties
-        }
-
-        protected function readFile() {
-            $d = $this->readRawData($this->file, $this->only_detect_source, $this->rsids);
-            $this->_snps = $d["snps"];
-            $this->_source = (strpos($d["source"], ", ") !== false) ? explode(", ", $d["source"]) : [$d["source"]];
-            $this->_phased = $d["phased"];
-            $this->_build = $d["build"] ?? null;
-            $this->_build_detected = $d["build_detected"] ?? false;
-            // $this->_cluster = $d["cluster"];
-            // $this->_chip = $d["chip"];
-            // $this->_chip_version = $d["chip_version"];
-        }
-
-        protected function readRawData($file, $only_detect_source, $rsids = [])
-        {
-            $r = new Reader($file, $only_detect_source, $this->resources, $rsids);
-            return $r->read();
-        }
-
-        /**
-         * Get the SNPs as an array.
-         *
-         * @return array The SNPs array
-         */
-        public function getSnps(): array
-        {
-            return $this->_snps;
-        }
-
-        /**
-         * Check if the build was detected.
-         * 
-         * @return bool True if the build was detected, False otherwise
-         */
-        public function isBuildDetected(): bool
-        {   
-            return $this->_build_detected;
+        if (!empty($file)) {
+            $this->readFile();
         }
     }
+
+    public function count(): int
+    {
+        return $this->get_count();
+    }
+
+    /**
+     * Get the value of the source property.
+     *
+     * @return string
+     *   Data source(s) for this `SNPs` object, separated by ", ".
+     */
+    public function getSource(): string
+    {
+        return implode(", ", $this->_source);
+    }
+
+    /**
+     * Magic method to handle property access.
+     *
+     * @param string $name
+     *   The name of the property.
+     *
+     * @return mixed
+     *   The value of the property.
+     */
+    public function __get(string $name)
+    {
+        $getter = 'get' . ucfirst($name);
+        if (method_exists($this, $getter)) {
+            return $this->$getter();
+        }
+        return null; // Or throw an exception for undefined properties
+    }
+
+    protected function readFile()
+    {
+        $d = $this->readRawData($this->file, $this->only_detect_source, $this->rsids);
+        $this->_snps = $d["snps"];
+        $this->_source = (strpos($d["source"], ", ") !== false) ? explode(", ", $d["source"]) : [$d["source"]];
+        $this->_phased = $d["phased"];
+        $this->_build = $d["build"] ?? null;
+        $this->_build_detected = $d["build_detected"] ?? false;
+        // $this->_cluster = $d["cluster"];
+        // $this->_chip = $d["chip"];
+        // $this->_chip_version = $d["chip_version"];
+    }
+
+    protected function readRawData($file, $only_detect_source, $rsids = [])
+    {
+        $r = new Reader($file, $only_detect_source, $this->resources, $rsids);
+        return $r->read();
+    }
+
+    /**
+     * Get the SNPs as an array.
+     *
+     * @return array The SNPs array
+     */
+    public function getSnps(): array
+    {
+        return $this->_snps;
+    }
+
+    /**
+     * Check if the build was detected.
+     * 
+     * @return bool True if the build was detected, False otherwise
+     */
+    public function isBuildDetected(): bool
+    {
+        return $this->_build_detected;
+    }
+
+    /**
+     * Count of SNPs.
+     *
+     * @param string $chrom (optional) Chromosome (e.g., "1", "X", "MT")
+     * @return int The count of SNPs for the given chromosome
+     */
+    public function get_count($chrom = "")
+    {
+        return count($this->_filter($chrom));
+    }
+
+    protected function _filter($chrom = "")
+    {
+        if ($chrom) {
+            $filteredSnps = array_filter($this->_snps, function ($snp) use ($chrom) {
+                return $snp['chrom'] === $chrom;
+            });
+            return array_values($filteredSnps); // Reset array keys
+        } else {
+            return $this->_snps;
+        }
+    }
+}
 
         
 //         protected function initSnps() {
@@ -424,17 +450,7 @@ use Dna\Snps\IO\Reader;
 //             }
 //         }
 
-//         public function getCount(): int
-//         {
-//             // Replace with the relevant implementation for getting the count of SNPs.
-//             // For example: return count($this->_snps);
-//             //
-//             // Returns
-//             // -------
-//             // int
-//             //     The count of SNPs
-//             // TODO: Replace with the appropriate implementation
-//         }
+//        
     
 //         public function getChromosomes(): array
 //         {
@@ -690,10 +706,7 @@ use Dna\Snps\IO\Reader;
 //             );
 //         }
         
-//         public function filter($chrom = "") {
-//             // Filter the snps collection based on the 'chrom' value
-//             return $chrom ? $this->snps->where('chrom', $chrom) : $this->snps;
-//         }
+         
         
 //         public function read_raw_data($file, $only_detect_source, $rsids) {
 //             // Create a new instance of the Reader class
@@ -860,12 +873,7 @@ use Dna\Snps\IO\Reader;
 //             return $build;
 //         }
         
-//         public function get_count($chrom = "") {
-//             // Get the filtered snps collection based on the 'chrom' value
-//             $filteredSnps = $this->filter($chrom);
-//             // Return the count of the filtered snps collection
-//             return count($filteredSnps);
-//         }
+
         
 //         /**
 //          * Determine the sex based on X chromosome SNPs.
@@ -1757,4 +1765,3 @@ use Dna\Snps\IO\Reader;
 
 
 // }
-
