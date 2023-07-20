@@ -519,16 +519,17 @@ class ResourcesTest extends BaseSNPsTestCase
         $dest = $tmpdir . DIRECTORY_SEPARATOR . "generic.fa.gz";
         Utils::gzip_file("tests/input/generic.fa", $dest);
 
-        $seq = new ReferenceSequence("1", $dest);
+        $seq = new ReferenceSequence("1", "", $dest);
         $this->assertEquals($seq->getID(), "1");
         $this->assertEquals($seq->getChrom(), "1");
         $this->assertEquals($seq->getPath(), $dest);
         $this->assertEquals(
             $seq->getSequence(),
-            [
-                "NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNAGGCCGGACNNNNNNNN"
-            ]
-        );
+            array_values(unpack(
+                'C*', 
+                "NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNAGGCCGGACNNNNNNNN",
+            ))
+        );        
         $this->assertEquals(
             str_split("AGGCCGGAC"),
             array_map('chr', array_slice($seq->getSequence(), 100, 9))
