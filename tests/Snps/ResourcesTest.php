@@ -459,31 +459,31 @@ class ResourcesTest extends BaseSNPsTestCase
     }
 
     protected function runReferenceSequenceLoadSequenceTest(string $hash)
-{
-    $callback = function () use ($hash) {
-        $seqs = $this->resource->getReferenceSequences(chroms: ['MT']);
-        $this->assertCount(16569, $seqs['MT']->getSequence());
-        $this->assertEquals($hash, $seqs['MT']->getMd5());
-        $this->assertEquals(1, $seqs['MT']->getStart());
-        $this->assertEquals(16569, $seqs['MT']->getEnd());
-        $this->assertEquals(16569, $seqs['MT']->getLength());
+    {
+        $callback = function () use ($hash) {
+            $seqs = $this->resource->getReferenceSequences(chroms: ['MT']);
+            $this->assertCount(16569, $seqs['MT']->getSequence());
+            $this->assertEquals($hash, $seqs['MT']->getMd5());
+            $this->assertEquals(1, $seqs['MT']->getStart());
+            $this->assertEquals(16569, $seqs['MT']->getEnd());
+            $this->assertEquals(16569, $seqs['MT']->getLength());
 
-        $seqs['MT']->clear();
-        $this->assertEquals(0, $seqs['MT']->getLength());
-        $this->assertEquals('', $seqs['MT']->getMd5());
-        $this->assertEquals(0, $seqs['MT']->getStart());
-        $this->assertEquals(0, $seqs['MT']->getEnd());
-        $this->assertEquals(0, $seqs['MT']->getLength());
+            $seqs['MT']->clear();
+            $this->assertEquals(0, $seqs['MT']->getLength());
+            $this->assertEquals('', $seqs['MT']->getMd5());
+            $this->assertEquals(0, $seqs['MT']->getStart());
+            $this->assertEquals(0, $seqs['MT']->getEnd());
+            $this->assertEquals(0, $seqs['MT']->getLength());
 
-        $this->assertCount(16569, $seqs['MT']->getSequence());
-        $this->assertEquals($hash, $seqs['MT']->getMd5());
-        $this->assertEquals(1, $seqs['MT']->getStart());
-        $this->assertEquals(16569, $seqs['MT']->getEnd());
-        $this->assertEquals(16569, $seqs['MT']->getLength());
-    };
+            $this->assertCount(16569, $seqs['MT']->getSequence());
+            $this->assertEquals($hash, $seqs['MT']->getMd5());
+            $this->assertEquals(1, $seqs['MT']->getStart());
+            $this->assertEquals(16569, $seqs['MT']->getEnd());
+            $this->assertEquals(16569, $seqs['MT']->getLength());
+        };
 
-    $this->runReferenceSequencesTest($callback);
-}
+        $this->runReferenceSequencesTest($callback);
+    }
 
 
     public function testReferenceSequenceLoadSequence()
@@ -502,23 +502,23 @@ class ResourcesTest extends BaseSNPsTestCase
         gzip_file("tests/input/generic.fa", $dest);
 
         $seq = new ReferenceSequence("1", $dest);
-        $this->assertEquals($seq->ID, "1");
-        $this->assertEquals($seq->chrom, "1");
-        $this->assertEquals($seq->path, $dest);
+        $this->assertEquals($seq->getID(), "1");
+        $this->assertEquals($seq->getChrom(), "1");
+        $this->assertEquals($seq->getPath(), $dest);
         $this->assertEquals(
-            $seq->sequence,
+            $seq->getSequence(),
             new \SplFixedArray([
                 "NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNAGGCCGGACNNNNNNNN"
             ])
         );
         $this->assertEquals(
             str_split("AGGCCGGAC"),
-            array_map('chr', array_slice($seq->sequence->toArray(), 100, 9))
+            array_map('chr', array_slice($seq->getSequence(), 100, 9))
         );
-        $this->assertEquals($seq->md5, "6ac6176535ad0e38aba2d05d786c39b6");
-        $this->assertEquals($seq->start, 1);
-        $this->assertEquals($seq->end, 117);
-        $this->assertEquals($seq->length, 117);
+        $this->assertEquals($seq->getMd5(), "6ac6176535ad0e38aba2d05d786c39b6");
+        $this->assertEquals($seq->getStart(), 1);
+        $this->assertEquals($seq->getEnd(), 117);
+        $this->assertEquals($seq->getLength(), 117);
     }
 
     public function testLoadOpenSnpDatadumpFile()
