@@ -15,6 +15,7 @@ use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Psr7\Request;
 use PHPUnit\Framework\TestResult;
 use Psr\Http\Message\UriInterface;
+use ReflectionClass;
 
 class ResourcesTest extends BaseSNPsTestCase
 {
@@ -469,11 +470,26 @@ class ResourcesTest extends BaseSNPsTestCase
             $this->assertEquals(16569, $seqs['MT']->getLength());
 
             $seqs['MT']->clear();
-            $this->assertEquals(0, $seqs['MT']->getLength());
-            $this->assertEquals('', $seqs['MT']->getMd5());
-            $this->assertEquals(0, $seqs['MT']->getStart());
-            $this->assertEquals(0, $seqs['MT']->getEnd());
-            $this->assertEquals(0, $seqs['MT']->getLength());
+            $reflectionSeqs = new ReflectionClass($seqs['MT']);
+            $sequenceProperty = $reflectionSeqs->getProperty('sequence');
+            $md5Property = $reflectionSeqs->getProperty('md5');
+            $startProperty = $reflectionSeqs->getProperty('start');
+            $endProperty = $reflectionSeqs->getProperty('end');
+            $lengthProperty = $reflectionSeqs->getProperty('length');
+
+            $sequenceProperty->setAccessible(true);
+            $md5Property->setAccessible(true);
+            $startProperty->setAccessible(true);
+            $endProperty->setAccessible(true);
+            $lengthProperty->setAccessible(true);
+
+            // Test the private fields after calling clear method
+            $this->assertEquals(0, count($sequenceProperty->getValue($seqs['MT'])));
+            $this->assertEquals('', $md5Property->getValue($seqs['MT']));
+            $this->assertEquals(0, $startProperty->getValue($seqs['MT']));
+            $this->assertEquals(0, $endProperty->getValue($seqs['MT']));
+            $this->assertEquals(0, $lengthProperty->getValue($seqs['MT']));
+
 
             $this->assertCount(16569, $seqs['MT']->getSequence());
             $this->assertEquals($hash, $seqs['MT']->getMd5());

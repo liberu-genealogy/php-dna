@@ -1,4 +1,4 @@
-<?php 
+<?php
 
 namespace Dna\Snps;
 
@@ -148,9 +148,7 @@ class ReferenceSequence
      */
     public function getSequence(): array
     {
-        if ($this->sequence === null) {
-            $this->loadSequence();
-        }
+        $this->loadSequence();
         return $this->sequence;
     }
 
@@ -161,9 +159,7 @@ class ReferenceSequence
      */
     public function getMd5(): string
     {
-        if ($this->md5 === null) {
-            $this->loadSequence();
-        }
+        $this->loadSequence();
         return $this->md5;
     }
 
@@ -174,9 +170,7 @@ class ReferenceSequence
      */
     public function getStart(): int
     {
-        if ($this->start === null) {
-            $this->loadSequence();
-        }
+        $this->loadSequence();        
         return $this->start;
     }
 
@@ -202,45 +196,45 @@ class ReferenceSequence
     }
 
     private function loadSequence(): void
-{
-    if (!count($this->sequence)) {
-        // Decompress and read file
-        $data = file_get_contents($this->_path);
+    {
+        if (!count($this->sequence)) {
+            // Decompress and read file
+            $data = file_get_contents($this->_path);
 
-        // check if file is gzipped
-        if (substr($data, 0, 2) === "\x1f\x8b") {
-            // Decompress the file
-            $data = gzdecode($data);
+            // check if file is gzipped
+            if (substr($data, 0, 2) === "\x1f\x8b") {
+                // Decompress the file
+                $data = gzdecode($data);
+            }
+
+            // Detect character encoding
+            $encoding = mb_detect_encoding($data);
+
+            // Convert to UTF-8 if not already
+            if (!empty($encoding) && $encoding !== 'UTF-8') {
+                $data = mb_convert_encoding($data, 'UTF-8', $encoding);
+            }
+
+            // Split lines
+            $lines = explode(PHP_EOL, $data);
+
+            // Parse the first line
+            [$this->start, $this->end] = array_pad(
+                $this->parseFirstLine($lines[0]),
+                2,
+                ""
+            );
+
+            // Convert str (FASTA sequence) to bytes
+            $fastaSequence = implode("", array_slice($lines, 1));
+
+            // Get MD5 of FASTA sequence
+            $this->md5 = md5($fastaSequence);
+
+            // Store FASTA sequence as an array of integers
+            $this->sequence = array_map('ord', mb_str_split($fastaSequence, 1, 'UTF-8'));
         }
-
-        // Detect character encoding
-        $encoding = mb_detect_encoding($data);
-
-        // Convert to UTF-8 if not already
-        if (!empty($encoding) && $encoding !== 'UTF-8') {
-            $data = mb_convert_encoding($data, 'UTF-8', $encoding);
-        }
-
-        // Split lines
-        $lines = explode(PHP_EOL, $data);
-
-        // Parse the first line
-        [$this->start, $this->end] = array_pad(
-            $this->parseFirstLine($lines[0]),
-            2,
-            ""
-        );
-
-        // Convert str (FASTA sequence) to bytes
-        $fastaSequence = implode("", array_slice($lines, 1));
-
-        // Get MD5 of FASTA sequence
-        $this->md5 = md5($fastaSequence);
-
-        // Store FASTA sequence as an array of integers
-        $this->sequence = array_map('ord', mb_str_split($fastaSequence, 1, 'UTF-8'));
     }
-}
 
 
     private function parseFirstLine(string $firstLine): array
