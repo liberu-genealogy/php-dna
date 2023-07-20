@@ -563,33 +563,24 @@ class ResourcesTest extends BaseSNPsTestCase
         $this->resource->setResourcesDir("./resources");
     }
 
-    // public function testLoadOpenSnpDatadumpFile()
-    // {
-    //     $tmpdir = sys_get_temp_dir();
-    //     $this->resource->setResourcesDir($tmpdir);
+    public function testLoadOpenSnpDatadumpFile()
+    {
+        $tmpdir = sys_get_temp_dir();
+        $this->resource->setResourcesDir($tmpdir);
+        
+        // write test openSNP datadump zip
+        $zipPath = $tmpdir . DIRECTORY_SEPARATOR . "opensnp_datadump.current.zip";
+        $zip = new ZipArchive();
+        $zip->open($zipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE);
+        $zip->addFile("tests/input/generic.csv", "generic1.csv");
+        $zip->addFile("tests/input/generic.csv", "generic2.csv");
+        $zip->close();
 
-    //     // Write test openSNP datadump zip
-    //     $zipPath = $tmpdir . DIRECTORY_SEPARATOR . "opensnp_datadump.current.zip";
-    //     $zip = new \ZipArchive();
-    //     $zip->open($zipPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE);
-    //     $zip->addFile("tests/input/generic.csv", "generic1.csv");
-    //     $zip->addFile("tests/input/generic.csv", "generic2.csv");
-    //     $zip->close();
+        $snps1 = new SNPs($this->resource->loadOpenSNPDatadumpFile("generic1.csv"));
+        $snps2 = new SNPs($this->resource->loadOpenSNPDatadumpFile("generic2.csv"));
 
-    //     $snps1 = new SNPs($this->resource->loadOpenSnpDatadumpFile("generic1.csv"));
-    //     $snps2 = new SNPs($this->resource->loadOpenSnpDatadumpFile("generic2.csv"));
-
-    //     $this->assertDataFrameEquals(
-    //         $snps1->snps,
-    //         $this->genericSnps(),
-    //         true
-    //     );
-    //     $this->assertDataFrameEquals(
-    //         $snps2->snps,
-    //         $this->genericSnps(),
-    //         true
-    //     );
-
-    //     $this->resource->setResourcesDir("resources");
-    // }
+        $this->assertEquals($this->generic_snps(), $snps1->getSnps());
+        $this->assertEquals($this->generic_snps(), $snps2->getSnps());
+        $this->resource->setResourcesDir("resources");
+    }
 }
