@@ -860,6 +860,20 @@ class SNPsResources extends Singleton
         return $this->download_file("https://opensnp.org/data/zip/opensnp_datadump.current.zip", "opensnp_datadump.current.zip");
     }
 
+    public function loadOpenSNPDatadumpFile($filename)
+    {
+        $pathOpensnpDatadump = $this->get_path_opensnp_datadump();
+        if ($pathOpensnpDatadump) {
+            $zip = new ZipArchive();
+            if ($zip->open($pathOpensnpDatadump) === true) {
+                $fileContent = $zip->getFromName($filename);
+                $zip->close();
+                return $fileContent;
+            }
+        }
+        return "";
+    }
+
     private static function _getOpenSNPDatadumpFilenames($filename)
     {
         $filenames = [];
