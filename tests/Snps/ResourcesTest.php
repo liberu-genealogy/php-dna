@@ -8,6 +8,7 @@ use Dna\Resources;
 use Dna\Snps\EnsemblRestClient;
 use Dna\Snps\ReferenceSequence;
 use Dna\Snps\SNPs;
+use Dna\Snps\Utils;
 use GuzzleHttp\Client;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\Psr7\Response;
@@ -16,6 +17,7 @@ use GuzzleHttp\Psr7\Request;
 use PHPUnit\Framework\TestResult;
 use Psr\Http\Message\UriInterface;
 use ReflectionClass;
+
 
 class ResourcesTest extends BaseSNPsTestCase
 {
@@ -511,31 +513,31 @@ class ResourcesTest extends BaseSNPsTestCase
         $this->runReferenceSequenceLoadSequenceTest($hash);
     }
 
-    // public function testReferenceSequenceGenericLoadSequence()
-    // {
-    //     $tmpdir = sys_get_temp_dir();
-    //     $dest = $tmpdir . DIRECTORY_SEPARATOR . "generic.fa.gz";
-    //     gzip_file("tests/input/generic.fa", $dest);
+    public function testReferenceSequenceGenericLoadSequence()
+    {
+        $tmpdir = sys_get_temp_dir();
+        $dest = $tmpdir . DIRECTORY_SEPARATOR . "generic.fa.gz";
+        Utils::gzip_file("tests/input/generic.fa", $dest);
 
-    //     $seq = new ReferenceSequence("1", $dest);
-    //     $this->assertEquals($seq->getID(), "1");
-    //     $this->assertEquals($seq->getChrom(), "1");
-    //     $this->assertEquals($seq->getPath(), $dest);
-    //     $this->assertEquals(
-    //         $seq->getSequence(),
-    //         new \SplFixedArray([
-    //             "NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNAGGCCGGACNNNNNNNN"
-    //         ])
-    //     );
-    //     $this->assertEquals(
-    //         str_split("AGGCCGGAC"),
-    //         array_map('chr', array_slice($seq->getSequence(), 100, 9))
-    //     );
-    //     $this->assertEquals($seq->getMd5(), "6ac6176535ad0e38aba2d05d786c39b6");
-    //     $this->assertEquals($seq->getStart(), 1);
-    //     $this->assertEquals($seq->getEnd(), 117);
-    //     $this->assertEquals($seq->getLength(), 117);
-    // }
+        $seq = new ReferenceSequence("1", $dest);
+        $this->assertEquals($seq->getID(), "1");
+        $this->assertEquals($seq->getChrom(), "1");
+        $this->assertEquals($seq->getPath(), $dest);
+        $this->assertEquals(
+            $seq->getSequence(),
+            [
+                "NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNAGGCCGGACNNNNNNNN"
+            ]
+        );
+        $this->assertEquals(
+            str_split("AGGCCGGAC"),
+            array_map('chr', array_slice($seq->getSequence(), 100, 9))
+        );
+        $this->assertEquals($seq->getMd5(), "6ac6176535ad0e38aba2d05d786c39b6");
+        $this->assertEquals($seq->getStart(), 1);
+        $this->assertEquals($seq->getEnd(), 117);
+        $this->assertEquals($seq->getLength(), 117);
+    }
 
     // public function testLoadOpenSnpDatadumpFile()
     // {
