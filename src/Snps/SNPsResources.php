@@ -975,7 +975,7 @@ class SNPsResources extends Singleton
                 // check if the file is gzipped
                 if (substr($data, 0, 2) === "\x1f\x8b") {
                     $data = gzdecode($data);
-                    $compress = true;
+                    // $compress = true;
                 }
 
 
