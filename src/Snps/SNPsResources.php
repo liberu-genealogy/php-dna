@@ -43,6 +43,44 @@ class SNPsResources extends Singleton
      */
     private EnsemblRestClient $_ensembl_rest_client;
 
+        /**
+     * An array of reference sequences
+     * @var array
+     */
+    private array $_reference_sequences;
+
+    /**
+     * A map of GSA RSIDs to chromosome positions
+     * @var array|null
+     */
+    private ?array $_gsa_rsid_map;
+
+    /**
+     * A map of GSA chromosome positions to RSIDs
+     * @var array|null
+     */
+    private ?array $_gsa_chrpos_map;
+
+    /**
+     * A map of dbSNP 151 to GRCh37 reverse mappings
+     * @var array|null
+     */
+    private ?array $_dbsnp_151_37_reverse;
+
+    /**
+     * An array of filenames for the OpenSNP datadump
+     * @var array
+     */
+    private array $_opensnp_datadump_filenames;
+
+    /**
+     * A map of chip clusters
+     * @var array|null
+     */
+    private ?array $_chip_clusters;
+    
+
+    private ?array $_lowQualitySnps = null;
 
 
     private $logger = null;
@@ -85,49 +123,6 @@ class SNPsResources extends Singleton
     {
         $this->_ensembl_rest_client = $rest_client;
     }
-
-    /**
-     * An array of reference sequences
-     * @var array
-     */
-    private array $_reference_sequences;
-
-    /**
-     * A map of GSA RSIDs to chromosome positions
-     * @var array|null
-     */
-    private ?array $_gsa_rsid_map;
-
-    /**
-     * A map of GSA chromosome positions to RSIDs
-     * @var array|null
-     */
-    private ?array $_gsa_chrpos_map;
-
-    /**
-     * A map of dbSNP 151 to GRCh37 reverse mappings
-     * @var array|null
-     */
-    private ?array $_dbsnp_151_37_reverse;
-
-    /**
-     * An array of filenames for the OpenSNP datadump
-     * @var array
-     */
-    private array $_opensnp_datadump_filenames;
-
-    /**
-     * A map of chip clusters
-     * @var array|null
-     */
-    private ?array $_chip_clusters;
-
-    /**
-     * An array of low quality SNPs
-     * @var array|null
-     */
-    private ?array $_low_quality_snps;
-
     /**
      * Initializes the resource attributes
      */
@@ -230,18 +225,6 @@ class SNPsResources extends Singleton
 
         return $seqs;
     }
-
-
-    // /**
-    //  * Retrieves paths to reference sequences for the specified assembly and chromosomes
-    //  * @param string $assembly The assembly to retrieve reference sequence paths for
-    //  * @param array $chroms The chromosomes to retrieve reference sequence paths for
-    //  * @return array An array of paths to reference sequences
-    //  */
-    // private function getPathsReferenceSequences(string $assembly, array $chroms): array {
-    //     // TODO: Implement reference sequence path retrieval
-    //     return [];
-    // }
 
     /**
      * Get assembly mapping data.
@@ -431,8 +414,6 @@ class SNPsResources extends Singleton
      *
      * @return array The low quality SNPs data.
      */
-    private ?array $_lowQualitySnps = null;
-
     public function getLowQualitySNPs(): array
     {
         // If the low quality SNPs data has not been loaded yet, download and process it.
@@ -559,13 +540,13 @@ class SNPsResources extends Singleton
     public function getOpensnpDatadumpFilenames(): array
     {
         // If the OpenSNP datadump filenames have not been loaded yet, load them from the path.
-        if (!$this->opensnpDatadumpFilenames) {
-            $this->opensnpDatadumpFilenames = $this->getOpensnpDatadumpFilenamesFromPath(
-                $this->getPathOpensnpDatadump()
+        if (!$this->_opensnp_datadump_filenames) {
+            $this->_opensnp_datadump_filenames = $this->_getOpenSNPDatadumpFilenames(
+                $this->get_path_opensnp_datadump()
             );
         }
         // Return the OpenSNP datadump filenames.
-        return $this->opensnpDatadumpFilenames;
+        return $this->_opensnp_datadump_filenames;
     }
 
     /**
@@ -615,55 +596,6 @@ class SNPsResources extends Singleton
         // Return the assembly mapping data.
         return $assembly_mapping_data;
     }
-
-    /**
-     * Get the paths to reference sequences for a given assembly and set of chromosomes.
-     *
-     * @param string $sub_dir The subdirectory to download the reference sequences to.
-     * @param string $assembly The assembly to get the reference sequences for.
-     * @param array $chroms The chromosomes to get the reference sequences for.
-     * @return array An array containing the assembly, chromosomes, URLs, and local filenames of the reference sequences.
-     */
-    // public function getPathsReferenceSequences(
-    //     string $sub_dir = "fasta",
-    //     string $assembly = "GRCh37",
-    //     array $chroms = []
-    // ): array {
-    //     // Determine the base URL and release number based on the assembly.
-    //     if ($assembly === "GRCh37") {
-    //         $base = "ftp://ftp.ensembl.org/pub/grch37/release-96/fasta/homo_sapiens/dna/";
-    //         $release = "";
-    //     } elseif ($assembly === "NCBI36") {
-    //         $base = "ftp://ftp.ensembl.org/pub/release-54/fasta/homo_sapiens/dna/";
-    //         $release = "54.";
-    //     } elseif ($assembly === "GRCh38") {
-    //         $base = "ftp://ftp.ensembl.org/pub/release-96/fasta/homo_sapiens/dna/";
-    //         $release = "";
-    //     } else {
-    //         // If the assembly is not recognized, return an empty array.
-    //         return ["", [], [], []];
-    //     }
-
-    //     // Generate the filenames, URLs, and local filenames for the reference sequences.
-    //     $filenames = array_map(
-    //         fn ($chrom) => "Homo_sapiens.{$assembly}.{$release}dna.chromosome.{$chrom}.fa.gz",
-    //         $chroms
-    //     );
-
-    //     $urls = array_map(fn ($filename) => "{$base}{$filename}", $filenames);
-
-    //     $local_filenames = array_map(
-    //         fn ($filename) => "{$sub_dir}" . DIRECTORY_SEPARATOR . "{$assembly}" . DIRECTORY_SEPARATOR . "{$filename}",
-    //         $filenames
-    //     );
-
-    //     // Download the reference sequences and return the assembly, chromosomes, URLs, and local filenames.
-    //     $downloads = array_map(function ($url, $localFilename) {
-    //         return $this->download_file($url, $localFilename);
-    //     }, $urls, $local_filenames);
-
-    //     return [$assembly, $chroms, $urls, $downloads];
-    // }
 
     public function getPathsReferenceSequences(
         string $subDir = "fasta",
@@ -871,10 +803,6 @@ class SNPsResources extends Singleton
 
         return $this->_gsa_rsid_map;
     }
-
-
-
-
     /**
      * Get the GSA chrpos map.
      *
@@ -930,6 +858,21 @@ class SNPsResources extends Singleton
     {
         // Download the OpenSNP datadump file and return its path.
         return $this->download_file("https://opensnp.org/data/zip/opensnp_datadump.current.zip", "opensnp_datadump.current.zip");
+    }
+
+    private static function _getOpenSNPDatadumpFilenames($filename)
+    {
+        $filenames = [];
+        if ($filename) {
+            $zip = new ZipArchive();
+            if ($zip->open($filename) === true) {
+                for ($i = 0; $i < $zip->numFiles; $i++) {
+                    $filenames[] = $zip->getNameIndex($i);
+                }
+                $zip->close();
+            }
+        }
+        return $filenames;
     }
 
     /**
