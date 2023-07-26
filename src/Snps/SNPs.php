@@ -130,6 +130,7 @@ class SNPs implements Countable
 
     protected function readFile()
     {
+        // print_r($this->file);
         $d = $this->readRawData($this->file, $this->only_detect_source, $this->rsids);
         $this->_snps = $d["snps"];
         $this->_source = (strpos($d["source"], ", ") !== false) ? explode(", ", $d["source"]) : [$d["source"]];

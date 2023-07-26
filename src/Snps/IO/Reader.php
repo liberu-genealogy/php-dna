@@ -53,6 +53,7 @@ class Reader
 
         // Peek into files to determine the data format
         if (is_string($file) && file_exists($file)) {
+            var_dump($file);
             if (strpos($file, ".zip") !== false) {
                 $zip = new ZipArchive();
                 if ($zip->open($file) === true) {
@@ -73,6 +74,7 @@ class Reader
                 $compression = "gzip";
             } else {
                 $fileContents = file_get_contents($file);
+                var_dump($fileContents);
                 $read_data = $this->_handle_bytes_data($fileContents);
             }
         } elseif (is_string($file)) {
@@ -82,6 +84,7 @@ class Reader
             return $d;
         }
 
+        var_dump($read_data);
         $first_line = $read_data["first_line"] ?? '';
         $comments = $read_data["comments"] ?? '';
         $data = $read_data["data"] ?? '';

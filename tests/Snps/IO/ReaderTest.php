@@ -158,11 +158,11 @@ final class ReaderTest extends BaseSNPsTestCase
     //         self.run_parsing_tests("tests/input/codigo46.txt", "Codigo46")
     //         self._teardown_gsa_test()
 
-    // public function testReadCodigo46()
-    // {
-    //     // https://codigo46.com.mx
-    //     $this->run_parse_tests("tests/input/codigo46.txt", "Codigo46");
-    // }
+    public function testReadCodigo46()
+    {
+        // https://codigo46.com.mx
+        $this->run_parse_tests("tests/input/codigo46.txt", "Codigo46");
+    }
 
     // def test_read_tellmeGen(self):
     //     # https://www.tellmegen.com/

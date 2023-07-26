@@ -103,14 +103,6 @@ abstract class BaseSNPsTestCase extends TestCase
         return $df;
     }
 
-    // def generic_snps(self):
-    //     return self.create_snp_df(
-    //         rsid=["rs" + str(i) for i in range(1, 9)],
-    //         chrom=["1"] * 8,
-    //         pos=list(range(101, 109)),
-    //         genotype=["AA", "CC", "GG", "TT", np.nan, "GC", "TC", "AT"],
-    //     )
-
     protected function generic_snps()
     {
         $rsid = [];
@@ -168,34 +160,29 @@ abstract class BaseSNPsTestCase extends TestCase
     //     )
     //     self.make_normalized_dataframe_assertions(snps.snps)
 
-    public function make_parsing_assertions(
-        $snps,
-        $source,
-        $phased,
-        $build,
-        $build_detected,
-        $snps_df
+    protected function make_parsing_assertions(
+        $snps, $source, $phased, $build, $build_detected, $snps_df
     ) {
-        if (empty($snps_df))
+        if ($snps_df === null) {
             $snps_df = $this->generic_snps();
+        }
 
-        // # these are useful for debugging if there is a problem
-        // print("Observed:")
-        // print(snps.snps)
-        // print(snps.snps.info())
-        // print("Expected:")
-        // print(snps_df)
-        // print(snps_df.info())
+        // These are useful for debugging if there is a problem
+        echo "Observed:\n";
+        print_r($snps['snps']);
+        print_r($snps['snps']['info']());
+        echo "Expected:\n";
+        print_r($snps_df);
+        print_r($snps_df['info']());
 
-        $this->assertEquals($snps->source, $source);
-        // pd.testing.assert_frame_equal(snps.snps, snps_df, check_exact=True)
-        // self.assertTrue(snps.phased) if phased else self.assertFalse(snps.phased)
-        // self.assertEqual(snps.build, build)
-        // self.assertTrue(snps.build_detected) if build_detected else self.assertFalse(
-        //     snps.build_detected
-        // )
-        // self.make_normalized_dataframe_assertions(snps.snps)
+        $this->assertEquals($snps['source'], $source);
+        $this->assertEquals($snps['snps'], $snps_df);
+        $this->assertTrue($snps['phased']) ?: $this->assertFalse($snps['phased']);
+        $this->assertEquals($snps['build'], $build);
+        $this->assertTrue($snps['build_detected']) ?: $this->assertFalse($snps['build_detected']);
+        // $this->makeNormalizedDataframeAssertions($snps['snps']);
     }
+
 
     public function parse_file($file, $rsids = [])
     {
