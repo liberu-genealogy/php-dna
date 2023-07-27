@@ -535,6 +535,7 @@ class Reader
             $csv->setHeaderOffset($headerRowIndex);
 
             foreach ($csv->getRecords() as $record) {
+                // print_r($record);
                 if (isset($record['rsid']) && strpos($record['rsid'], '#') === 0) {
                     continue;
                 }
@@ -579,6 +580,8 @@ class Reader
 
                 $data[] = $entry;
             }
+
+            print_r(count($data));
 
             return [$data];
         };

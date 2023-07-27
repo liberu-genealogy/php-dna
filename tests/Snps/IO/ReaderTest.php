@@ -134,13 +134,16 @@ final class ReaderTest extends BaseSNPsTestCase
         $snps_df = $this->create_snp_df(
             array_map(function ($i) {
                 return "rs" . (1 + $i);
-            }, range(0, $total_snps)),
+            }, range(0, $total_snps - 1)),
             "1",
             array_map(function ($i) {
                 return 101 + $i;
-            }, range(0, $total_snps)),
+            }, range(0, $total_snps - 1)),
             "AA"
         );
+
+        echo "snps_df: \n";
+        print_r($snps_df);
 
         $path = tempnam(sys_get_temp_dir(), "ancestry_extra_tab.txt");
         file_put_contents($path, $s);
