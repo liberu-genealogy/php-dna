@@ -97,9 +97,15 @@ abstract class BaseSNPsTestCase extends TestCase
         mixed $pos, 
         mixed $genotype)
     {
-        $df = [
-            ["rsid" => $rsid, "chrom" => $chrom, "pos" => $pos, "genotype" => $genotype],
-        ];
+        $df = [];
+        foreach ($rsid as $i => $r) {
+            $df[] = [
+                "rsid" => $rsid[$i], 
+                "chrom" => $chrom[$i], 
+                "pos" => $pos[$i], 
+                "genotype" => $genotype[$i],
+            ];
+        }
         return $df;
     }
 
@@ -173,17 +179,17 @@ abstract class BaseSNPsTestCase extends TestCase
 
         // These are useful for debugging if there is a problem
         echo "Observed:\n";
-        print_r($snps->snps);
+        // print_r($snps->snps);
         // print_r($snps->snps['info']());
         echo "Expected:\n";
-        print_r($snps_df);
+        // print_r($snps_df);
         // print_r($snps_df['info']());
 
         $this->assertEquals($source, $snps->getSource());
         $this->assertEquals($snps_df, $snps->snps);
         // $this->assertTrue($snps['phased']) ?: $this->assertFalse($snps['phased']);
-        $this->assertEquals($build, $snps['build']);
-        $this->assertTrue($snps['build_detected']) ?: $this->assertFalse($snps['build_detected']);
+        $this->assertEquals($build, $snps->build);
+        $this->assertTrue($snps->build_detected) ?: $this->assertFalse($snps->build_detected);
         // $this->makeNormalizedDataframeAssertions($snps['snps']);
     }
 

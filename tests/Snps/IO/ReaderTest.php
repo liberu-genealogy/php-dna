@@ -2,31 +2,34 @@
 
 namespace DnaTest\Snps\IO;
 
+use Dna\Resources;
 use Dna\Snps\SNPsResources;
+use Dna\Snps\Utils;
 use DnaTest\Snps\BaseSNPsTestCase;
 
 final class ReaderTest extends BaseSNPsTestCase
 {
 
-    // public static function setupGsaTest($resourcesDir) {
-    //     // reset resource if already loaded
-    //     $r = new SNPsResources();
-    //     $r->_resources_dir = $resourcesDir;
-    //     $r->_init_resource_attributes();
+    public static function setupGsaTest($resourcesDir) {
+        // reset resource if already loaded
+        $r = new Resources(
+            resources_dir: $resourcesDir,
+        );
+        $r->init_resource_attributes();
 
-    //     gzip_file(
-    //         "tests/resources/gsa_rsid_map.txt",
-    //         $resourcesDir . "/gsa_rsid_map.txt.gz"
-    //     );
-    //     gzip_file(
-    //         "tests/resources/gsa_chrpos_map.txt",
-    //         $resourcesDir . "/gsa_chrpos_map.txt.gz"
-    //     );
-    //     gzip_file(
-    //         "tests/resources/dbsnp_151_37_reverse.txt",
-    //         $resourcesDir . "/dbsnp_151_37_reverse.txt.gz"
-    //     );
-    // }
+        Utils::gzip_file(
+            "tests/resources/gsa_rsid_map.txt",
+            $resourcesDir . "/gsa_rsid_map.txt.gz"
+        );
+        Utils::gzip_file(
+            "tests/resources/gsa_chrpos_map.txt",
+            $resourcesDir . "/gsa_chrpos_map.txt.gz"
+        );
+        Utils::gzip_file(
+            "tests/resources/dbsnp_151_37_reverse.txt",
+            $resourcesDir . "/dbsnp_151_37_reverse.txt.gz"
+        );
+    }
 
     public function testRead23AndMe()
     {
