@@ -2,9 +2,15 @@
 
 namespace Dna\Snps\IO;
 
+
+
 use Dna\Snps\SNPsResources;
 use League\Csv\Reader as CsvReader;
+use php_user_filter;
 use ZipArchive;
+
+stream_filter_register("extra_tabs_filter", ExtraTabsFilter::class) or die("Failed to register filter");
+
 
 /**
  * Class for reading and parsing raw data / genotype files.
@@ -53,8 +59,8 @@ class Reader
         );
 
         // Peek into files to determine the data format
+        var_dump($file);
         if (is_string($file) && file_exists($file)) {
-            var_dump($file);
             if (strpos($file, ".zip") !== false) {
                 $zip = new ZipArchive();
                 if ($zip->open($file) === true) {
@@ -509,55 +515,6 @@ class Reader
     }
 
 
-    // def read_ancestry(self, file, compression):
-    //     """Read and parse Ancestry.com file.
-
-    //     http://www.ancestry.com
-
-    //     Parameters
-    //     ----------
-    //     file : str
-    //         path to file
-
-    //     Returns
-    //     -------
-    //     dict
-    //         result of `read_helper`
-    //     """
-
-    //     def parser():
-    //         df = pd.read_csv(
-    //             file,
-    //             comment="#",
-    //             header=0,
-    //             engine="c",
-    //             sep=r"\s+",
-    //             # delim_whitespace=True,  # https://stackoverflow.com/a/15026839
-    //             na_values=0,
-    //             names=["rsid", "chrom", "pos", "allele1", "allele2"],
-    //             index_col=0,
-    //             dtype=TWO_ALLELE_DTYPES,
-    //             compression=compression,
-    //         )
-
-    //         # create genotype column from allele columns
-    //         df["genotype"] = df["allele1"] + df["allele2"]
-
-    //         # delete allele columns
-    //         # http://stackoverflow.com/a/13485766
-    //         del df["allele1"]
-    //         del df["allele2"]
-
-    //         # https://redd.it/5y90un
-    //         df.iloc[np.where(df["chrom"] == "23")[0], 0] = "X"
-    //         df.iloc[np.where(df["chrom"] == "24")[0], 0] = "Y"
-    //         df.iloc[np.where(df["chrom"] == "25")[0], 0] = "PAR"
-    //         df.iloc[np.where(df["chrom"] == "26")[0], 0] = "MT"
-
-    //         return (df,)
-
-    //     return self.read_helper("AncestryDNA", parser)
-
     /**
      * Reads and parses an Ancestry.com file.
      *
@@ -570,16 +527,19 @@ class Reader
         $parser = function () use ($file) {
             $data = [];
             $csv = CsvReader::createFromPath($file, 'r');
+            if ($csv->supportsStreamFilterOnRead()) 
+                $csv->addStreamFilter('extra_tabs_filter');
             $csv->setDelimiter("\t");
 
             $headerRowIndex = $this->findHeaderRow($csv);
-            print_r($headerRowIndex);
             $csv->setHeaderOffset($headerRowIndex);
 
             foreach ($csv->getRecords() as $record) {
                 if (isset($record['rsid']) && strpos($record['rsid'], '#') === 0) {
                     continue;
                 }
+
+                // print_r($record);
 
                 $na_values = [0];
                 foreach ($record as $key => $value) {
@@ -595,6 +555,7 @@ class Reader
                     'pos' => $record['position'],
                     'genotype' => $record['allele1'] . $record['allele2']
                 ];
+
 
                 if (empty($entry['genotype'])) {
                     $entry['genotype'] = null;

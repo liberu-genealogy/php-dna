@@ -101,9 +101,9 @@ abstract class BaseSNPsTestCase extends TestCase
         foreach ($rsid as $i => $r) {
             $df[] = [
                 "rsid" => $rsid[$i], 
-                "chrom" => $chrom[$i], 
-                "pos" => $pos[$i], 
-                "genotype" => $genotype[$i],
+                "chrom" => is_array($chrom) ? $chrom[$i] : $chrom, 
+                "pos" => is_array($pos) ? $pos[$i] : $pos, 
+                "genotype" => is_array($genotype) ? $genotype[$i] : $genotype,
             ];
         }
         return $df;
@@ -178,9 +178,9 @@ abstract class BaseSNPsTestCase extends TestCase
         }
 
         // These are useful for debugging if there is a problem
-        // echo "Observed:\n";
+        echo "Observed:\n";
         // echo $snps->isBuildDetected() . "\n";
-        // print_r($snps->snps);
+        // print_r($snps->getSnps());
         // print_r($snps->snps['info']());
         // echo "Expected:\n";
         // echo $build . "\n";

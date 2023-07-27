@@ -145,7 +145,7 @@ final class ReaderTest extends BaseSNPsTestCase
         $path = tempnam(sys_get_temp_dir(), "ancestry_extra_tab.txt");
         file_put_contents($path, $s);
 
-        $this->run_parse_tests($path, "AncestryDNA", $snps_df);
+        $this->run_parse_tests($path, "AncestryDNA", snps_df: $snps_df);
     }
 
     public function testReadAncestryMultiSep()
