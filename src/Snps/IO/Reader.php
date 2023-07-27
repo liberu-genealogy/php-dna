@@ -3,6 +3,7 @@
 namespace Dna\Snps\IO;
 
 use Dna\Snps\SNPsResources;
+use League\Csv\Reader as CsvReader;
 use ZipArchive;
 
 /**
@@ -58,11 +59,8 @@ class Reader
                 $zip = new ZipArchive();
                 if ($zip->open($file) === true) {
                     $firstEntry = $zip->getNameIndex(0);
-                    $firstEntryFile = $zip->getStream($firstEntry);
-                    $first_line = '';
-                    $comments = '';
-                    $data = '';
-                    $this->_extract_comments($firstEntryFile, true, $first_line, $comments, $data);
+                    $firstEntryFile = $zip->getStream($firstEntry);                   
+                    $read_data = $this->_extract_comments($firstEntryFile, true, true);
                     $compression = "zip";
                     $zip->close();
                 }
@@ -74,7 +72,6 @@ class Reader
                 $compression = "gzip";
             } else {
                 $fileContents = file_get_contents($file);
-                var_dump($fileContents);
                 $read_data = $this->_handle_bytes_data($fileContents);
             }
         } elseif (is_string($file)) {
@@ -89,7 +86,11 @@ class Reader
         $comments = $read_data["comments"] ?? '';
         $data = $read_data["data"] ?? '';
 
+        print_r(strpos($first_line, "[Header]"));
+        echo "now checking...\n";
+
         if (strpos($first_line, "23andMe") !== false) {
+            print_r("23andme");
             // Some 23andMe files have separate alleles
             if (str_ends_with(trim($comments), "# rsid\tchromosome\tposition\tallele1\tallele2")) {
                 $d = $this->read_23andme($file, $compression, false);
@@ -104,7 +105,13 @@ class Reader
             }
         } 
         else if (strpos($first_line, 'AncestryDNA') !== false) {
+            print_r("AncestryDNA");
             $d = $this->read_ancestry($file, $compression);
+        }
+        else if (str_starts_with($first_line, "[Header]")) {
+            print_r("GSA");
+            # Global Screening Array, includes SANO and CODIGO46
+            $d = $this->readGsa($file, $compression, $comments);
         }
 
 
@@ -125,6 +132,10 @@ class Reader
         $comments = "";
         $data = "";
 
+        echo "Read line\n";
+        print_r($line);
+        var_dump(strpos($first_line, "[Header]"));
+
         if (strpos($first_line, "#") === 0) {
             while (strpos($line, "#") === 0) {
                 $comments .= $line;
@@ -139,7 +150,10 @@ class Reader
                 }
             }
         } elseif (strpos($first_line, "[Header]") === 0) {
-            while (!strpos($line, "[Data]") === 0) {
+            echo "Read [Header]\n";
+            while (strpos($line, "[Data]") !== 0) {
+                echo "Read line\n";
+                print_r($line);
                 $comments .= $line;
                 $line = $this->readLine($f, $decode);
             }
@@ -163,6 +177,7 @@ class Reader
         if (!$f instanceof ZipArchive) {
             fseek($f, 0);
         }
+
 
         return compact('first_line', 'comments', 'data');
     }
@@ -597,4 +612,206 @@ class Reader
 
         return $this->read_helper("AncestryDNA", $parser);
     }
+
+    /**
+ * Read and parse Illumina Global Screening Array files
+ *
+ * @param string $dataOrFilename Either the filename to read from or the bytes data itself.
+ * @param string $compression Compression type
+ * @param string $comments Comments related to the data
+ * 
+ * @return array Result of `readHelper`
+ */
+public function readGsa($dataOrFilename, $compression, $comments)
+{
+    // Pick the source
+    // Ideally we want something more specific than GSA
+    if (strpos($comments, 'SANO') !== false) {
+        $source = 'Sano';
+    } elseif (strpos($comments, 'CODIGO46') !== false) {
+        $source = 'Codigo46';
+    } else {
+        // Default to generic global screening array
+        $source = 'GSA';
+    }
+
+    return $this->_readGsaHelper($dataOrFilename, $source);
+}
+
+protected function _readGsaHelper($file, $source)
+{
+    $parser = function() use($file, $source) {
+        // Read the comments so we get to the actual data
+        if (is_string($file)) {
+            try {
+                $handle = fopen($file, "rb");
+                if ($handle === false) {
+                    throw new \RuntimeException("Failed to open file: $file");
+                }
+                $extracted = $this->_extract_comments($handle, true, true);
+                $data = $extracted['data'];
+            } catch (\InvalidArgumentException $e) {
+                // compressed file on filesystem
+                $handle = fopen($file, "rb");
+                if ($handle === false) {
+                    throw new \RuntimeException("Failed to open file: $file");
+                }
+                $data = stream_get_contents($handle);
+                if ($data === false) {
+                    throw new \RuntimeException("Failed to read from file: $file");
+                }
+                $bytes_data = $this->_handle_bytes_data($data, true);
+                $data = $bytes_data['data'];
+            } finally {
+                if (isset($handle) && is_resource($handle)) {
+                    fclose($handle);
+                }
+            }
+        } else {
+            $data = stream_get_contents($file);
+            $bytes_data = $this->_handle_bytes_data($data, true);
+            $data = $bytes_data['data'];
+        }
+    
+        // Read the data into an array for manipulation
+        $csv = CsvReader::createFromString($data);
+        $csv->setDelimiter("\t");
+        $records = $csv->getRecords();
+
+        $dataArr = [];
+        foreach ($records as $offset => $record) {
+            $dataArr[] = $record;
+        }
+
+        // Ensure that 'rsid', 'chrom', 'pos' and 'genotype' are not in the column names
+        if (!in_array('rsid', $dataArr[0]) && !in_array('chrom', $dataArr[0]) 
+            && !in_array('pos', $dataArr[0]) && !in_array('genotype', $dataArr[0])) {
+            
+            // Prefer the specified chromosome and position, if present
+            if (in_array('Chr', $dataArr[0]) && in_array('Position', $dataArr[0])) {
+                // Put the chromosome in the right column with the right type
+                $dataArr = array_map(function ($row) {
+                    $row['chrom'] = (string)$row['Chr'];
+                    $row['pos'] = (int)$row['Position'];
+                    return $row;
+                }, $dataArr);
+
+            } else {
+                // Use an external source to map SNP names to chromosome and position
+                // Assume get_gsa_chrpos returns array with 'gsaname_chrpos', 'gsachr', 'gsapos'
+                $gsaChrPos = $this->resources->getGsaChrpos();
+
+                // Merge the two arrays
+                foreach ($dataArr as $key => $value) {
+                    $posKey = array_search($value['SNP Name'], array_column($gsaChrPos, 'gsaname_chrpos'));
+                    if ($posKey !== false) {
+                        $dataArr[$key] = array_merge($value, $gsaChrPos[$posKey]);
+                        $dataArr[$key]['chrom'] = (string)$dataArr[$key]['gsachr'];
+                        $dataArr[$key]['pos'] = (int)$dataArr[$key]['gsapos'];
+                    }
+                }
+            }
+        }
+
+       // Use the given rsid when available, SNP Name when unavailable
+       foreach ($dataArr as $key => $value) {
+        $dataArr[$key]['rsid'] = (string)$value['SNP Name'];
+        if (isset($value['RsID']) && $value['RsID'] != '.') {
+            $dataArr[$key]['rsid'] = $value['RsID'];
+        } else {
+            // If given RSIDs are not available, then use the external mapping to turn
+            // SNP names into rsids where possible
+            // Assume get_gsa_rsid returns array with 'gsaname_rsid', 'gsarsid'
+            $gsaRsid = $this->resources->getGsaRsid();
+
+            // Merge the two arrays
+            foreach ($dataArr as $k => $v) {
+                $posKey = array_search($v['SNP Name'], array_column($gsaRsid, 'gsaname_rsid'));
+                if ($posKey !== false) {
+                    $dataArr[$k] = array_merge($v, $gsaRsid[$posKey]);
+                    $dataArr[$k]['rsid'] = (string)$dataArr[$k]['gsarsid'];
+                }
+            }
+        }
+
+        // Combine the alleles into genotype
+        // Prefer Plus strand as that is forward reference
+        if (isset($value['Allele1 - Plus']) && isset($value['Allele2 - Plus'])) {
+            $dataArr[$key]['genotype'] = (string)($value['Allele1 - Plus'].$value['Allele2 - Plus']);
+        } elseif (isset($value['Allele1 - Forward']) && isset($value['Allele2 - Forward'])) {
+            // If strand is forward, need to take reverse complement of *some* rsids
+            // This is because it is Illumina forward, which is dbSNP strand, which
+            // is reverse reference for some RSIDs before dbSNP 151.
+
+            // Load list of reversible rsids
+            // Assume get_dbsnp_151_37_reverse returns array with 'dbsnp151revrsid'
+            $dbsnp151 = $this->resources->get_dbsnp_151_37_reverse();
+            $dbsnp151 = array_column($dbsnp151, 'dbsnp151revrsid');
+
+            // Add it as an extra column
+            foreach ($dataArr as $k => $v) {
+                $posKey = array_search($v['rsid'], $dbsnp151);
+                if ($posKey !== false) {
+                    $dataArr[$k]['dbsnp151revrsid'] = $dbsnp151[$posKey];
+                }
+            }
+        }
+
+        // Create plus strand columns from the forward alleles and flip them if appropriate
+        for ($i = 1; $i <= 2; $i++) {
+            foreach ($dataArr as $key => $value) {
+                $dataArr[$key]["Allele{$i} - Plus"] = $value["Allele{$i} - Forward"];
+
+                if ($value["Allele{$i} - Forward"] == "A" && isset($value["dbsnp151revrsid"])) {
+                    $dataArr[$key]["Allele{$i} - Plus"] = "T";
+                }
+                if ($value["Allele{$i} - Forward"] == "T" && isset($value["dbsnp151revrsid"])) {
+                    $dataArr[$key]["Allele{$i} - Plus"] = "A";
+                }
+                if ($value["Allele{$i} - Forward"] == "C" && isset($value["dbsnp151revrsid"])) {
+                    $dataArr[$key]["Allele{$i} - Plus"] = "G";
+                }
+                if ($value["Allele{$i} - Forward"] == "G" && isset($value["dbsnp151revrsid"])) {
+                    $dataArr[$key]["Allele{$i} - Plus"] = "C";
+                }
+
+                // Create a genotype by combining the new plus columns
+                $dataArr[$key]['genotype'] = (string)($value['Allele1 - Plus'].$value['Allele2 - Plus']);
+            }
+        }
+
+        // Mark -- genotype as na
+        foreach ($dataArr as $key => $value) {
+            if ($value['genotype'] == '--') {
+                $dataArr[$key]['genotype'] = null;
+            }
+        }
+
+        // Keep only the columns we want
+        $dataArr = array_map(function($item) {
+            return [
+                'rsid' => $item['rsid'],
+                'chrom' => $item['chrom'],
+                'pos' => $item['pos'],
+                'genotype' => $item['genotype']
+            ];
+        }, $dataArr);
+
+        // Discard rows without values
+        $dataArr = array_filter($dataArr, function($item) {
+            return !is_null($item['rsid']) && !is_null($item['chrom']) && !is_null($item['pos']);
+        });
+
+        // ... Code to reindex for new identifiers, if needed...
+        // df.set_index(["rsid"], inplace=True)
+        return $dataArr;
+    }
+
+    };
+
+    echo "Read helper\n";
+    echo $source;
+    return $this->read_helper($source, $parser);
+}
+
 }
