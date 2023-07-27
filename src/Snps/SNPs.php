@@ -4,6 +4,7 @@
 namespace Dna\Snps;
 
 use Countable;
+use Dna\Resources;
 use Dna\Snps\IO\IO;
 use Dna\Snps\IO\Reader;
 
@@ -46,6 +47,7 @@ class SNPs implements Countable
     private $_build;
     private $_phased;
     private $_build_detected;
+    private $_resources;
 
     /**
      * SNPs constructor.
@@ -66,6 +68,14 @@ class SNPs implements Countable
     public function __construct(
         private $file,
         private bool $only_detect_source = False,
+        private bool $assign_par_snps = False,
+        private string $output_dir = "output",
+        private string $resources_dir = "resources",
+        private bool $deduplicate=True,
+        private bool $deduplicate_XY_chrom=True,
+        private bool $deduplicate_MT_chrom=True,
+        private bool $parallelize=False,
+        private int $processes = 1, // cpu count
         private array $rsids = [],
     ) //, $only_detect_source, $output_dir, $resources_dir, $parallelize, $processes)
     {
@@ -83,7 +93,7 @@ class SNPs implements Countable
         // $this->_build = 0;
         // $this->_build_detected = false;
         // $this->_output_dir = $output_dir;
-        // $this->_resources = new Resources($resources_dir);
+        $this->_resources = new Resources($resources_dir);
         // $this->_parallelizer = new Parallelizer($parallelize, $processes);
         // $this->_cluster = "";
         // $this->_chip = "";

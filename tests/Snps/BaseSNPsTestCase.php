@@ -128,7 +128,7 @@ abstract class BaseSNPsTestCase extends TestCase
     ) {
         $snps = $this->parse_file($file);
         echo "snps:\n";
-        print_r($snps);
+        // print_r($snps);
         
         $this->make_parsing_assertions(
             $snps,

@@ -81,16 +81,14 @@ class Reader
             return $d;
         }
 
-        var_dump($read_data);
+        // var_dump($read_data);
         $first_line = $read_data["first_line"] ?? '';
         $comments = $read_data["comments"] ?? '';
         $data = $read_data["data"] ?? '';
 
-        print_r(strpos($first_line, "[Header]"));
-        echo "now checking...\n";
 
         if (strpos($first_line, "23andMe") !== false) {
-            print_r("23andme");
+            // print_r("23andme");
             // Some 23andMe files have separate alleles
             if (str_ends_with(trim($comments), "# rsid\tchromosome\tposition\tallele1\tallele2")) {
                 $d = $this->read_23andme($file, $compression, false);
@@ -105,11 +103,11 @@ class Reader
             }
         } 
         else if (strpos($first_line, 'AncestryDNA') !== false) {
-            print_r("AncestryDNA");
+            // print_r("AncestryDNA");
             $d = $this->read_ancestry($file, $compression);
         }
         else if (str_starts_with($first_line, "[Header]")) {
-            print_r("GSA");
+            // print_r("GSA");
             # Global Screening Array, includes SANO and CODIGO46
             $d = $this->readGsa($file, $compression, $comments);
         }
@@ -132,9 +130,9 @@ class Reader
         $comments = "";
         $data = "";
 
-        echo "Read line\n";
-        print_r($line);
-        var_dump(strpos($first_line, "[Header]"));
+        // echo "Read line\n";
+        // print_r($line);
+        // var_dump(strpos($first_line, "[Header]"));
 
         if (strpos($first_line, "#") === 0) {
             while (strpos($line, "#") === 0) {
@@ -150,10 +148,7 @@ class Reader
                 }
             }
         } elseif (strpos($first_line, "[Header]") === 0) {
-            echo "Read [Header]\n";
             while (strpos($line, "[Data]") !== 0) {
-                echo "Read line\n";
-                print_r($line);
                 $comments .= $line;
                 $line = $this->readLine($f, $decode);
             }
