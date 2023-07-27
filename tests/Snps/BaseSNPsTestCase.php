@@ -133,7 +133,7 @@ abstract class BaseSNPsTestCase extends TestCase
         $snps_df = null
     ) {
         $snps = $this->parse_file($file);
-        echo "snps:\n";
+        // echo "snps:\n";
         // print_r($snps);
         
         $this->make_parsing_assertions(
@@ -178,12 +178,12 @@ abstract class BaseSNPsTestCase extends TestCase
         }
 
         // These are useful for debugging if there is a problem
-        echo "Observed:\n";
-        echo $snps->getBuild() . "\n";
+        // echo "Observed:\n";
+        // echo $snps->isBuildDetected() . "\n";
         // print_r($snps->snps);
         // print_r($snps->snps['info']());
-        echo "Expected:\n";
-        echo $build . "\n";
+        // echo "Expected:\n";
+        // echo $build . "\n";
         // print_r($snps_df);
         // print_r($snps_df['info']());
 
@@ -191,7 +191,11 @@ abstract class BaseSNPsTestCase extends TestCase
         $this->assertEquals($snps_df, $snps->getSnps());
         // $this->assertTrue($snps['phased']) ?: $this->assertFalse($snps['phased']);
         $this->assertEquals($build, $snps->getBuild());
-        $this->assertTrue($snps->build_detected) ?: $this->assertFalse($snps->build_detected);
+        if ($build_detected) {
+            $this->assertTrue($snps->isBuildDetected());
+        } else {
+            $this->assertFalse($snps->isBuildDetected());
+        }
         // $this->makeNormalizedDataframeAssertions($snps['snps']);
     }
 

@@ -90,8 +90,8 @@ class SNPs implements Countable
         // $this->_discrepant_merge_genotypes = new DataFrame();
         $this->_source = [];
         // $this->_phased = false;
-        // $this->_build = 0;
-        // $this->_build_detected = false;
+        $this->_build = 0;
+        $this->_build_detected = false;
         // $this->_output_dir = $output_dir;
         $this->_resources = new Resources($resources_dir);
         // $this->_parallelizer = new Parallelizer($parallelize, $processes);
@@ -146,7 +146,7 @@ class SNPs implements Countable
         $this->_source = (strpos($d["source"], ", ") !== false) ? explode(", ", $d["source"]) : [$d["source"]];
         $this->_phased = $d["phased"];
         $this->_build = $d["build"] ?? null;
-        $this->_build_detected = $d["build_detected"] ?? false;
+        $this->_build_detected = empty($d["build_detected"]) ? false : $d["build_detected"];
         // $this->_cluster = $d["cluster"];
         // $this->_chip = $d["chip"];
         // $this->_chip_version = $d["chip_version"];
@@ -199,7 +199,7 @@ class SNPs implements Countable
     }
 
     /**
-     * Check if the build was detected.
+     * Status indicating if build of SNPs was detected.
      * 
      * @return bool True if the build was detected, False otherwise
      */
