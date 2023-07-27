@@ -557,16 +557,17 @@ class Reader
     //         return (df,)
 
     //     return self.read_helper("AncestryDNA", parser)
-    
+
     /**
      * Reads and parses an Ancestry.com file.
      *
      * @param string $file Path to file
      * @return array Result of `read_helper`
      */
-    public function read_ancestry($file) {
+    public function read_ancestry($file)
+    {
 
-        $parser = function() use ($file) {
+        $parser = function () use ($file) {
             $data = [];
             $csv = CsvReader::createFromPath($file, 'r');
             $csv->setDelimiter("\t");
@@ -574,10 +575,17 @@ class Reader
             $headerRowIndex = $this->findHeaderRow($csv);
             print_r($headerRowIndex);
             $csv->setHeaderOffset($headerRowIndex);
-           
+
             foreach ($csv->getRecords() as $record) {
                 if (isset($record['rsid']) && strpos($record['rsid'], '#') === 0) {
                     continue;
+                }
+
+                $na_values = [0];
+                foreach ($record as $key => $value) {
+                    if (in_array($value, $na_values)) {
+                        $record[$key] = null;
+                    }
                 }
 
                 // Create an array with the rsid, chrom, pos, and genotype
@@ -587,6 +595,10 @@ class Reader
                     'pos' => $record['position'],
                     'genotype' => $record['allele1'] . $record['allele2']
                 ];
+
+                if (empty($entry['genotype'])) {
+                    $entry['genotype'] = null;
+                }
 
                 // Adjust chrom values
                 switch ($entry['chrom']) {
@@ -619,7 +631,8 @@ class Reader
      * @param Reader $csv CSV reader
      * @return int Index of header row
      */
-    private function findHeaderRow($csv) {
+    private function findHeaderRow($csv)
+    {
         foreach ($csv as $index => $record) {
             if (strpos($record[0], '#') !== 0) {
                 return $index;
