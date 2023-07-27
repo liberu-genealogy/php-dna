@@ -508,10 +508,6 @@ class Reader
         return $this->read_helper("23andMe", $parser);
     }
 
-    private function isValid($row, $key, $na_values)
-    {
-        return isset($row[$key]) && !in_array($row[$key], $na_values);
-    }
 
     // def read_ancestry(self, file, compression):
     //     """Read and parse Ancestry.com file.
@@ -561,63 +557,75 @@ class Reader
     //         return (df,)
 
     //     return self.read_helper("AncestryDNA", parser)
+    
     /**
-     * Read and parse Ancestry.com file.
+     * Reads and parses an Ancestry.com file.
      *
-     * @param string $file         Path to the file
-     * @param string $compression  Compression type (e.g., gzip)
-     *
-     * @return array  Result of `read_helper`
+     * @param string $file Path to file
+     * @return array Result of `read_helper`
      */
-    function read_ancestry($file, $compression)
-    {
-        $parser = function () use ($file, $compression) {
+    public function read_ancestry($file) {
 
+        $parser = function() use ($file) {
             $data = [];
-            $lines = file($file);
+            $csv = CsvReader::createFromPath($file, 'r');
+            $csv->setDelimiter("\t");
 
-            foreach ($lines as $line) {
-                $line = trim($line);
-
-                if (strpos($line, '#') === 0) {
+            $headerRowIndex = $this->findHeaderRow($csv);
+            print_r($headerRowIndex);
+            $csv->setHeaderOffset($headerRowIndex);
+           
+            foreach ($csv->getRecords() as $record) {
+                if (isset($record['rsid']) && strpos($record['rsid'], '#') === 0) {
                     continue;
                 }
 
-                $columns = preg_split('/\s+/', $line);
-                $rsid = $columns[0];
-                $chrom = $columns[1];
-                $pos = $columns[2];
-                $allele1 = $columns[3];
-                $allele2 = $columns[4];
-
-                $genotype = $allele1 . $allele2;
-
-                // Create an associative array for each line
-                $data[] = [
-                    'rsid' => $rsid,
-                    'chrom' => $chrom,
-                    'pos' => $pos,
-                    'genotype' => $genotype
+                // Create an array with the rsid, chrom, pos, and genotype
+                $entry = [
+                    'rsid' => $record['rsid'],
+                    'chrom' => $record['chromosome'],
+                    'pos' => $record['position'],
+                    'genotype' => $record['allele1'] . $record['allele2']
                 ];
-            }
 
-            // https://redd.it/5y90un
-            foreach ($data as &$row) {
-                if ($row['chrom'] == '23') {
-                    $row['chrom'] = 'X';
-                } elseif ($row['chrom'] == '24') {
-                    $row['chrom'] = 'Y';
-                } elseif ($row['chrom'] == '25') {
-                    $row['chrom'] = 'PAR';
-                } elseif ($row['chrom'] == '26') {
-                    $row['chrom'] = 'MT';
+                // Adjust chrom values
+                switch ($entry['chrom']) {
+                    case '23':
+                        $entry['chrom'] = 'X';
+                        break;
+                    case '24':
+                        $entry['chrom'] = 'Y';
+                        break;
+                    case '25':
+                        $entry['chrom'] = 'PAR';
+                        break;
+                    case '26':
+                        $entry['chrom'] = 'MT';
+                        break;
                 }
+
+                $data[] = $entry;
             }
 
             return [$data];
         };
 
-        return $this->read_helper("AncestryDNA", $parser);
+        return $this->read_helper('AncestryDNA', $parser);
+    }
+
+    /**
+     * Finds the index of header row in a CSV file.
+     *
+     * @param Reader $csv CSV reader
+     * @return int Index of header row
+     */
+    private function findHeaderRow($csv) {
+        foreach ($csv as $index => $record) {
+            if (strpos($record[0], '#') !== 0) {
+                return $index;
+            }
+        }
+        return 0;
     }
 
     /**
