@@ -71,10 +71,10 @@ class SNPs implements Countable
         private bool $assign_par_snps = False,
         private string $output_dir = "output",
         private string $resources_dir = "resources",
-        private bool $deduplicate=True,
-        private bool $deduplicate_XY_chrom=True,
-        private bool $deduplicate_MT_chrom=True,
-        private bool $parallelize=False,
+        private bool $deduplicate = True,
+        private bool $deduplicate_XY_chrom = True,
+        private bool $deduplicate_MT_chrom = True,
+        private bool $parallelize = False,
         private int $processes = 1, // cpu count
         private array $rsids = [],
     ) //, $only_detect_source, $output_dir, $resources_dir, $parallelize, $processes)
@@ -150,6 +150,36 @@ class SNPs implements Countable
         // $this->_cluster = $d["cluster"];
         // $this->_chip = $d["chip"];
         // $this->_chip_version = $d["chip_version"];
+        // if not self._snps.empty:
+        //     self.sort()
+
+        //     if deduplicate:
+        //         self._deduplicate_rsids()
+
+        //     # use build detected from `read` method or comments, if any
+        //     # otherwise use SNP positions to detect build
+        //     if not self._build_detected:
+        //         self._build = self.detect_build()
+        //         self._build_detected = True if self._build else False
+
+        //         if not self._build:
+        //             self._build = 37  # assume Build 37 / GRCh37 if not detected
+        //         else:
+        //             self._build_detected = True
+        if (!empty($this->_snps)) {
+            // use build detected from `read` method or comments, if any
+            // otherwise use SNP positions to detect build
+            if (!$this->_build_detected) {
+                $this->_build = $this->detect_build();
+                $this->_build_detected = $this->_build ? true : false;
+
+                if (!$this->_build) {
+                    $this->_build = 37; // assume Build 37 / GRCh37 if not detected
+                } else {
+                    $this->_build_detected = true;
+                }
+            }
+        }
     }
 
     protected function readRawData($file, $only_detect_source, $rsids = [])
@@ -179,6 +209,16 @@ class SNPs implements Countable
     }
 
     /**
+     * Get the build number associated with the data.
+     *
+     * @return mixed The build number
+     */
+    public function getBuild()
+    {
+        return $this->_build;
+    }
+
+    /**
      * Count of SNPs.
      *
      * @param string $chrom (optional) Chromosome (e.g., "1", "X", "MT")
@@ -199,6 +239,80 @@ class SNPs implements Countable
         } else {
             return $this->_snps;
         }
+    }
+
+    /**
+     * Detect build of SNPs.
+     *
+     * Use the coordinates of common SNPs to identify the build / assembly of a genotype file
+     * that is being loaded.
+     *
+     * Notes:
+     * - rs3094315 : plus strand in 36, 37, and 38
+     * - rs11928389 : plus strand in 36, minus strand in 37 and 38
+     * - rs2500347 : plus strand in 36 and 37, minus strand in 38
+     * - rs964481 : plus strand in 36, 37, and 38
+     * - rs2341354 : plus strand in 36, 37, and 38
+     * - rs3850290 : plus strand in 36, 37, and 38
+     * - rs1329546 : plus strand in 36, 37, and 38
+     *
+     * Returns detected build of SNPs, else 0
+     *
+     * References:
+     * 1. Yates et. al. (doi:10.1093/bioinformatics/btu613),
+     *    <http://europepmc.org/search/?query=DOI:10.1093/bioinformatics/btu613>
+     * 2. Zerbino et. al. (doi.org/10.1093/nar/gkx1098), https://doi.org/10.1093/nar/gkx1098
+     * 3. Sherry ST, Ward MH, Kholodov M, Baker J, Phan L, Smigielski EM, Sirotkin K.
+     *    dbSNP: the NCBI database of genetic variation. Nucleic Acids Res. 2001
+     *    Jan 1;29(1):308-11.
+     * 4. Database of Single Nucleotide Polymorphisms (dbSNP). Bethesda (MD): National Center
+     *    for Biotechnology Information, National Library of Medicine. dbSNP accession: rs3094315,
+     *    rs11928389, rs2500347, rs964481, rs2341354, rs3850290, and rs1329546
+     *    (dbSNP Build ID: 151). Available from: http://www.ncbi.nlm.nih.gov/SNP/
+     */
+    protected function detect_build()
+    {
+        $lookup_build_with_snp_pos = function ($pos, $s) {
+            foreach ($s as $index => $value) {
+                if ($value == $pos) {
+                    return $index;
+                }
+            }
+            return 0;
+        };
+
+        $build = 0;
+
+        $rsids = [
+            "rs3094315",
+            "rs11928389",
+            "rs2500347",
+            "rs964481",
+            "rs2341354",
+            "rs3850290",
+            "rs1329546",
+        ];
+        $df = [
+            "rs3094315" => [36 => 742429, 37 => 752566, 38 => 817186],
+            "rs11928389" => [36 => 50908372, 37 => 50927009, 38 => 50889578],
+            "rs2500347" => [36 => 143649677, 37 => 144938320, 38 => 148946169],
+            "rs964481" => [36 => 27566744, 37 => 27656823, 38 => 27638706],
+            "rs2341354" => [36 => 908436, 37 => 918573, 38 => 983193],
+            "rs3850290" => [36 => 22315141, 37 => 23245301, 38 => 22776092],
+            "rs1329546" => [36 => 135302086, 37 => 135474420, 38 => 136392261]
+        ];
+
+        foreach ($this->_snps as $snp) {
+            if (in_array($snp['rsid'], $rsids)) {
+                $build = $lookup_build_with_snp_pos($snp['pos'], $df[$snp['rsid']]);
+            }
+
+            if ($build) {
+                break;
+            }
+        }
+
+        return $build;
     }
 }
 

@@ -179,16 +179,18 @@ abstract class BaseSNPsTestCase extends TestCase
 
         // These are useful for debugging if there is a problem
         echo "Observed:\n";
+        echo $snps->getBuild() . "\n";
         // print_r($snps->snps);
         // print_r($snps->snps['info']());
         echo "Expected:\n";
+        echo $build . "\n";
         // print_r($snps_df);
         // print_r($snps_df['info']());
 
         $this->assertEquals($source, $snps->getSource());
-        $this->assertEquals($snps_df, $snps->snps);
+        $this->assertEquals($snps_df, $snps->getSnps());
         // $this->assertTrue($snps['phased']) ?: $this->assertFalse($snps['phased']);
-        $this->assertEquals($build, $snps->build);
+        $this->assertEquals($build, $snps->getBuild());
         $this->assertTrue($snps->build_detected) ?: $this->assertFalse($snps->build_detected);
         // $this->makeNormalizedDataframeAssertions($snps['snps']);
     }
