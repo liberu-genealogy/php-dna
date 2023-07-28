@@ -315,6 +315,23 @@ class SNPs implements Countable
 
         return $build;
     }
+
+
+        /**
+         * Convert the SNPs object to a string representation.
+         *
+         * @return string The string representation of the SNPs object
+         */
+        public function __toString()
+        {
+            if (is_string($this->file)) {
+                // If the file path is a string, return SNPs with the basename of the file
+                return "SNPs('" . basename($this->file) . "')";
+            } else {
+                // If the file path is not a string, return SNPs with <bytes>
+                return "SNPs(<bytes>)";
+            }
+        }
 }
 
         
@@ -399,21 +416,6 @@ class SNPs implements Countable
 //             return $this->count;
 //         }
 
-//         /**
-//          * Convert the SNPs object to a string representation.
-//          *
-//          * @return string The string representation of the SNPs object
-//          */
-//         public function __toString()
-//         {
-//             if (is_string($this->file)) {
-//                 // If the file path is a string, return SNPs with the basename of the file
-//                 return "SNPs('" . basename($this->file) . "')";
-//             } else {
-//                 // If the file path is not a string, return SNPs with <bytes>
-//                 return "SNPs(<bytes>)";
-//             }
-//         }
 //         
 
 //         /**
