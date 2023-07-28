@@ -66,7 +66,7 @@ class SNPs implements Countable
      */
 
     public function __construct(
-        private $file,
+        private $file = "",
         private bool $only_detect_source = False,
         private bool $assign_par_snps = False,
         private string $output_dir = "output",

@@ -200,6 +200,8 @@ class Reader
         $compression = "infer";
         $data = [];
         if ($this->is_zip($file)) {
+            echo "zip\n";
+            var_dump($file);
             $compression = "zip";
             $z = new ZipArchive();
             $z->open("data.zip");
@@ -355,6 +357,7 @@ class Reader
      */
     public static function is_zip($bytes_data)
     {
+        if (empty($bytes_data)) return false;
         $file = tmpfile();
         fwrite($file, $bytes_data);
         $meta_data = stream_get_meta_data($file);
