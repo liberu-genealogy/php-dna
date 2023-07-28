@@ -324,7 +324,7 @@ class SNPs implements Countable
          */
         public function __toString()
         {
-            if (is_string($this->file)) {
+            if (is_string($this->file) && is_file($this->file)) {
                 // If the file path is a string, return SNPs with the basename of the file
                 return "SNPs('" . basename($this->file) . "')";
             } else {

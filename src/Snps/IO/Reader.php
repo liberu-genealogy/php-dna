@@ -60,7 +60,7 @@ class Reader
         );
 
         // Peek into files to determine the data format
-        var_dump($file);
+        // var_dump($file);
         if (is_string($file) && file_exists($file)) {
             if (strpos($file, ".zip") !== false) {
                 $zip = new ZipArchive();
@@ -84,6 +84,12 @@ class Reader
         } elseif (is_string($file)) {
             $fileContents = $file;
             $read_data = $this->_handle_bytes_data($fileContents);
+
+            $tempfile = tmpfile();
+            fwrite($tempfile, $fileContents);
+            $meta_data = stream_get_meta_data($tempfile);
+            $file_path = $meta_data['uri'];
+            $file = $file_path;
         } else {
             return $d;
         }
@@ -128,6 +134,7 @@ class Reader
         if (!$d["build"]) {
             $d["build"] = $this->_detect_build_from_comments($comments, $d["source"]);
         }
+
 
         return $d;
     }
