@@ -828,7 +828,7 @@ class Reader
     public function readGeneric(string $file, ?string $compression, int $skip = 1): array
     {
         $parser = function () use ($file, $compression, $skip) {
-            $parse = function ($sep) use ($file, $skip, $compression) {
+            $parse = function ($sep, $use_cols = false) use ($file, $skip, $compression) {
                 // Stream filter for compressed file, if needed
                 $filter = $compression ? 'compress.zlib://' : '';
 
@@ -841,19 +841,28 @@ class Reader
 
                 $results = [];
                 $stmt = Statement::create();
-                    // ->offset($skip);
+                // ->offset($skip);
 
-                //query your records from the document
-                $records = $stmt->process($csv, ["rsid", "chrom", "pos", "genotype"]);
+                if (!$use_cols)
+                    $records = $stmt->process($csv, ["rsid", "chrom", "pos", "genotype"]);
+                else
+                    $records = $stmt->process($csv);
                 foreach ($records as $record) {
                     // Convert '--' to NULL
                     $record = array_map(function ($value) {
                         return $value == '--' ? null : $value;
                     }, $record);
 
-                    // print_r($record);
-
-                    $results[] = $record;
+                    if (!$use_cols) {
+                        $results[] = $record;
+                    } else {
+                        $results[] = [
+                            "rsid" => $record[0],
+                            "chrom" => $record[1],
+                            "pos" => $record[2],
+                            "genotype" => $record[3],
+                        ];
+                    }
                 }
 
                 return $results;
@@ -865,7 +874,7 @@ class Reader
                 try {
                     return [$parse('\t')];
                 } catch (\Exception $e) {
-                    return [$parse(null)];
+                    return [$parse("\t", true)];
                 }
             }
         };
