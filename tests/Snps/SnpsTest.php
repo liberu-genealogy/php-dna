@@ -31,12 +31,16 @@ class SnpsTest extends BaseSNPsTestCase
         }
     }
 
-    // def test___repr__snps(self):
-    //     s = SNPs("tests/input/GRCh37.csv")
-    //     self.assertEqual("SNPs('GRCh37.csv')", s.__repr__())
     public function test__toString()
     {
         $s = new SNPs("tests/input/GRCh37.csv");
         $this->assertEquals("SNPs('GRCh37.csv')", $s->__toString());
+    }
+
+    public function test__toString_bytes()
+    {
+        $data = file_get_contents("tests/input/GRCh37.csv");
+        $s = new SNPs($data);
+        $this->assertEquals("SNPs(<bytes>)", $s->__toString());
     }
 }
