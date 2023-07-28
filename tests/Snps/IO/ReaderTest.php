@@ -285,4 +285,43 @@ final class ReaderTest extends BaseSNPsTestCase
     //         self.run_parsing_tests(path, "FTDNA", snps_df=snps_df)
 
 
+
+    public function testReadGenericCsv()
+    {
+        $this->run_parse_tests("tests/input/generic.csv", "generic");
+    }
+
+    public function testReadGenericTsv()
+    {
+        $this->run_parse_tests("tests/input/generic.tsv", "generic");
+    }
+
+    public function testReadGenericExtraColumnTsv()
+    {
+        $this->run_parse_tests("tests/input/generic_extra_column.tsv", "generic");
+    }
+
+    public function testReadGenericHeaderComment()
+    {
+        $this->run_parse_tests("tests/input/generic_header_comment.tsv", "generic");
+    }
+
+    public function testReadGenericMultiRsidTsv()
+    {
+        $this->run_parse_tests("tests/input/generic_multi_rsid.tsv", "generic");
+    }
+
+    public function testReadGenericNoHeader()
+    {
+        $this->run_parse_tests("tests/input/generic_no_header.tsv", "generic");
+    }
+
+    public function testReadGenericNonStandardColumns()
+    {
+        $this->run_parse_tests(
+            "tests/input/generic_non_standard_columns.tsv",
+            "generic"
+        );
+    }
+
 }

@@ -231,7 +231,7 @@ class SNPs implements Countable
 
     protected function _filter($chrom = "")
     {
-        if ($chrom) {
+        if (!empty($chrom)) {
             $filteredSnps = array_filter($this->_snps, function ($snp) use ($chrom) {
                 return $snp['chrom'] === $chrom;
             });
