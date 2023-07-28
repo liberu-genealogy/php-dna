@@ -272,6 +272,7 @@ class SNPs implements Countable
      */
     protected function detect_build()
     {
+        // print_r($this->_snps);
         $lookup_build_with_snp_pos = function ($pos, $s) {
             foreach ($s as $index => $value) {
                 if ($value == $pos) {

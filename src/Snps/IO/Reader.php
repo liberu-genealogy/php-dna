@@ -6,6 +6,7 @@ namespace Dna\Snps\IO;
 
 use Dna\Snps\SNPsResources;
 use League\Csv\Reader as CsvReader;
+use League\Csv\Statement;
 use php_user_filter;
 use ZipArchive;
 
@@ -114,6 +115,12 @@ class Reader
             // print_r("GSA");
             # Global Screening Array, includes SANO and CODIGO46
             $d = $this->readGsa($file, $compression, $comments);
+        } else if (preg_match("/^#*[ \t]*rsid[, \t]*chr/", $first_line)) {
+            print_r("generic");
+            $d = $this->readGeneric($file, $compression);
+        } else if (preg_match("/rs[0-9]*[, \t]{1}[1]/", $first_line)) {
+            print_r("generic");
+            $d = $this->readGeneric($file, $compression, 0);
         }
 
 
@@ -244,7 +251,7 @@ class Reader
      *               'phased' (bool) Flag indicating if SNPs are phased.
      *               'build' (int) The detected build of SNPs.
      */
-    private function read_helper($source, $parser)
+    private function readHelper($source, $parser)
     {
         $phased = false;
         $build = 0;
@@ -410,7 +417,7 @@ class Reader
      * @param string $file The path to the file.
      * @param string|null $compression The compression type (e.g., "zip", "gzip"). Defaults to null.
      * @param bool $joined Indicates whether the file has joined columns. Defaults to true.
-     * @return array Returns the result of `read_helper`.
+     * @return array Returns the result of `readHelper`.
      */
     private function read_23andme($file, $compression = null, $joined = true)
     {
@@ -511,7 +518,7 @@ class Reader
             return [$df];
         };
 
-        return $this->read_helper("23andMe", $parser);
+        return $this->readHelper("23andMe", $parser);
     }
 
 
@@ -519,7 +526,7 @@ class Reader
      * Reads and parses an Ancestry.com file.
      *
      * @param string $file Path to file
-     * @return array Result of `read_helper`
+     * @return array Result of `readHelper`
      */
     public function read_ancestry($file)
     {
@@ -527,7 +534,7 @@ class Reader
         $parser = function () use ($file) {
             $data = [];
             $csv = CsvReader::createFromPath($file, 'r');
-            if ($csv->supportsStreamFilterOnRead()) 
+            if ($csv->supportsStreamFilterOnRead())
                 $csv->addStreamFilter('extra_tabs_filter');
             $csv->setDelimiter("\t");
 
@@ -586,7 +593,7 @@ class Reader
             return [$data];
         };
 
-        return $this->read_helper('AncestryDNA', $parser);
+        return $this->readHelper('AncestryDNA', $parser);
     }
 
     /**
@@ -803,6 +810,66 @@ class Reader
 
         echo "Read helper\n";
         echo $source;
-        return $this->read_helper($source, $parser);
+        return $this->readHelper($source, $parser);
+    }
+
+    /**
+     * Read and parse a generic CSV or TSV file.
+     *
+     * Assumes columns are 'rsid', 'chrom' / 'chromosome', 'pos' / 'position', and 'genotype';
+     * values are comma separated; unreported genotypes are indicated by '--'; and one header row
+     * precedes data.
+     *
+     * @param string $file Path to file
+     * @param string|null $compression Compression type
+     * @param int $skip Number of rows to skip
+     * @return array Result of `readHelper`
+     */
+    public function readGeneric(string $file, ?string $compression, int $skip = 1): array
+    {
+        $parser = function () use ($file, $compression, $skip) {
+            $parse = function ($sep) use ($file, $skip, $compression) {
+                // Stream filter for compressed file, if needed
+                $filter = $compression ? 'compress.zlib://' : '';
+
+                // CSV Reader setup
+                $csv = CsvReader::createFromPath($filter . $file, 'r');
+                $csv->setDelimiter($sep);
+                if ($skip > 0)
+                    $csv->setHeaderOffset($skip - 1);
+
+
+                $results = [];
+                $stmt = Statement::create();
+                    // ->offset($skip);
+
+                //query your records from the document
+                $records = $stmt->process($csv, ["rsid", "chrom", "pos", "genotype"]);
+                foreach ($records as $record) {
+                    // Convert '--' to NULL
+                    $record = array_map(function ($value) {
+                        return $value == '--' ? null : $value;
+                    }, $record);
+
+                    // print_r($record);
+
+                    $results[] = $record;
+                }
+
+                return $results;
+            };
+
+            try {
+                return [$parse(',')];
+            } catch (\Exception $e) {
+                try {
+                    return [$parse('\t')];
+                } catch (\Exception $e) {
+                    return [$parse(null)];
+                }
+            }
+        };
+
+        return $this->readHelper('generic', $parser);
     }
 }

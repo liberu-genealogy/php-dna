@@ -6,9 +6,9 @@ class IO
 {
     public static function get_empty_snps_dataframe()
     {
-        $columns = array("rsid" => null, "chrom" => null, "pos" => null, "genotype" => null);
-        $df = array();
-        $df[] = $columns;
-        return $df;
+        // $columns = array("rsid" => null, "chrom" => null, "pos" => null, "genotype" => null);
+        // $df = array();
+        // $df[] = $columns;
+        return [];
     }
 }
