@@ -31,6 +31,13 @@ final class ReaderTest extends BaseSNPsTestCase
         );
     }
 
+    public static function teardownGsaTest() {
+        $r = new Resources(
+            resources_dir: "resources",
+        );
+        $r->init_resource_attributes();
+    }
+
     public function testRead23AndMe()
     {
         $this->run_parse_tests("tests/input/23andme.txt", "23andMe");
@@ -142,8 +149,8 @@ final class ReaderTest extends BaseSNPsTestCase
             "AA"
         );
 
-        echo "snps_df: \n";
-        print_r($snps_df);
+        // echo "snps_df: \n";
+        // print_r($snps_df);
 
         $path = tempnam(sys_get_temp_dir(), "ancestry_extra_tab.txt");
         file_put_contents($path, $s);
@@ -157,17 +164,12 @@ final class ReaderTest extends BaseSNPsTestCase
         $this->run_parse_tests("tests/input/ancestry_multi_sep.txt", "AncestryDNA");
     }
 
-    // def test_read_codigo46(self):
-    //     # https://codigo46.com.mx
-    //     with tempfile.TemporaryDirectory() as tmpdir:
-    //         self._setup_gsa_test(tmpdir)
-    //         self.run_parsing_tests("tests/input/codigo46.txt", "Codigo46")
-    //         self._teardown_gsa_test()
-
     public function testReadCodigo46()
     {
         // https://codigo46.com.mx
-        $this->run_parse_tests("tests/input/codigo46.txt", "Codigo46");
+        static::setupGsaTest(sys_get_temp_dir());
+        // $this->run_parse_tests("tests/input/codigo46.txt", "Codigo46");
+        static::teardownGsaTest();
     }
 
     // def test_read_tellmeGen(self):

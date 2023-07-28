@@ -581,7 +581,7 @@ class Reader
                 $data[] = $entry;
             }
 
-            print_r(count($data));
+            // print_r(count($data));
 
             return [$data];
         };

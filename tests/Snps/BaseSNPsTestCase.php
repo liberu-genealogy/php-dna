@@ -178,11 +178,11 @@ abstract class BaseSNPsTestCase extends TestCase
         }
 
         // These are useful for debugging if there is a problem
-        echo "Observed:\n";
+        // echo "Observed:\n";
         // echo $snps->isBuildDetected() . "\n";
         // print_r(count($snps->getSnps()));
         // print_r($snps->snps['info']());
-        echo "Expected:\n";
+        // echo "Expected:\n";
         // echo $build . "\n";
         // print_r(count($snps_df));
         // print_r($snps_df['info']());

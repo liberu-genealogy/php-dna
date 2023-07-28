@@ -184,7 +184,7 @@ class SNPs implements Countable
 
     protected function readRawData($file, $only_detect_source, $rsids = [])
     {
-        $r = new Reader($file, $only_detect_source, $this->resources, $rsids);
+        $r = new Reader($file, $only_detect_source, $this->_resources, $rsids);
         return $r->read();
     }
 
