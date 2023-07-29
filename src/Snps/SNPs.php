@@ -7,6 +7,7 @@ use Countable;
 use Dna\Resources;
 use Dna\Snps\IO\IO;
 use Dna\Snps\IO\Reader;
+use Iterator;
 
 // You may need to find alternative libraries for numpy, pandas, and snps in PHP, as these libraries are specific to Python
 // For numpy, consider using a library such as MathPHP: https://github.com/markrogoyski/math-php
@@ -39,7 +40,7 @@ use Dna\Snps\IO\Reader;
 // $logger = new Logger('my_logger');
 // $logger->pushHandler(new StreamHandler('php://stderr', Logger::DEBUG));
 
-class SNPs implements Countable
+class SNPs implements Countable, Iterator
 {
 
     private $_source;
@@ -48,6 +49,7 @@ class SNPs implements Countable
     private $_phased;
     private $_build_detected;
     private $_resources;
+    private int $_position = 0;
 
     /**
      * SNPs constructor.
@@ -112,6 +114,43 @@ class SNPs implements Countable
         return $this->get_count();
     }
 
+    public function rewind(): void
+    {
+        $this->_position = 0;
+    }
+
+    public function current()
+    {
+        return $this->_snps[$this->_position];
+    }
+
+    public function key()
+    {
+        return $this->_position;
+    }
+
+    public function next(): void
+    {
+        ++$this->_position;
+    }
+
+    public function valid(): bool
+    {
+        return isset($this->_snps[$this->_position]);
+    }
+
+
+    /**
+     * Get the SNPs as a DataFrame.
+     *
+     * @return SNPs[] The SNPs array
+     */
+    public function filter(callable $callback)
+    {
+        return array_filter($this->_snps, $callback);
+    }
+
+
     /**
      * Get the value of the source property.
      *
@@ -149,7 +188,11 @@ class SNPs implements Countable
         $this->_source = (strpos($d["source"], ", ") !== false) ? explode(", ", $d["source"]) : [$d["source"]];
         $this->_phased = $d["phased"];
         $this->_build = $d["build"] ?? null;
-        $this->_build_detected = empty($d["build_detected"]) ? false : $d["build_detected"];
+        $this->_build_detected = !empty($d["build"]);
+
+        echo "HERE\n";
+        var_dump($d["build"]);
+        var_dump($this->_build_detected);
         // $this->_cluster = $d["cluster"];
         // $this->_chip = $d["chip"];
         // $this->_chip_version = $d["chip_version"];
@@ -182,6 +225,25 @@ class SNPs implements Countable
                     $this->_build_detected = true;
                 }
             }
+
+            if ($this->assign_par_snps) {
+                $this->assignParSnps();
+                // self.sort()
+            }
+
+            // if ($this->deduplicate_XY_chrom) {
+            //     if (
+            //         ($this->deduplicate_XY_chrom === true and $this->determine_sex() == "Male") 
+            //      || ($this->determine_sex(chrom: $this->deduplicate_XY_chrom) == "Male") 
+            //      ){
+            //     $this->_deduplicate_XY_chrom();
+            //     }
+            // }
+
+            // if ($this->deduplicate_MT_chrom) {
+            //     $this->_deduplicate_MT_chrom();
+            // }
+
         }
     }
 
@@ -373,11 +435,12 @@ class SNPs implements Countable
      *    rs28736870, rs113313554, and rs758419898 (dbSNP Build ID: 151). Available from:
      *    http://www.ncbi.nlm.nih.gov/SNP/
      */
-    private function assignParSnps()
+    protected function assignParSnps()
     {
         $restClient = $this->ensemblRestClient;
-
-        foreach ($this->snps->loc[$this->snps["chrom"] === "PAR"]->index->values as $rsid) {
+        $snps = $this->filter(function ($snps) { return $snps["chrom"] === "PAR"; });
+        foreach ($snps as $snp) {
+            $rsid = $snp["rsid"];
             if (strpos($rsid, "rs") !== false) {
                 $response = $this->lookupRefsnpSnapshot($rsid, $restClient);
 
@@ -392,9 +455,9 @@ class SNPs implements Countable
                         }
 
                         if ($assigned) {
-                            if (!$this->buildDetected) {
-                                $this->build = $this->extractBuild($item);
-                                $this->buildDetected = true;
+                            if (!$this->_build_detected) {
+                                $this->_build = $this->extractBuild($item);
+                                $this->_build_detected = true;
                             }
                             break;
                         }

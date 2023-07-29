@@ -119,13 +119,13 @@ class Reader
             $d = $this->read_ancestry($file, $compression);
         } else if (str_starts_with($first_line, "[Header]")) {
             // print_r("GSA");
-            # Global Screening Array, includes SANO and CODIGO46
+            // Global Screening Array, includes SANO and CODIGO46
             $d = $this->readGsa($file, $compression, $comments);
         } else if (preg_match("/^#*[ \t]*rsid[, \t]*chr/", $first_line)) {
-            print_r("generic");
+            // print_r("generic");
             $d = $this->readGeneric($file, $compression);
         } else if (preg_match("/rs[0-9]*[, \t]{1}[1]/", $first_line)) {
-            print_r("generic");
+            // print_r("generic");
             $d = $this->readGeneric($file, $compression, 0);
         }
 
