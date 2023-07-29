@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace DnaTest\Snps;
 
@@ -14,6 +16,9 @@ use GuzzleHttp\Psr7\Response;
 
 abstract class BaseSNPsTestCase extends TestCase
 {
+
+    protected $downloads_enabled = false;
+
     public function simulate_snps(
         $chrom = "1",
         $pos_start = 1,
@@ -92,17 +97,17 @@ abstract class BaseSNPsTestCase extends TestCase
     //     df = df.set_index("rsid")
     //     return df
     public static function create_snp_df(
-        mixed $rsid, 
-        mixed $chrom, 
-        mixed $pos, 
-        mixed $genotype)
-    {
+        mixed $rsid,
+        mixed $chrom,
+        mixed $pos,
+        mixed $genotype
+    ) {
         $df = [];
         foreach ($rsid as $i => $r) {
             $df[] = [
-                "rsid" => $rsid[$i], 
-                "chrom" => is_array($chrom) ? $chrom[$i] : $chrom, 
-                "pos" => is_array($pos) ? $pos[$i] : $pos, 
+                "rsid" => $rsid[$i],
+                "chrom" => is_array($chrom) ? $chrom[$i] : $chrom,
+                "pos" => is_array($pos) ? $pos[$i] : $pos,
                 "genotype" => is_array($genotype) ? $genotype[$i] : $genotype,
             ];
         }
@@ -135,7 +140,7 @@ abstract class BaseSNPsTestCase extends TestCase
         $snps = $this->parse_file($file);
         // echo "snps:\n";
         // print_r($snps);
-        
+
         $this->make_parsing_assertions(
             $snps,
             $source,
@@ -144,7 +149,6 @@ abstract class BaseSNPsTestCase extends TestCase
             $build_detected,
             $snps_df
         );
-
     }
 
     // def make_parsing_assertions(
@@ -171,7 +175,12 @@ abstract class BaseSNPsTestCase extends TestCase
     //     self.make_normalized_dataframe_assertions(snps.snps)
 
     protected function make_parsing_assertions(
-        SNPs $snps, $source, $phased, $build, $build_detected, $snps_df
+        SNPs $snps,
+        $source,
+        $phased,
+        $build,
+        $build_detected,
+        $snps_df
     ) {
         if ($snps_df === null) {
             $snps_df = $this->generic_snps();
@@ -205,7 +214,8 @@ abstract class BaseSNPsTestCase extends TestCase
         return new SNPs($file, rsids: $rsids);
     }
 
-    protected function _get_test_assembly_mapping_data($source, $target, $strands, $mappings) {
+    protected function _get_test_assembly_mapping_data($source, $target, $strands, $mappings)
+    {
         return [
             "1" => [
                 "mappings" => [
@@ -294,9 +304,10 @@ abstract class BaseSNPsTestCase extends TestCase
         $handlerStack = HandlerStack::create($mockHandler);
         return new Client(['handler' => $handlerStack, 'http_errors' => false] + $httpClientOptions);
     }
-    
 
-    protected function NCBI36_GRCh37() {
+
+    protected function NCBI36_GRCh37()
+    {
         return $this->_get_test_assembly_mapping_data(
             "NCBI36",
             "GRCh37",
@@ -314,5 +325,325 @@ abstract class BaseSNPsTestCase extends TestCase
         );
     }
 
+    protected function GRCh37_NCBI36()
+    {
+        return $this->_get_test_assembly_mapping_data(
+            "GRCh37",
+            "NCBI36",
+            [1, 1, 1, 1, 1, 1, 1, -1],
+            [
+                752566,
+                742429,
+                144938320,
+                143649677,
+                144938321,
+                143649678,
+                50927009,
+                50908372,
+            ]
+        );
+    }
 
+    protected function GRCh37_GRCh38()
+    {
+        return $this->_get_test_assembly_mapping_data(
+            "GRCh37",
+            "GRCh38",
+            [1, 1, 1, -1, 1, -1, 1, 1],
+            [
+                752566,
+                817186,
+                144938320,
+                148946169,
+                144938321,
+                148946168,
+                50927009,
+                50889578,
+            ]
+        );
+    }
+
+    protected function GRCh37_GRCh38_PAR()
+    {
+        return [
+            "X" => [
+                "mappings" => [
+                    [
+                        "original" => [
+                            "seq_region_name" => "X",
+                            "strand" => 1,
+                            "start" => 220770,
+                            "end" => 220770,
+                            "assembly" => "GRCh37",
+                        ],
+                        "mapped" => [
+                            "seq_region_name" => "X",
+                            "strand" => 1,
+                            "start" => 304103,
+                            "end" => 304103,
+                            "assembly" => "GRCh38",
+                        ],
+                    ],
+                    [
+                        "original" => [
+                            "seq_region_name" => "X",
+                            "strand" => 1,
+                            "start" => 91941056,
+                            "end" => 91941056,
+                            "assembly" => "GRCh37",
+                        ],
+                        "mapped" => [
+                            "seq_region_name" => "X",
+                            "strand" => 1,
+                            "start" => 92686057,
+                            "end" => 92686057,
+                            "assembly" => "GRCh38",
+                        ],
+                    ],
+                ]
+            ],
+            "Y" => [
+                "mappings" => [
+                    [
+                        "original" => [
+                            "seq_region_name" => "Y",
+                            "strand" => 1,
+                            "start" => 535258,
+                            "end" => 535258,
+                            "assembly" => "GRCh37",
+                        ],
+                        "mapped" => [
+                            "seq_region_name" => "Y",
+                            "strand" => 1,
+                            "start" => 624523,
+                            "end" => 624523,
+                            "assembly" => "GRCh38",
+                        ],
+                    ]
+                ]
+            ],
+        ];
+    }
+
+    protected function snps_NCBI36()
+    {
+        return $this->create_snp_df(
+            rsid: ["rs3094315", "rs2500347", "rsIndelTest", "rs11928389"],
+            chrom: ["1", "1", "1", "3"],
+            pos: [742429, 143649677, 143649678, 50908372],
+            genotype: ["AA", null, "ID", "AG"],
+        );
+    }
+
+
+    protected function snps_GRCh37()
+    {
+        return $this->create_snp_df(
+            rsid: ["rs3094315", "rs2500347", "rsIndelTest", "rs11928389"],
+            chrom: ["1", "1", "1", "3"],
+            pos: [752566, 144938320, 144938321, 50927009],
+            genotype: ["AA", null, "ID", "TC"],
+        );
+    }
+
+
+    protected function snps_GRCh38()
+    {
+        return $this->create_snp_df(
+            rsid: ["rs3094315", "rsIndelTest", "rs2500347", "rs11928389"],
+            chrom: ["1", "1", "1", "3"],
+            pos: [817186, 148946168, 148946169, 50889578],
+            genotype: ["AA", "ID", null, "TC"],
+        );
+    }
+
+
+    protected function snps_GRCh37_PAR()
+    {
+        return $this->create_snp_df(
+            rsid: ["rs28736870", "rs113378274", "rs113313554", "rs758419898"],
+            chrom: ["X", "X", "Y", "PAR"],
+            pos: [220770, 91941056, 535258, 1],
+            genotype: ["AA", "AA", "AA", "AA"],
+        );
+    }
+
+    protected function snps_GRCh38_PAR()
+    {
+        return $this->create_snp_df(
+            rsid: ["rs28736870", "rs113378274", "rs113313554"],
+            chrom: ["X", "X", "Y"],
+            pos: [304103, 92686057, 624523],
+            genotype: ["AA", "AA", "AA"],
+        );
+    }
+
+
+
+    /**
+     * Load and assign PAR SNPs.
+     * 
+     * If downloads are not enabled, use a minimal subset of the real responses.
+     * 
+     * References:
+     * 1. National Center for Biotechnology Information, Variation Services, RefSNP,
+     *    https://api.ncbi.nlm.nih.gov/variation/v0/
+     * 2. Yates et. al. (doi:10.1093/bioinformatics/btu613),
+     *    http://europepmc.org/search/?query=DOI:10.1093/bioinformatics/btu613
+     * 3. Zerbino et. al. (doi.org/10.1093/nar/gkx1098), https://doi.org/10.1093/nar/gkx1098
+     * 4. Sherry ST, Ward MH, Kholodov M, Baker J, Phan L, Smigielski EM, Sirotkin K.
+     *    dbSNP: the NCBI database of genetic variation. Nucleic Acids Res. 2001 Jan 1;
+     *    29(1):308-11.
+     * 5. Database of Single Nucleotide Polymorphisms (dbSNP). Bethesda (MD): National Center
+     *    for Biotechnology Information, National Library of Medicine. dbSNP accession:
+     *    rs28736870, rs113313554, rs758419898, and rs113378274 (dbSNP Build ID: 151).
+     *    Available from: http://www.ncbi.nlm.nih.gov/SNP/
+     * 
+     * @param string $path The path to the SNP file
+     * 
+     * @return SNPs Instance of SNPs class with loaded data
+     */
+    protected function loadAssignPARSnps(string $path): SNPs
+    {
+        $effects = [
+            [
+                "refsnp_id" => "758419898",
+                "create_date" => "2015-04-1T22:25Z",
+                "last_update_date" => "2019-07-14T04:19Z",
+                "last_update_build_id" => "153",
+                "primary_snapshot_data" => [
+                    "placements_with_allele" => [
+                        [
+                            "seq_id" => "NC_000024.9",
+                            "placement_annot" => [
+                                "seq_id_traits_by_assembly" => [
+                                    ["assembly_name" => "GRCh37.p13"]
+                                ]
+                            ],
+                            "alleles" => [
+                                [
+                                    "allele" => [
+                                        "spdi" => [
+                                            "seq_id" => "NC_000024.9",
+                                            "position" => 7364103,
+                                        ]
+                                    ]
+                                ]
+                            ],
+                        ]
+                    ]
+                ],
+            ],
+            [
+                "refsnp_id" => "28736870",
+                "create_date" => "2005-05-24T14:43Z",
+                "last_update_date" => "2019-07-14T04:18Z",
+                "last_update_build_id" => "153",
+                "primary_snapshot_data" => [
+                    "placements_with_allele" => [
+                        [
+                            "seq_id" => "NC_000023.10",
+                            "placement_annot" => [
+                                "seq_id_traits_by_assembly" => [
+                                    ["assembly_name" => "GRCh37.p13"]
+                                ]
+                            ],
+                            "alleles" => [
+                                [
+                                    "allele" => [
+                                        "spdi" => [
+                                            "seq_id" => "NC_000023.10",
+                                            "position" => 220769,
+                                        ]
+                                    ]
+                                ]
+                            ],
+                        ]
+                    ]
+                ],
+            ],
+            [
+                "refsnp_id" => "113313554",
+                "create_date" => "2010-07-4T18:13Z",
+                "last_update_date" => "2019-07-14T04:18Z",
+                "last_update_build_id" => "153",
+                "primary_snapshot_data" => [
+                    "placements_with_allele" => [
+                        [
+                            "seq_id" => "NC_000024.9",
+                            "placement_annot" => [
+                                "seq_id_traits_by_assembly" => [
+                                    ["assembly_name" => "GRCh37.p13"]
+                                ]
+                            ],
+                            "alleles" => [
+                                [
+                                    "allele" => [
+                                        "spdi" => [
+                                            "seq_id" => "NC_000024.9",
+                                            "position" => 535257,
+                                        ]
+                                    ]
+                                ]
+                            ],
+                        ]
+                    ]
+                ],
+            ],
+            [
+                "refsnp_id" => "113378274",
+                "create_date" => "2010-07-4T18:14Z",
+                "last_update_date" => "2016-03-3T10:51Z",
+                "last_update_build_id" => "147",
+                "merged_snapshot_data" => ["merged_into" => ["72608386"]],
+            ],
+            [
+                "refsnp_id" => "72608386",
+                "create_date" => "2009-02-14T01:08Z",
+                "last_update_date" => "2019-07-14T04:05Z",
+                "last_update_build_id" => "153",
+                "primary_snapshot_data" => [
+                    "placements_with_allele" => [
+                        [
+                            "seq_id" => "NC_000023.10",
+                            "placement_annot" => [
+                                "seq_id_traits_by_assembly" => [
+                                    ["assembly_name" => "GRCh37.p13"]
+                                ]
+                            ],
+                            "alleles" => [
+                                [
+                                    "allele" => [
+                                        "spdi" => [
+                                            "seq_id" => "NC_000023.10",
+                                            "position" => 91941055,
+                                        ]
+                                    ]
+                                ]
+                            ],
+                        ]
+                    ]
+                ],
+            ]
+        ];
+
+        if ($this->downloads_enabled) {
+            return new SNPs($path, true, false);
+        } else {
+            $mock = $this->createMock(EnsemblRestClient::class);
+
+            $mock->expects($this->exactly(count($effects)))
+                ->method('perform_rest_action')
+                ->willReturnOnConsecutiveCalls(...$effects);
+
+            $snps = new SNPs(
+                $path,
+                assign_par_snps: true,
+                deduplicate_XY_chrom: false,
+                ensemblRestClient: $mock
+            );
+
+            return $snps;
+        }
+    }
 }

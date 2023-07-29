@@ -22,7 +22,6 @@ use ZipArchive;
 class ResourcesTest extends BaseSNPsTestCase
 {
     private Resources $resource;
-    private $downloads_enabled = false;
     private $originalHttp = null;
 
     private function _reset_resource()

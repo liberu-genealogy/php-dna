@@ -77,6 +77,7 @@ class SNPs implements Countable
         private bool $parallelize = False,
         private int $processes = 1, // cpu count
         private array $rsids = [],
+        private $ensemblRestClient = null,
     ) //, $only_detect_source, $output_dir, $resources_dir, $parallelize, $processes)
     {
         // $this->_only_detect_source = $only_detect_source;
@@ -98,6 +99,8 @@ class SNPs implements Countable
         // $this->_cluster = "";
         // $this->_chip = "";
         // $this->_chip_version = "";
+
+        $this->ensemblRestClient = $ensemblRestClient ?? new EnsemblRestClient("https://api.ncbi.nlm.nih.gov", 1);
 
         if (!empty($file)) {
             $this->readFile();
@@ -317,39 +320,89 @@ class SNPs implements Countable
     }
 
 
-        /**
-         * Convert the SNPs object to a string representation.
-         *
-         * @return string The string representation of the SNPs object
-         */
-        public function __toString()
-        {
-            if (is_string($this->file) && is_file($this->file)) {
-                // If the file path is a string, return SNPs with the basename of the file
-                return "SNPs('" . basename($this->file) . "')";
-            } else {
-                // If the file path is not a string, return SNPs with <bytes>
-                return "SNPs(<bytes>)";
-            }
+    /**
+     * Convert the SNPs object to a string representation.
+     *
+     * @return string The string representation of the SNPs object
+     */
+    public function __toString()
+    {
+        if (is_string($this->file) && is_file($this->file)) {
+            // If the file path is a string, return SNPs with the basename of the file
+            return "SNPs('" . basename($this->file) . "')";
+        } else {
+            // If the file path is not a string, return SNPs with <bytes>
+            return "SNPs(<bytes>)";
         }
+    }
 
-        /**
-         * Get the assembly of the SNPs.
-         *
-         * @return string The assembly of the SNPs
-         */
-        public function getAssembly(): string
-        {
-            if ($this->_build === 37) {
-                return "GRCh37";
-            } elseif ($this->_build === 36) {
-                return "NCBI36";
-            } elseif ($this->_build === 38) {
-                return "GRCh38";
-            } else {
-                return "";
+    /**
+     * Get the assembly of the SNPs.
+     *
+     * @return string The assembly of the SNPs
+     */
+    public function getAssembly(): string
+    {
+        if ($this->_build === 37) {
+            return "GRCh37";
+        } elseif ($this->_build === 36) {
+            return "NCBI36";
+        } elseif ($this->_build === 38) {
+            return "GRCh38";
+        } else {
+            return "";
+        }
+    }
+
+
+
+    /**
+     * Assign PAR SNPs to the X or Y chromosome using SNP position.
+     * 
+     * References:
+     * 1. National Center for Biotechnology Information, Variation Services, RefSNP,
+     *    https://api.ncbi.nlm.nih.gov/variation/v0/
+     * 2. Yates et. al. (doi:10.1093/bioinformatics/btu613),
+     *    http://europepmc.org/search/?query=DOI:10.1093/bioinformatics/btu613
+     * 3. Zerbino et. al. (doi.org/10.1093/nar/gkx1098), https://doi.org/10.1093/nar/gkx1098
+     * 4. Sherry ST, Ward MH, Kholodov M, Baker J, Phan L, Smigielski EM, Sirotkin K.
+     *    dbSNP: the NCBI database of genetic variation. Nucleic Acids Res. 2001 Jan 1;
+     *    29(1):308-11.
+     * 5. Database of Single Nucleotide Polymorphisms (dbSNP). Bethesda (MD): National Center
+     *    for Biotechnology Information, National Library of Medicine. dbSNP accession:
+     *    rs28736870, rs113313554, and rs758419898 (dbSNP Build ID: 151). Available from:
+     *    http://www.ncbi.nlm.nih.gov/SNP/
+     */
+    private function assignParSnps()
+    {
+        $restClient = $this->ensemblRestClient;
+
+        foreach ($this->snps->loc[$this->snps["chrom"] === "PAR"]->index->values as $rsid) {
+            if (strpos($rsid, "rs") !== false) {
+                $response = $this->lookupRefsnpSnapshot($rsid, $restClient);
+
+                if ($response !== null) {
+                    foreach ($response["primary_snapshot_data"]["placements_with_allele"] as $item) {
+                        if (strpos($item["seq_id"], "NC_000023") !== false) {
+                            $assigned = $this->assignSnp($rsid, $item["alleles"], "X");
+                        } elseif (strpos($item["seq_id"], "NC_000024") !== false) {
+                            $assigned = $this->assignSnp($rsid, $item["alleles"], "Y");
+                        } else {
+                            $assigned = false;
+                        }
+
+                        if ($assigned) {
+                            if (!$this->buildDetected) {
+                                $this->build = $this->extractBuild($item);
+                                $this->buildDetected = true;
+                            }
+                            break;
+                        }
+                    }
+                }
             }
         }
+    }
 }
 
         
