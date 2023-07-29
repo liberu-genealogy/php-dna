@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace DnaTest\Snps;
 
@@ -42,5 +44,36 @@ class SnpsTest extends BaseSNPsTestCase
         $data = file_get_contents("tests/input/GRCh37.csv");
         $s = new SNPs($data);
         $this->assertEquals("SNPs(<bytes>)", $s->__toString());
+    }
+
+    public function testAssembly()
+    {
+        $s = new SNPs("tests/input/GRCh38.csv");
+        $this->assertEquals($s->getAssembly(), "GRCh38");
+    }
+
+    public function testAssemblyNoSnps()
+    {
+        $emptySnps = $this->empty_snps();
+
+        foreach ($emptySnps as $snps) {
+            $this->assertEmpty($snps->getAssembly());
+        }
+    }
+
+    public function testBuild()
+    {
+        $s = new SNPs("tests/input/NCBI36.csv");
+        $this->assertEquals($s->getBuild(), 36);
+        $this->assertEquals($s->getAssembly(), "NCBI36");
+    }
+
+    public function testBuildDetectedNoSnps()
+    {
+        $emptySnps = $this->empty_snps();
+
+        foreach ($emptySnps as $snps) {
+            $this->assertFalse($snps->isBuildDetected());
+        }
     }
 }

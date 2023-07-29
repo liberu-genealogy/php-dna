@@ -332,6 +332,24 @@ class SNPs implements Countable
                 return "SNPs(<bytes>)";
             }
         }
+
+        /**
+         * Get the assembly of the SNPs.
+         *
+         * @return string The assembly of the SNPs
+         */
+        public function getAssembly(): string
+        {
+            if ($this->_build === 37) {
+                return "GRCh37";
+            } elseif ($this->_build === 36) {
+                return "NCBI36";
+            } elseif ($this->_build === 38) {
+                return "GRCh38";
+            } else {
+                return "";
+            }
+        }
 }
 
         
@@ -559,24 +577,7 @@ class SNPs implements Countable
         
 //         
         
-//         public function getAssembly(): string
-//         {
-//             // Get the assembly name based on the build number.
-//             //
-//             // Returns
-//             // -------
-//             // string
-//             //     The assembly name (e.g., "GRCh37", "NCBI36", "GRCh38")
-//             if ($this->_build === 37) {
-//                 return "GRCh37";
-//             } elseif ($this->_build === 36) {
-//                 return "NCBI36";
-//             } elseif ($this->_build === 38) {
-//                 return "GRCh38";
-//             } else {
-//                 return "";
-//             }
-//         }
+//         
 
 //        
     
