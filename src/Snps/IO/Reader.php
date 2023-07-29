@@ -5,6 +5,7 @@ namespace Dna\Snps\IO;
 
 
 use Dna\Snps\SNPsResources;
+use League\Csv\Info;
 use League\Csv\Reader as CsvReader;
 use League\Csv\Statement;
 use php_user_filter;
@@ -502,7 +503,7 @@ class Reader
                     $row["genotype"] = $row["allele1"] . $row["allele2"];
                     unset($row["allele1"], $row["allele2"]);
                 }
-                $df[] = $row;
+                $df[$row["rsid"]] = $row;
             }
 
             $df = array_map(function ($row) use ($mapping) {
@@ -595,7 +596,7 @@ class Reader
                         break;
                 }
 
-                $data[] = $entry;
+                $data[$entry["rsid"]] = $entry;
             }
 
             // print_r(count($data));
@@ -688,18 +689,22 @@ class Reader
             $records = $csv->getRecords();
 
             $dataArr = [];
+            $firstrsid = null;
             foreach ($records as $offset => $record) {
-                $dataArr[] = $record;
+                if ($offset == 0) $firstrsid = $record["rsid"];
+                $dataArr[$record["rsid"]] = $record;
             }
 
             // Ensure that 'rsid', 'chrom', 'pos' and 'genotype' are not in the column names
             if (
-                !in_array('rsid', $dataArr[0]) && !in_array('chrom', $dataArr[0])
-                && !in_array('pos', $dataArr[0]) && !in_array('genotype', $dataArr[0])
+                !is_null($firstrsid)
+                && (!in_array('rsid', $dataArr[$firstrsid]) && !in_array('chrom', $dataArr[$firstrsid])
+                    && !in_array('pos', $dataArr[$firstrsid]) && !in_array('genotype', $dataArr[$firstrsid])
+                )
             ) {
 
                 // Prefer the specified chromosome and position, if present
-                if (in_array('Chr', $dataArr[0]) && in_array('Position', $dataArr[0])) {
+                if (in_array('Chr', $dataArr[$firstrsid]) && in_array('Position', $dataArr[$firstrsid])) {
                     // Put the chromosome in the right column with the right type
                     $dataArr = array_map(function ($row) {
                         $row['chrom'] = (string)$row['Chr'];
@@ -842,8 +847,13 @@ class Reader
                 // Stream filter for compressed file, if needed
                 $filter = $compression ? 'compress.zlib://' : '';
 
+             
                 // CSV Reader setup
                 $csv = CsvReader::createFromPath($filter . $file, 'r');
+
+                $stats = Info::getDelimiterStats($csv, [",", "\t"], 10);
+     
+                $sep = array_flip($stats)[max($stats)];
                 $csv->setDelimiter($sep);
                 if ($skip > 0)
                     $csv->setHeaderOffset($skip - 1);
@@ -853,40 +863,43 @@ class Reader
                 $stmt = Statement::create();
                 // ->offset($skip);
 
+                
+                $records = $stmt->process($csv);
+                
+
                 if (!$use_cols)
                     $records = $stmt->process($csv, ["rsid", "chrom", "pos", "genotype"]);
-                else
-                    $records = $stmt->process($csv);
+
                 foreach ($records as $record) {
                     // Convert '--' to NULL
                     $record = array_map(function ($value) {
                         return $value == '--' ? null : $value;
                     }, $record);
 
-                    if (!$use_cols) {
-                        $results[] = $record;
-                    } else {
-                        $results[] = [
+                    if ($use_cols) {                    
+                        $record = [
                             "rsid" => $record[0],
                             "chrom" => $record[1],
                             "pos" => $record[2],
                             "genotype" => $record[3],
                         ];
                     }
+
+                    $key = explode(",", $record["rsid"], 2)[0];
+                    $record["rsid"] = $key;
+                    $results[$key] = $record;
                 }
 
                 return $results;
             };
 
-            try {
-                return [$parse(',')];
-            } catch (\Exception $e) {
+         
                 try {
                     return [$parse('\t')];
                 } catch (\Exception $e) {
                     return [$parse("\t", true)];
                 }
-            }
+            
         };
 
         return $this->readHelper('generic', $parser);

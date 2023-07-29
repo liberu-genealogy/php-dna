@@ -103,7 +103,7 @@ abstract class BaseSNPsTestCase extends TestCase
     ) {
         $df = [];
         foreach ($rsid as $i => $r) {
-            $df[] = [
+            $df[$r] = [
                 "rsid" => $rsid[$i],
                 "chrom" => is_array($chrom) ? $chrom[$i] : $chrom,
                 "pos" => is_array($pos) ? $pos[$i] : $pos,

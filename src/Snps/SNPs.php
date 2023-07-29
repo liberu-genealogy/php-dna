@@ -50,6 +50,7 @@ class SNPs implements Countable, Iterator
     private $_build_detected;
     private $_resources;
     private int $_position = 0;
+    private array $_keys = [];
 
     /**
      * SNPs constructor.
@@ -83,7 +84,7 @@ class SNPs implements Countable, Iterator
     ) //, $only_detect_source, $output_dir, $resources_dir, $parallelize, $processes)
     {
         // $this->_only_detect_source = $only_detect_source;
-        $this->_snps = IO::get_empty_snps_dataframe();
+        $this->setSNPs(IO::get_empty_snps_dataframe());
         // $this->_duplicate = $this->get_empty_snps_dataframe();
         // $this->_discrepant_XY = $this->get_empty_snps_dataframe();
         // $this->_heterozygous_MT = $this->get_empty_snps_dataframe();
@@ -114,19 +115,15 @@ class SNPs implements Countable, Iterator
         return $this->get_count();
     }
 
-    public function rewind(): void
+    public function current(): SNPs
     {
-        $this->_position = 0;
+        $key = $this->_keys[$this->_position];
+        return $this->_snps[$key];
     }
 
-    public function current()
+    public function key(): string
     {
-        return $this->_snps[$this->_position];
-    }
-
-    public function key()
-    {
-        return $this->_position;
+        return $this->_keys[$this->_position];
     }
 
     public function next(): void
@@ -134,9 +131,14 @@ class SNPs implements Countable, Iterator
         ++$this->_position;
     }
 
+    public function rewind(): void
+    {
+        $this->_position = 0;
+    }
+
     public function valid(): bool
     {
-        return isset($this->_snps[$this->_position]);
+        return isset($this->_keys[$this->_position]);
     }
 
 
@@ -180,11 +182,17 @@ class SNPs implements Countable, Iterator
         return null; // Or throw an exception for undefined properties
     }
 
+    public function setSNPs(array $snps)
+    {
+        $this->_snps = $snps;
+        $this->_keys = array_keys($snps);
+    }
+
     protected function readFile()
     {
         // print_r($this->file);
         $d = $this->readRawData($this->file, $this->only_detect_source, $this->rsids);
-        $this->_snps = $d["snps"];
+        $this->setSNPs($d["snps"]);
         $this->_source = (strpos($d["source"], ", ") !== false) ? explode(", ", $d["source"]) : [$d["source"]];
         $this->_phased = $d["phased"];
         $this->_build = $d["build"] ?? null;
@@ -438,7 +446,9 @@ class SNPs implements Countable, Iterator
     protected function assignParSnps()
     {
         $restClient = $this->ensemblRestClient;
-        $snps = $this->filter(function ($snps) { return $snps["chrom"] === "PAR"; });
+        $snps = $this->filter(function ($snps) {
+            return $snps["chrom"] === "PAR";
+        });
         foreach ($snps as $snp) {
             $rsid = $snp["rsid"];
             if (strpos($rsid, "rs") !== false) {
@@ -466,6 +476,37 @@ class SNPs implements Countable, Iterator
             }
         }
     }
+
+
+    protected function extractBuild($item)
+    {
+        $assembly_name = $item["placement_annot"]["seq_id_traits_by_assembly"][0]["assembly_name"];
+        $assembly_name = explode(".", $assembly_name)[0];
+        return intval(substr($assembly_name, -2));
+    }
+
+    protected function assignSnp($rsid, $alleles, $chrom) {
+        // only assign SNP if positions match (i.e., same build)
+        foreach ($alleles as $allele) {
+            $allele_pos = $allele["allele"]["spdi"]["position"];
+            // ref SNP positions seem to be 0-based...
+            if ($allele_pos == $this->get($rsid)->pos - 1) {
+                $this->get($rsid)->chrom = $chrom;
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public function get($rsid)
+    {
+
+    }
+  
+    
+    
+    
+    
 }
 
         
