@@ -4,9 +4,8 @@ declare(strict_types=1);
 
 namespace DnaTest\Snps;
 
+use Dna\Snps\EnsemblRestClient;
 use Dna\Snps\SNPs;
-// use Dna\Utils\gzip_file;
-// use Dna\Utils\zip_file;
 use PHPUnit\Framework\TestCase;
 use GuzzleHttp\Client;
 use GuzzleHttp\Handler\MockHandler;
@@ -628,11 +627,10 @@ abstract class BaseSNPsTestCase extends TestCase
         ];
 
         if ($this->downloads_enabled) {
-            return new SNPs($path, true, false);
+            return new SNPs($path, assign_par_snps: true, deduplicate_XY_chrom: false);
         } else {
-            $mock = $this->createMock(EnsemblRestClient::class);
-
-            $mock->expects($this->exactly(count($effects)))
+            $mock = $this->createMock(EnsemblRestClient::class)
+                // ->expects($this->exactly(count($effects)))
                 ->method('perform_rest_action')
                 ->willReturnOnConsecutiveCalls(...$effects);
 
