@@ -500,11 +500,29 @@ class SNPs implements Countable, Iterator
 
     public function get($rsid)
     {
-
+        return $this->_snps[$rsid] ?? null;
     }
   
     
-    
+    private function lookupRefsnpSnapshot($rsid, $restClient)
+{
+    $id = str_replace("rs", "", $rsid);
+    $response = $restClient->perform_rest_action("/variation/v0/refsnp/" . $id);
+
+    if (isset($response["merged_snapshot_data"])) {
+        // this RefSnp id was merged into another
+        // we'll pick the first one to decide which chromosome this PAR will be assigned to
+        $mergedId = "rs" . $response["merged_snapshot_data"]["merged_into"][0];
+        error_log("SNP id {$rsid} has been merged into id {$mergedId}"); // replace with your preferred logger
+        return $this->lookupRefsnpSnapshot($mergedId, $restClient);
+    } elseif (isset($response["nosnppos_snapshot_data"])) {
+        error_log("Unable to look up SNP id {$rsid}"); // replace with your preferred logger
+        return null;
+    } else {
+        return $response;
+    }
+}
+
     
     
 }
@@ -1041,28 +1059,7 @@ class SNPs implements Countable, Iterator
 //             }
 //         }
 
-//         private function lookupRefsnpSnapshot(string $rsid, RestClient $rest_client)
-//         {
-//             // Extract the ID from the rsid by removing the 'rs' prefix
-//             $id = substr($rsid, 2);
-//             // Perform the REST action to retrieve the RefSnp snapshot data
-//             $response = $rest_client->performRestAction("/variation/v0/refsnp/" . $id);
-        
-//             if (isset($response["merged_snapshot_data"])) {
-//                 // This RefSnp id was merged into another
-//                 // We'll pick the first one to decide which chromosome this PAR will be assigned to
-//                 $merged_id = "rs" . $response["merged_snapshot_data"]["merged_into"][0];
-//                 $logger->info("SNP id {$rsid} has been merged into id {$merged_id}");
-//                 // Recursively lookup the snapshot data for the merged id
-//                 return $this->lookupRefsnpSnapshot($merged_id, $rest_client);
-//             } elseif (isset($response["nosnppos_snapshot_data"])) {
-//                 $logger->warning("Unable to look up SNP id {$rsid}");
-//                 return null;
-//             } else {
-//                 // Return the response containing the snapshot data
-//                 return $response;
-//             }
-//         }
+//         
         
 //         private function assignSnp(string $rsid, array $alleles, string $chrom)
 //         {

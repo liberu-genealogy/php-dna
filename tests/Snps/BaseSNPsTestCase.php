@@ -629,10 +629,12 @@ abstract class BaseSNPsTestCase extends TestCase
         if ($this->downloads_enabled) {
             return new SNPs($path, assign_par_snps: true, deduplicate_XY_chrom: false);
         } else {
-            $mock = $this->createMock(EnsemblRestClient::class)
-                // ->expects($this->exactly(count($effects)))
+            $mock = $this->createStub(EnsemblRestClient::class);
+
+            $mock->expects($this->exactly(count($effects)))
                 ->method('perform_rest_action')
-                ->willReturnOnConsecutiveCalls(...$effects);
+                ->with(self::callback(function ($object): bool { return true; }))
+                ->willReturn(...$effects);
 
             $snps = new SNPs(
                 $path,
