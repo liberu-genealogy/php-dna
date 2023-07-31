@@ -198,9 +198,9 @@ class SNPs implements Countable, Iterator
         $this->_build = $d["build"] ?? null;
         $this->_build_detected = !empty($d["build"]);
 
-        echo "HERE\n";
-        var_dump($d["build"]);
-        var_dump($this->_build_detected);
+        // echo "HERE\n";
+        // var_dump($d["build"]);
+        // var_dump($this->_build_detected);
         // $this->_cluster = $d["cluster"];
         // $this->_chip = $d["chip"];
         // $this->_chip_version = $d["chip_version"];
@@ -463,7 +463,6 @@ class SNPs implements Countable, Iterator
                         } else {
                             $assigned = false;
                         }
-
                         if ($assigned) {
                             if (!$this->_build_detected) {
                                 $this->_build = $this->extractBuild($item);
@@ -485,13 +484,14 @@ class SNPs implements Countable, Iterator
         return intval(substr($assembly_name, -2));
     }
 
-    protected function assignSnp($rsid, $alleles, $chrom) {
+    protected function assignSnp($rsid, $alleles, $chrom)
+    {
         // only assign SNP if positions match (i.e., same build)
         foreach ($alleles as $allele) {
             $allele_pos = $allele["allele"]["spdi"]["position"];
             // ref SNP positions seem to be 0-based...
-            if ($allele_pos == $this->get($rsid)->pos - 1) {
-                $this->get($rsid)->chrom = $chrom;
+            if ($allele_pos == $this->get($rsid)["pos"] - 1) {
+                $this->setValue($rsid, "chrom", $chrom);
                 return true;
             }
         }
@@ -502,29 +502,31 @@ class SNPs implements Countable, Iterator
     {
         return $this->_snps[$rsid] ?? null;
     }
-  
-    
-    private function lookupRefsnpSnapshot($rsid, $restClient)
-{
-    $id = str_replace("rs", "", $rsid);
-    $response = $restClient->perform_rest_action("/variation/v0/refsnp/" . $id);
 
-    if (isset($response["merged_snapshot_data"])) {
-        // this RefSnp id was merged into another
-        // we'll pick the first one to decide which chromosome this PAR will be assigned to
-        $mergedId = "rs" . $response["merged_snapshot_data"]["merged_into"][0];
-        error_log("SNP id {$rsid} has been merged into id {$mergedId}"); // replace with your preferred logger
-        return $this->lookupRefsnpSnapshot($mergedId, $restClient);
-    } elseif (isset($response["nosnppos_snapshot_data"])) {
-        error_log("Unable to look up SNP id {$rsid}"); // replace with your preferred logger
-        return null;
-    } else {
-        return $response;
+    public function setValue($rsid, $key, $value)
+    {
+        $this->_snps[$rsid][$key] = $value;
     }
-}
 
-    
-    
+
+    private function lookupRefsnpSnapshot($rsid, $restClient)
+    {
+        $id = str_replace("rs", "", $rsid);
+        $response = $restClient->perform_rest_action("/variation/v0/refsnp/" . $id);
+
+        if (isset($response["merged_snapshot_data"])) {
+            // this RefSnp id was merged into another
+            // we'll pick the first one to decide which chromosome this PAR will be assigned to
+            $mergedId = "rs" . $response["merged_snapshot_data"]["merged_into"][0];
+            error_log("SNP id {$rsid} has been merged into id {$mergedId}"); // replace with your preferred logger
+            return $this->lookupRefsnpSnapshot($mergedId, $restClient);
+        } elseif (isset($response["nosnppos_snapshot_data"])) {
+            error_log("Unable to look up SNP id {$rsid}"); // replace with your preferred logger
+            return null;
+        } else {
+            return $response;
+        }
+    }
 }
 
         
