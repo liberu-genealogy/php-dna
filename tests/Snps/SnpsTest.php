@@ -101,7 +101,7 @@ class SnpsTest extends BaseSNPsTestCase
     {
         $s = new SNPs("tests/input/generic.csv");
         $snps = $this->generic_snps();
-        unset($snps["rs5"]); // Assuming snps is an associative array
+        unset($snps["rs5"]);
 
         $this->assertEquals($s->notnull(), $snps, "Frames are not equal!");
     }
@@ -132,5 +132,19 @@ class SnpsTest extends BaseSNPsTestCase
         );
 
         $this->assertEquals($expected, $s->homozygous(), "Frames are not equal!");
+    }
+
+    public function test_homozygous_chrom()
+    {
+        $s = new SNPs("tests/input/generic.csv");
+
+        $expected = $this->create_snp_df(
+            rsid: ["rs1", "rs2", "rs3", "rs4"],
+            chrom: ["1", "1", "1", "1"],
+            pos: [101, 102, 103, 104],
+            genotype: ["AA", "CC", "GG", "TT"],
+        );
+
+        $this->assertEquals($expected, $s->homozygous("1"), "Frames are not equal!");
     }
 }
