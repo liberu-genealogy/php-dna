@@ -241,17 +241,16 @@ class SNPs implements Countable, Iterator
 
             // if ($this->deduplicate_XY_chrom) {
             //     if (
-            //         ($this->deduplicate_XY_chrom === true and $this->determine_sex() == "Male") 
-            //      || ($this->determine_sex(chrom: $this->deduplicate_XY_chrom) == "Male") 
-            //      ){
-            //     $this->_deduplicate_XY_chrom();
+            //         ($this->deduplicate_XY_chrom === true && $this->determine_sex() == "Male")
+            //         || ($this->determine_sex(chrom: $this->deduplicate_XY_chrom) == "Male")
+            //     ) {
+            //         $this->_deduplicate_XY_chrom();
             //     }
             // }
 
             // if ($this->deduplicate_MT_chrom) {
             //     $this->_deduplicate_MT_chrom();
             // }
-
         }
     }
 
@@ -308,7 +307,7 @@ class SNPs implements Countable, Iterator
             $filteredSnps = array_filter($this->_snps, function ($snp) use ($chrom) {
                 return $snp['chrom'] === $chrom;
             });
-            return array_values($filteredSnps); // Reset array keys
+            return $filteredSnps;
         } else {
             return $this->_snps;
         }
@@ -538,6 +537,54 @@ class SNPs implements Countable, Iterator
             return $response;
         }
     }
+
+
+
+    // public function _determine_sex_X($threshold)
+    // {
+    //     $x_snps = $this->get_count("X");
+
+    //     if ($x_snps > 0) {
+    //         if (count($this->heterozygous("X")) / $x_snps > $threshold) {
+    //             return "Female";
+    //         } else {
+    //             return "Male";
+    //         }
+    //     } else {
+    //         return "";
+    //     }
+    // }
+
+    public function _determine_sex_Y($threshold)
+    {
+        $y_snps = $this->get_count("Y");
+
+        if ($y_snps > 0) {
+            if (count($this->notnull("Y")) / $y_snps > $threshold) {
+                return "Male";
+            } else {
+                return "Female";
+            }
+        } else {
+            return "";
+        }
+    }
+
+    public function notnull($chrom = "") {
+        $df = $this->_filter($chrom);
+        $result = [];
+    
+        foreach ($df as $rsid => $row) {
+            if ($row['genotype'] !== null) {
+                $result[$rsid] = $row;
+            }
+        }
+    
+        return $result;
+    }
+     
+    
+    
 }
 
         

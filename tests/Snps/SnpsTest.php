@@ -96,6 +96,14 @@ class SnpsTest extends BaseSNPsTestCase
         $this->assertEquals($expectedSnps, $actualSnps);
     }
       
+
+    public function test_notnull() {
+        $s = new SNPs("tests/input/generic.csv");
+        $snps = $this->generic_snps();
+        unset($snps["rs5"]); // Assuming snps is an associative array
+        
+        $this->assertEquals($s->notnull(), $snps, "Frames are not equal!");
+    }
     
     
     
