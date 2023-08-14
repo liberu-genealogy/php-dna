@@ -104,6 +104,20 @@ class SnpsTest extends BaseSNPsTestCase
         
         $this->assertEquals($s->notnull(), $snps, "Frames are not equal!");
     }
+
+    public function test_heterozygous() {
+        $s = new SNPs("tests/input/generic.csv");
+        
+        $expected = $this->create_snp_df(
+            rsid: ["rs6", "rs7", "rs8"],
+            chrom: ["1", "1", "1"],
+            pos: [106, 107, 108],
+            genotype: ["GC", "TC", "AT"]
+        );
+    
+        $this->assertEquals($expected, $s->heterozygous(), "Frames are not equal!");
+    }
+    
     
     
     

@@ -570,21 +570,43 @@ class SNPs implements Countable, Iterator
         }
     }
 
-    public function notnull($chrom = "") {
+    public function notnull($chrom = "")
+    {
         $df = $this->_filter($chrom);
         $result = [];
-    
+
         foreach ($df as $rsid => $row) {
             if ($row['genotype'] !== null) {
                 $result[$rsid] = $row;
             }
         }
-    
+
         return $result;
     }
-     
-    
-    
+
+    /**
+     * Get heterozygous SNPs.
+     *
+     * @param string $chrom (optional) chromosome (e.g., "1", "X", "MT")
+     * @return array normalized ``snps`` array
+     */
+    public function heterozygous($chrom = "")
+    {
+        $df = $this->_filter($chrom);
+        $result = [];
+
+        foreach ($df as $rsid => $row) {
+            if (
+                $row['genotype'] !== null
+                && strlen($row['genotype']) == 2
+                && $row['genotype'][0] != $row['genotype'][1]
+            ) {
+                $result[$rsid] = $row;
+            }
+        }
+
+        return $result;
+    }
 }
 
         
