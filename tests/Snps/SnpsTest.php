@@ -91,9 +91,9 @@ class SnpsTest extends BaseSNPsTestCase
         $snps = $this->loadAssignPARSnps('tests/input/GRCh37_PAR.csv');
         $this->assertEquals(37, $snps->getBuild());
         $this->assertTrue($snps->isBuildDetected());
-        // $expectedSnps = $this->snps_GRCh37_PAR();
-        // $actualSnps = $snps->getSnps();
-        // $this->assertEquals($expectedSnps, $actualSnps);
+        $expectedSnps = $this->snps_GRCh37_PAR();
+        $actualSnps = $snps->getSnps();
+        $this->assertEquals($expectedSnps, $actualSnps);
     }
       
     

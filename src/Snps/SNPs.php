@@ -451,15 +451,22 @@ class SNPs implements Countable, Iterator
         });
         foreach ($snps as $snp) {
             $rsid = $snp["rsid"];
-            if (strpos($rsid, "rs") !== false) {
+            echo "rsid: $rsid\n";
+            if (str_starts_with($rsid, "rs")) {
                 $response = $this->lookupRefsnpSnapshot($rsid, $restClient);
-
+                // print_r($response);
                 if ($response !== null) {
+                    // print_r($response["primary_snapshot_data"]["placements_with_allele"]);
                     foreach ($response["primary_snapshot_data"]["placements_with_allele"] as $item) {
-                        if (strpos($item["seq_id"], "NC_000023") !== false) {
+                        print_r($item["seq_id"]);
+                        var_dump(str_starts_with($item["seq_id"], "NC_000023"));
+                        var_dump(str_starts_with($item["seq_id"], "NC_000024"));
+                        if (str_starts_with($item["seq_id"], "NC_000023")) {
                             $assigned = $this->assignSnp($rsid, $item["alleles"], "X");
-                        } elseif (strpos($item["seq_id"], "NC_000024") !== false) {
+                            var_dump($assigned);
+                        } elseif (str_starts_with($item["seq_id"], "NC_000024")) {
                             $assigned = $this->assignSnp($rsid, $item["alleles"], "Y");
+                            var_dump($assigned);
                         } else {
                             $assigned = false;
                         }
@@ -490,6 +497,9 @@ class SNPs implements Countable, Iterator
         foreach ($alleles as $allele) {
             $allele_pos = $allele["allele"]["spdi"]["position"];
             // ref SNP positions seem to be 0-based...
+            print_r($this->get($rsid)["pos"] - 1);
+            echo "\n";
+            print_r($allele_pos);
             if ($allele_pos == $this->get($rsid)["pos"] - 1) {
                 $this->setValue($rsid, "chrom", $chrom);
                 return true;
@@ -505,6 +515,7 @@ class SNPs implements Countable, Iterator
 
     public function setValue($rsid, $key, $value)
     {
+        echo "Setting {$rsid} {$key} to {$value}\n";
         $this->_snps[$rsid][$key] = $value;
     }
 
