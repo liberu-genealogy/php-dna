@@ -607,6 +607,30 @@ class SNPs implements Countable, Iterator
 
         return $result;
     }
+
+    /**
+     * Get homozygous SNPs.
+     *
+     * @param string $chrom (optional) chromosome (e.g., "1", "X", "MT")
+     * @return array normalized ``snps`` array
+     */
+    public function homozygous($chrom = "")
+    {
+        $df = $this->_filter($chrom);
+        $result = [];
+
+        foreach ($df as $rsid => $row) {
+            if (
+                $row['genotype'] !== null
+                && strlen($row['genotype']) == 2
+                && $row['genotype'][0] == $row['genotype'][1]
+            ) {
+                $result[$rsid] = $row;
+            }
+        }
+
+        return $result;
+    }
 }
 
         

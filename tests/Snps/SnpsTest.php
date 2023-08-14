@@ -86,7 +86,7 @@ class SnpsTest extends BaseSNPsTestCase
         }
     }
 
-    public function testBuildDetectedPARSnps() 
+    public function testBuildDetectedPARSnps()
     {
         $snps = $this->loadAssignPARSnps('tests/input/GRCh37_PAR.csv');
         $this->assertEquals(37, $snps->getBuild());
@@ -95,33 +95,42 @@ class SnpsTest extends BaseSNPsTestCase
         $actualSnps = $snps->getSnps();
         $this->assertEquals($expectedSnps, $actualSnps);
     }
-      
 
-    public function test_notnull() {
+
+    public function test_notnull()
+    {
         $s = new SNPs("tests/input/generic.csv");
         $snps = $this->generic_snps();
         unset($snps["rs5"]); // Assuming snps is an associative array
-        
+
         $this->assertEquals($s->notnull(), $snps, "Frames are not equal!");
     }
 
-    public function test_heterozygous() {
+    public function test_heterozygous()
+    {
         $s = new SNPs("tests/input/generic.csv");
-        
+
         $expected = $this->create_snp_df(
             rsid: ["rs6", "rs7", "rs8"],
             chrom: ["1", "1", "1"],
             pos: [106, 107, 108],
             genotype: ["GC", "TC", "AT"]
         );
-    
+
         $this->assertEquals($expected, $s->heterozygous(), "Frames are not equal!");
     }
-    
-    
-    
-    
-    
-    
 
+    public function test_homozygous()
+    {
+        $s = new SNPs("tests/input/generic.csv");
+
+        $expected = $this->create_snp_df(
+            rsid: ["rs1", "rs2", "rs3", "rs4"],
+            chrom: ["1", "1", "1", "1"],
+            pos: [101, 102, 103, 104],
+            genotype: ["AA", "CC", "GG", "TT"],
+        );
+
+        $this->assertEquals($expected, $s->homozygous(), "Frames are not equal!");
+    }
 }
