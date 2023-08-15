@@ -147,4 +147,17 @@ class SnpsTest extends BaseSNPsTestCase
 
         $this->assertEquals($expected, $s->homozygous("1"), "Frames are not equal!");
     }
+
+    public function test_valid_False()
+    {
+        foreach ($this->empty_snps() as $snps) {
+            $this->assertFalse($snps->isValid());
+        }
+    }
+
+    public function test_valid_True()
+    {
+        $s = new SNPs("tests/input/generic.csv");
+        $this->assertTrue($s->isValid());
+    }
 }

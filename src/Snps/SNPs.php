@@ -631,6 +631,22 @@ class SNPs implements Countable, Iterator
 
         return $result;
     }
+
+    /*
+     * Determine if SNPs is valid.
+     * 
+     * SNPs is valid when the input file has been successfully parsed.
+     * 
+     * @return bool True if SNPs is valid
+    */
+    public function isValid(): bool
+    {
+        if (empty($this->_snps)) {
+            return false;
+        } else {
+            return true;
+        }
+    }
 }
 
         
@@ -1007,15 +1023,7 @@ class SNPs implements Countable, Iterator
 //             }
 //         }
         
-//         public function isValid(): bool
-//         {
-//             // Check if the 'snps' property is empty
-//             if (empty($this->snps)) {
-//                 return false; // If 'snps' is empty, the object is not valid
-//             } else {
-//                 return true; // If 'snps' is not empty, the object is valid
-//             }
-//         }
+        
 
 //         public function save(
 //             string $filename = "",
