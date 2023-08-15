@@ -160,4 +160,11 @@ class SnpsTest extends BaseSNPsTestCase
         $s = new SNPs("tests/input/generic.csv");
         $this->assertTrue($s->isValid());
     }
+    
+    public function test_only_detect_source()
+    {
+        $s = new SNPs("tests/input/generic.csv", true);
+        $this->assertEquals($s->getSource(), "generic");
+        $this->assertEquals(count($s), 0);
+    }
 }
