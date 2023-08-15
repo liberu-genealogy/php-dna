@@ -647,6 +647,28 @@ class SNPs implements Countable, Iterator
             return true;
         }
     }
+
+    /*
+     * Summary of SNPs.
+     * 
+     * @return array Summary of SNPs
+    */
+    public function getSummary(): array
+        {
+            if (!$this->isValid()) {
+                return []; 
+            } else {
+                return [
+                    "source" => $this->source,
+                    "assembly" => $this->getAssembly(),
+                    "build" => $this->_build,
+                    "build_detected" => $this->_build_detected,
+                    "count" => $this->count,
+                    "chromosomes" => $this->chromosomes_summary,
+                    "sex" => $this->sex,
+                ];
+            }
+        }
 }
 
         
@@ -963,65 +985,6 @@ class SNPs implements Countable, Iterator
 //             return [];
 //         }
 
-//         public function heterozygous(string $chrom = ''): array
-//         {
-//             // Call the filter() method to get the filtered data
-//             $df = $this->filter($chrom);
-    
-//             // Filter the data to return rows with heterozygous genotypes
-//             return array_filter($df, function ($row) {
-//                 return (
-//                     $row['genotype'] !== null &&                      // Genotype is not null
-//                     strlen($row['genotype']) === 2 &&                  // Genotype is of length 2
-//                     $row['genotype'][0] !== $row['genotype'][1]       // The two alleles are different
-//                 );
-//             });
-//         }
-    
-//         public function homozygous(string $chrom = ''): array
-//         {
-//             // Call the filter() method to get the filtered data
-//             $df = $this->filter($chrom);
-    
-//             // Filter the data to return rows with homozygous genotypes
-//             return array_filter($df, function ($row) {
-//                 return (
-//                     $row['genotype'] !== null &&                      // Genotype is not null
-//                     strlen($row['genotype']) === 2 &&                  // Genotype is of length 2
-//                     $row['genotype'][0] === $row['genotype'][1]        // The two alleles are the same
-//                 );
-//             });
-//         }
-    
-//         public function notnull(string $chrom = ''): array
-//         {
-//             // Call the filter() method to get the filtered data
-//             $df = $this->filter($chrom);
-    
-//             // Filter the data to return rows with non-null genotypes
-//             return array_filter($df, function ($row) {
-//                 return $row['genotype'] !== null;                     // Genotype is not null
-//             });
-//         }
-        
-//         public function getSummary(): array
-//         {
-//             // Check if the object is valid
-//             if (!$this->isValid()) {
-//                 return []; // If not valid, return an empty array
-//             } else {
-//                 // If valid, return an array with summary information
-//                 return [
-//                     "source" => $this->source,
-//                     "assembly" => $this->assembly,
-//                     "build" => $this->build,
-//                     "build_detected" => $this->build_detected,
-//                     "count" => $this->count,
-//                     "chromosomes" => $this->chromosomes_summary,
-//                     "sex" => $this->sex,
-//                 ];
-//             }
-//         }
         
         
 

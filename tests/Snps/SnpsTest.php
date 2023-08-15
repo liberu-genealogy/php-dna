@@ -167,4 +167,58 @@ class SnpsTest extends BaseSNPsTestCase
         $this->assertEquals($s->getSource(), "generic");
         $this->assertEquals(count($s), 0);
     }
+
+    public function test_empty_dataframe()
+    {
+        // for snps in self.empty_snps():
+//         self.assertListEqual(
+//             list(snps.snps.columns.values), ["chrom", "pos", "genotype"]
+//         )
+//         self.assertEqual(snps.snps.index.name, "rsid")
+        // foreach ($this->empty_snps() as $snps) {
+        //     $this->assertEquals(
+        //         $snps->getSnps()->columns->toArray(),
+        //         ["chrom", "pos", "genotype"]
+        //     );
+        //     $this->assertEquals($snps->getSnps()->index->name, "rsid");
+        // }
+    }
+
+   public function test_assembly_None()
+   {
+       $snps = new SNPs();
+       $this->assertFalse($snps->getAssembly());
+   }
+
+//    def test_summary(self):
+//         s = SNPs("tests/input/GRCh38.csv")
+//         self.assertDictEqual(
+//             s.summary,
+//             {
+//                 "source": "generic",
+//                 "assembly": "GRCh38",
+//                 "build": 38,
+//                 "build_detected": True,
+//                 "count": 4,
+//                 "chromosomes": "1, 3",
+//                 "sex": "",
+//             },
+//         )
+public function test_summary()
+{
+    $s = new SNPs("tests/input/GRCh38.csv");
+    $this->assertEquals(
+        $s->getSummary(),
+        [
+            "source" => "generic",
+            "assembly" => "GRCh38",
+            "build" => 38,
+            "build_detected" => true,
+            "count" => 4,
+            "chromosomes" => "1, 3",
+            "sex" => "",
+        ]
+        );
+}
+
 }
