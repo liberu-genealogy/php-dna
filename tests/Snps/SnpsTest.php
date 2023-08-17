@@ -160,7 +160,7 @@ class SnpsTest extends BaseSNPsTestCase
         $s = new SNPs("tests/input/generic.csv");
         $this->assertTrue($s->isValid());
     }
-    
+
     public function test_only_detect_source()
     {
         $s = new SNPs("tests/input/generic.csv", true);
@@ -171,10 +171,10 @@ class SnpsTest extends BaseSNPsTestCase
     public function test_empty_dataframe()
     {
         // for snps in self.empty_snps():
-//         self.assertListEqual(
-//             list(snps.snps.columns.values), ["chrom", "pos", "genotype"]
-//         )
-//         self.assertEqual(snps.snps.index.name, "rsid")
+        //         self.assertListEqual(
+        //             list(snps.snps.columns.values), ["chrom", "pos", "genotype"]
+        //         )
+        //         self.assertEqual(snps.snps.index.name, "rsid")
         // foreach ($this->empty_snps() as $snps) {
         //     $this->assertEquals(
         //         $snps->getSnps()->columns->toArray(),
@@ -184,41 +184,63 @@ class SnpsTest extends BaseSNPsTestCase
         // }
     }
 
-   public function test_assembly_None()
-   {
-       $snps = new SNPs();
-       $this->assertFalse($snps->getAssembly());
-   }
+    public function test_assembly_None()
+    {
+        $snps = new SNPs();
+        $this->assertFalse($snps->getAssembly());
+    }
 
-//    def test_summary(self):
-//         s = SNPs("tests/input/GRCh38.csv")
-//         self.assertDictEqual(
-//             s.summary,
-//             {
-//                 "source": "generic",
-//                 "assembly": "GRCh38",
-//                 "build": 38,
-//                 "build_detected": True,
-//                 "count": 4,
-//                 "chromosomes": "1, 3",
-//                 "sex": "",
-//             },
-//         )
-public function test_summary()
-{
-    $s = new SNPs("tests/input/GRCh38.csv");
-    $this->assertEquals(
-        $s->getSummary(),
-        [
-            "source" => "generic",
-            "assembly" => "GRCh38",
-            "build" => 38,
-            "build_detected" => true,
-            "count" => 4,
-            "chromosomes" => "1, 3",
-            "sex" => "",
-        ]
+    //    def test_summary(self):
+    //         s = SNPs("tests/input/GRCh38.csv")
+    //         self.assertDictEqual(
+    //             s.summary,
+    //             {
+    //                 "source": "generic",
+    //                 "assembly": "GRCh38",
+    //                 "build": 38,
+    //                 "build_detected": True,
+    //                 "count": 4,
+    //                 "chromosomes": "1, 3",
+    //                 "sex": "",
+    //             },
+    //         )
+    public function test_summary()
+    {
+        $s = new SNPs("tests/input/GRCh38.csv");
+        $this->assertEquals(
+            $s->getSummary(),
+            [
+                "source" => "generic",
+                "assembly" => "GRCh38",
+                "build" => 38,
+                "build_detected" => true,
+                "count" => 4,
+                "chromosomes" => "1, 3",
+                "sex" => "",
+            ]
         );
-}
+    }
 
+  
+    public function test_summary_no_snps()
+    {
+        foreach ($this->empty_snps() as $snps) {
+            $this->assertEquals($snps->getSummary(), []);
+        }
+    }
+
+//     def test_chromosomes(self):
+//     s = SNPs("tests/input/chromosomes.csv")
+//     self.assertListEqual(s.chromosomes, ["1", "2", "3", "5", "PAR", "MT"])
+
+    public function test_chromosomes()
+    {
+        $s = new SNPs("tests/input/chromosomes.csv");
+        var_dump($s->getChromosomes());
+        $this->assertEquals(["1", "2", "3", "5", "PAR", "MT"], $s->getChromosomes());
+    }
+
+// def test_chromosomes_no_snps(self):
+//     for snps in self.empty_snps():
+//         self.assertFalse(snps.chromosomes)
 }

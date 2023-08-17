@@ -654,21 +654,39 @@ class SNPs implements Countable, Iterator
      * @return array Summary of SNPs
     */
     public function getSummary(): array
-        {
-            if (!$this->isValid()) {
-                return []; 
-            } else {
-                return [
-                    "source" => $this->source,
-                    "assembly" => $this->getAssembly(),
-                    "build" => $this->_build,
-                    "build_detected" => $this->_build_detected,
-                    "count" => $this->count,
-                    "chromosomes" => $this->chromosomes_summary,
-                    "sex" => $this->sex,
-                ];
-            }
+    {
+        if (!$this->isValid()) {
+            return [];
+        } else {
+            return [
+                "source" => $this->source,
+                "assembly" => $this->getAssembly(),
+                "build" => $this->_build,
+                "build_detected" => $this->_build_detected,
+                "count" => $this->count,
+                "chromosomes" => $this->chromosomes_summary,
+                "sex" => $this->sex,
+            ];
         }
+    }
+
+    public function getChromosomes()
+    {
+        if (!empty($this->_snps)) {
+            $chromosomes = [];
+            foreach ($this->_snps as $snp) {
+                if (!in_array($snp["chrom"], $chromosomes))
+                    $chromosomes[] = $snp["chrom"];
+            }
+
+            var_dump($chromosomes);
+            sort($chromosomes);
+            var_dump($chromosomes);
+            return $chromosomes;
+        } else {
+            return [];
+        }
+    }
 }
 
         
@@ -900,18 +918,7 @@ class SNPs implements Countable, Iterator
 
 //        
     
-//         public function getChromosomes(): array
-//         {
-//             // Check if the "_snps" array is not empty
-//             if (!$this->_snps->isEmpty()) {
-//                 // Return unique values of the "chrom" key in the "_snps" array
-//                 return array_unique($this->_snps["chrom"]);
-//             } else {
-//                 // Return an empty array if "_snps" is empty
-//                 return [];
-//             }
-//         }
-
+//         
 //         public function getChromosomesSummary(): string
 //         {
 //             // Check if the "_snps" array is not empty
