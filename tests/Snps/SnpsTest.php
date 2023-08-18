@@ -240,7 +240,11 @@ class SnpsTest extends BaseSNPsTestCase
         $this->assertEquals(["1", "2", "3", "5", "PAR", "MT"], $s->getChromosomes());
     }
 
-// def test_chromosomes_no_snps(self):
-//     for snps in self.empty_snps():
-//         self.assertFalse(snps.chromosomes)
+    public function test_chromosomes_no_snps()
+    {
+        foreach ($this->empty_snps() as $snps) {
+            $this->assertEmpty($snps->getChromosomes());
+        }
+    }
+
 }
