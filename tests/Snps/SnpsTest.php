@@ -247,4 +247,191 @@ class SnpsTest extends BaseSNPsTestCase
         }
     }
 
+    // def test_sex_Female_X_chrom(self):
+    //     s = self.simulate_snps(
+    //         chrom="X", pos_start=1, pos_max=155270560, pos_step=10000, genotype="AC"
+    //     )
+    //     self.assertEqual(s.sex, "Female")
+
+    public function test_sex_Female_X_chrom()
+    {
+        $s = $this->simulate_snps(
+            chrom: "X",
+            pos_start: 1,
+            pos_max: 155270560,
+            pos_step: 10000,
+            genotype: "AC"
+        );
+        $this->assertEquals("Female", $s->getSex());
+    }
+
+    // def test_sex_Female_Y_chrom(self):
+    //     s = self.simulate_snps(
+    //         chrom="Y", pos_start=1, pos_max=59373566, pos_step=10000, null_snp_step=1
+    //     )
+    //     self.assertEqual(s.sex, "Female")
+
+    public function test_sex_Female_Y_chrom()
+    {
+        $s = $this->simulate_snps(
+            chrom: "Y",
+            pos_start: 1,
+            pos_max: 59373566,
+            pos_step: 10000,
+            null_snp_step: 1
+        );
+        $this->assertEquals("Female", $s->getSex());
+    }
+
+    // def test_sex_Male_X_chrom(self):
+    //     s = self.simulate_snps(
+    //         chrom="X", pos_start=1, pos_max=155270560, pos_step=10000, genotype="AA"
+    //     )
+    //     self.assertEqual(s.count, 15528)
+    //     s._deduplicate_XY_chrom()
+    //     self.assertEqual(s.count, 15528)
+    //     self.assertEqual(len(s.discrepant_XY), 0)
+    //     self.assertEqual(s.sex, "Male")
+
+    public function test_sex_Male_X_chrom()
+    {
+        $s = $this->simulate_snps(
+            chrom: "X",
+            pos_start: 1,
+            pos_max: 155270560,
+            pos_step: 10000,
+            genotype: "AA"
+        );
+        $this->assertEquals(15528, $s->count);
+        $s->deduplicate_XY_chrom();
+        $this->assertEquals(15528, $s->count);
+        $this->assertEquals(0, count($s->getDiscrepantXY()));
+        $this->assertEquals("Male", $s->getSex());
+    }
+
+    // def test_sex_Male_X_chrom_discrepant_XY(self):
+    //     s = self.simulate_snps(
+    //         chrom="X", pos_start=1, pos_max=155270560, pos_step=10000, genotype="AA"
+    //     )
+    //     self.assertEqual(s.count, 15528)
+    //     s._snps.loc["rs8001", "genotype"] = "AC"
+    //     s._deduplicate_XY_chrom()
+    //     self.assertEqual(s.count, 15527)
+    //     result = self.create_snp_df(
+    //         rsid=["rs8001"], chrom=["X"], pos=[80000001], genotype=["AC"]
+    //     )
+    //     pd.testing.assert_frame_equal(s.discrepant_XY, result, check_exact=True)
+    //     self.assertEqual(s.sex, "Male")
+
+    public function test_sex_Male_X_chrom_discrepant_XY()
+    {
+        $s = $this->simulate_snps(
+            chrom: "X",
+            pos_start: 1,
+            pos_max: 155270560,
+            pos_step: 10000,
+            genotype: "AA"
+        );
+        $this->assertEquals(15528, $s->count);
+        // $s->getSnps()->loc["rs8001", "genotype"] = "AC";
+        $s->deduplicate_XY_chrom();
+        $this->assertEquals(15527, $s->count);
+        $result = $this->create_snp_df(
+            rsid: ["rs8001"], chrom: ["X"], pos: [80000001], genotype: ["AC"]
+        );
+        $this->assertEquals($result, $s->getDiscrepantXY());
+        $this->assertEquals("Male", $s->getSex());
+    }
+
+    // def test_sex_Male_Y_chrom(self):
+    //     s = self.simulate_snps(chrom="Y", pos_start=1, pos_max=59373566, pos_step=10000)
+    //     self.assertEqual(s.sex, "Male")
+
+    public function test_sex_male_Y_chrom()
+    {
+        $s = $this->simulate_snps(
+            chrom: "Y",
+            pos_start: 1,
+            pos_max: 59373566,
+            pos_step: 10000
+        );
+
+        $this->assertEquals("Male", $s->getSex());
+    }
+
+    // def test_sex_not_determined(self):
+    //     s = self.simulate_snps(
+    //         chrom="1", pos_start=1, pos_max=249250621, pos_step=10000
+    //     )
+    //     self.assertEqual(s.sex, "")
+
+    public function test_sex_not_determined()
+    {
+        $s = $this->simulate_snps(
+            chrom: "1",
+            pos_start: 1,
+            pos_max: 249250621,
+            pos_step: 10000
+        );
+
+        $this->assertEquals("", $s->getSex());
+    }
+
+    // def test_sex_no_snps(self):
+    //     for snps in self.empty_snps():
+    //         self.assertFalse(snps.sex)
+
+    public function test_sex_no_snps()
+    {
+        foreach ($this->empty_snps() as $snps) {
+            $this->assertEmpty($snps->getSex());
+        }
+    }
+
+    // def test_source(self):
+    //     s = SNPs("tests/input/generic.csv")
+    //     self.assertEqual(s.source, "generic")
+    //     self.assertEqual(s._source, ["generic"])
+
+    public function test_source()
+    {
+        $s = new SNPs("tests/input/generic.csv");
+        $this->assertEquals("generic", $s->getSource());
+        $this->assertEquals(["generic"], $s->getSource());
+    }
+
+    // def test_source_no_snps(self):
+    //     for snps in self.empty_snps():
+    //         self.assertFalse(snps.source)
+
+    public function test_source_no_snps()
+    {
+        foreach ($this->empty_snps() as $snps) {
+            $this->assertEmpty($snps->getSource());
+        }
+    }
+
+    // def test_count(self):
+    //     s = SNPs("tests/input/NCBI36.csv")
+    //     self.assertEqual(s.count, 4)
+
+    public function test_count()
+    {
+        $s = new SNPs("tests/input/NCBI36.csv");
+        $this->assertEquals(4, $s->count);
+    }
+
+    // def test_count_no_snps(self):
+    //     for snps in self.empty_snps():
+    //         self.assertEqual(snps.count, 0)
+    //         self.assertTrue(snps.snps.empty)
+
+    public function test_count_no_snps()
+    {
+        foreach ($this->empty_snps() as $snps) {
+            $this->assertEquals(0, $snps->count);
+            $this->assertTrue($snps->getSnps()->isEmpty());
+        }
+    }
+    
 }
