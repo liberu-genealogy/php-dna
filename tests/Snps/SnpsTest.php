@@ -247,12 +247,7 @@ class SnpsTest extends BaseSNPsTestCase
         }
     }
 
-    // def test_sex_Female_X_chrom(self):
-    //     s = self.simulate_snps(
-    //         chrom="X", pos_start=1, pos_max=155270560, pos_step=10000, genotype="AC"
-    //     )
-    //     self.assertEqual(s.sex, "Female")
-
+  
     public function test_sex_Female_X_chrom()
     {
         $s = $this->simulate_snps(
@@ -265,13 +260,7 @@ class SnpsTest extends BaseSNPsTestCase
         $this->assertEquals("Female", $s->getSex());
     }
 
-    // def test_sex_Female_Y_chrom(self):
-    //     s = self.simulate_snps(
-    //         chrom="Y", pos_start=1, pos_max=59373566, pos_step=10000, null_snp_step=1
-    //     )
-    //     self.assertEqual(s.sex, "Female")
-
-    public function test_sex_Female_Y_chrom()
+       public function test_sex_Female_Y_chrom()
     {
         $s = $this->simulate_snps(
             chrom: "Y",

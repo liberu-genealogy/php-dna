@@ -164,7 +164,7 @@ class SNPs implements Countable, Iterator
         return implode(", ", $this->_source);
     }
 
-    public function getAllSources() : array
+    public function getAllSources(): array
     {
         return $this->_source;
     }
@@ -548,22 +548,60 @@ class SNPs implements Countable, Iterator
         }
     }
 
+    /**
+     * Sex derived from SNPs.
+     * 
+     * @return string 'Male' or 'Female' if detected, else empty string
+     */
+    public function getSex()
+    {
+        $sex = $this->determine_sex(chrom: "X");
+        if (empty($sex))
+            $sex = $this->determine_sex(chrom: "Y");
+        return $sex;
+    }
 
 
-    // public function _determine_sex_X($threshold)
-    // {
-    //     $x_snps = $this->get_count("X");
+    /**
+     * Determine sex from SNPs using thresholds.
+     *
+     * @param float $heterozygous_x_snps_threshold percentage heterozygous X SNPs; above this threshold, Female is determined
+     * @param float $y_snps_not_null_threshold percentage Y SNPs that are not null; above this threshold, Male is determined
+     * @param string $chrom use X or Y chromosome SNPs to determine sex, default is "X"
+     * @return string 'Male' or 'Female' if detected, else empty string
+     */
+    public function determine_sex(
+        $heterozygous_x_snps_threshold = 0.03,
+        $y_snps_not_null_threshold = 0.3,
+        $chrom = "X"
+    ) {
+        if (!empty($this->_snps)) {
+            if ($chrom === "X") {
+                return $this->_determine_sex_X($heterozygous_x_snps_threshold);
+            } elseif ($chrom === "Y") {
+                return $this->_determine_sex_Y($y_snps_not_null_threshold);
+            }
+        }
 
-    //     if ($x_snps > 0) {
-    //         if (count($this->heterozygous("X")) / $x_snps > $threshold) {
-    //             return "Female";
-    //         } else {
-    //             return "Male";
-    //         }
-    //     } else {
-    //         return "";
-    //     }
-    // }
+        return "";
+    }
+
+
+
+    public function _determine_sex_X($threshold)
+    {
+        $x_snps = $this->get_count("X");
+
+        if ($x_snps > 0) {
+            if (count($this->heterozygous("X")) / $x_snps > $threshold) {
+                return "Female";
+            } else {
+                return "Male";
+            }
+        } else {
+            return "";
+        }
+    }
 
     public function _determine_sex_Y($threshold)
     {
