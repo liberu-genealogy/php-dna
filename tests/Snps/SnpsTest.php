@@ -388,21 +388,12 @@ class SnpsTest extends BaseSNPsTestCase
         }
     }
 
-    // def test_source(self):
-    //     s = SNPs("tests/input/generic.csv")
-    //     self.assertEqual(s.source, "generic")
-    //     self.assertEqual(s._source, ["generic"])
-
     public function test_source()
     {
         $s = new SNPs("tests/input/generic.csv");
         $this->assertEquals("generic", $s->getSource());
-        $this->assertEquals(["generic"], $s->getSource());
+        $this->assertEquals(["generic"], $s->getAllSources());
     }
-
-    // def test_source_no_snps(self):
-    //     for snps in self.empty_snps():
-    //         self.assertFalse(snps.source)
 
     public function test_source_no_snps()
     {
@@ -411,26 +402,17 @@ class SnpsTest extends BaseSNPsTestCase
         }
     }
 
-    // def test_count(self):
-    //     s = SNPs("tests/input/NCBI36.csv")
-    //     self.assertEqual(s.count, 4)
-
     public function test_count()
     {
         $s = new SNPs("tests/input/NCBI36.csv");
-        $this->assertEquals(4, $s->count);
+        $this->assertEquals(4, $s->count());
     }
-
-    // def test_count_no_snps(self):
-    //     for snps in self.empty_snps():
-    //         self.assertEqual(snps.count, 0)
-    //         self.assertTrue(snps.snps.empty)
 
     public function test_count_no_snps()
     {
         foreach ($this->empty_snps() as $snps) {
-            $this->assertEquals(0, $snps->count);
-            $this->assertTrue($snps->getSnps()->isEmpty());
+            $this->assertEquals(0, $snps->count());
+            $this->assertEmpty($snps->getSnps());
         }
     }
     

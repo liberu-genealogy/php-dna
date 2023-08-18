@@ -18,20 +18,100 @@ abstract class BaseSNPsTestCase extends TestCase
 
     protected $downloads_enabled = false;
 
+
     public function simulate_snps(
-        $chrom = "1",
-        $pos_start = 1,
-        $pos_max = 248140902,
-        $pos_step = 100,
-        $genotype = "AA",
-        $insert_nulls = true,
-        $null_snp_step = 101,
-        $complement_genotype_one_chrom = false,
-        $complement_genotype_two_chroms = false,
-        $complement_snp_step = 50
-    ) {
-        // Test implementation
+        string $chrom = "1",
+        int $pos_start = 1,
+        int $pos_max = 248140902,
+        int $pos_step = 100,
+        string $genotype = "AA",
+        bool $insert_nulls = true,
+        int $null_snp_step = 101,
+        bool $complement_genotype_one_chrom = false,
+        bool $complement_genotype_two_chroms = false,
+        int $complement_snp_step = 50
+    ): SNPs {
+        $s = new SNPs();
+        $s->setBuild(37);
+
+        $positions = range($pos_start, $pos_max - 1, $pos_step);
+        $snps = array_fill_keys(array_map(fn ($x) => "rs" . ($x + 1), range(0, count($positions) - 1)), ["chrom" => $chrom]);
+        foreach ($positions as $index => $pos) {
+            $snps["rs" . ($index + 1)]["pos"] = $pos;
+            $snps["rs" . ($index + 1)]["genotype"] = $genotype;
+        }
+
+        if ($insert_nulls) {
+            for ($i = 0; $i < count($snps); $i += $null_snp_step) {
+                $snps[array_keys($snps)[$i]]["genotype"] = null;
+            }
+        }
+
+        for ($i = 0; $i < count($snps); $i += $complement_snp_step) {
+            $key = array_keys($snps)[$i];
+            if ($complement_genotype_two_chroms) {
+                $snps[$key]["genotype"] = $this->complement_two_chroms($snps[$key]["genotype"]);
+            } elseif ($complement_genotype_one_chrom) {
+                $snps[$key]["genotype"] = $this->complement_one_chrom($snps[$key]["genotype"]);
+            }
+        }
+
+        $s->setSNPs($snps);
+
+        return $s;
     }
+
+    public static function get_complement($base)
+    {
+        switch ($base) {
+            case "A":
+                return "T";
+            case "G":
+                return "C";
+            case "C":
+                return "G";
+            case "T":
+                return "A";
+            default:
+                return $base;
+        }
+    }
+
+    public function complement_one_chrom($genotype)
+    {
+        if (is_null($genotype)) {
+            return null;
+        }
+
+        $complement = "";
+
+        for ($i = 0; $i < strlen($genotype); $i++) {
+            $base = $genotype[$i];
+            $complement .= static::get_complement($base);
+            $complement .= $genotype[1];
+            return $complement;
+        }
+
+        return $complement;
+    }
+
+    public function complement_two_chroms($genotype)
+    {
+        if (is_null($genotype)) {
+            return null;
+        }
+
+        $complement = "";
+
+        for ($i = 0; $i < strlen($genotype); $i++) {
+            $base = $genotype[$i];
+            $complement .= static::get_complement($base);
+        }
+
+        return $complement;
+    }
+
+
 
     // def run_parsing_tests(
     //     self, file, source, phased=False, build=37, build_detected=False, snps_df=None
@@ -633,7 +713,9 @@ abstract class BaseSNPsTestCase extends TestCase
 
             $mock->expects($this->exactly(count($effects)))
                 ->method('perform_rest_action')
-                ->with(self::callback(function ($object): bool { return true; }))
+                ->with(self::callback(function ($object): bool {
+                    return true;
+                }))
                 ->willReturn(...$effects);
 
             $snps = new SNPs(

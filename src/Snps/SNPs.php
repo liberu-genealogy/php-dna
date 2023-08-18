@@ -164,6 +164,11 @@ class SNPs implements Countable, Iterator
         return implode(", ", $this->_source);
     }
 
+    public function getAllSources() : array
+    {
+        return $this->_source;
+    }
+
     /**
      * Magic method to handle property access.
      *
@@ -288,6 +293,11 @@ class SNPs implements Countable, Iterator
     public function getBuild()
     {
         return $this->_build;
+    }
+
+    public function setBuild($build)
+    {
+        $this->_build = $build;
     }
 
     /**
