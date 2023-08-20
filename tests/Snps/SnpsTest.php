@@ -407,7 +407,7 @@ class SnpsTest extends BaseSNPsTestCase
     }
 
     public function testDeduplicateFalse() {
-        $snps = new SNPs("tests/input/duplicate_rsids.csv", false);
+        $snps = new SNPs("tests/input/duplicate_rsids.csv", deduplicate: false);
         $result = $this->create_snp_df(["rs1", "rs1", "rs1"], ["1", "1", "1"], [101, 102, 103], ["AA", "CC", "GG"]);
         $this->assertEquals($result, $snps->snps);
     }
@@ -422,7 +422,7 @@ class SnpsTest extends BaseSNPsTestCase
     }
 
     public function testDeduplicateMTChromFalse() {
-        $snps = new SNPs("tests/input/ancestry_mt.txt", false);
+        $snps = new SNPs("tests/input/ancestry_mt.txt", deduplicate: false);
         $result = $this->create_snp_df(["rs1", "rs2", "rs3"], ["MT", "MT", "MT"], [101, 102, 103], ["AA", null, "GC"]);
         $this->assertEquals($result, $snps->snps);
     }

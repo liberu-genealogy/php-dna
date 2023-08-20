@@ -184,12 +184,14 @@ abstract class BaseSNPsTestCase extends TestCase
         $df = [];
         foreach ($rsid as $i => $r) {
             $df[$r] = [
-                "rsid" => $rsid[$i],
+                "rsid" => $r,
                 "chrom" => is_array($chrom) ? $chrom[$i] : $chrom,
                 "pos" => is_array($pos) ? $pos[$i] : $pos,
                 "genotype" => is_array($genotype) ? $genotype[$i] : $genotype,
             ];
         }
+
+        var_dump($df);
         return $df;
     }
 

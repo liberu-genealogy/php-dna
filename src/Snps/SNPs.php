@@ -229,6 +229,10 @@ class SNPs implements Countable, Iterator
         //         else:
         //             self._build_detected = True
         if (!empty($this->_snps)) {
+
+            if ($this->deduplicate) 
+                $this->_deduplicate_rsids();
+
             // use build detected from `read` method or comments, if any
             // otherwise use SNP positions to detect build
             if (!$this->_build_detected) {
@@ -247,18 +251,19 @@ class SNPs implements Countable, Iterator
                 // self.sort()
             }
 
-            // if ($this->deduplicate_XY_chrom) {
-            //     if (
-            //         ($this->deduplicate_XY_chrom === true && $this->determine_sex() == "Male")
-            //         || ($this->determine_sex(chrom: $this->deduplicate_XY_chrom) == "Male")
-            //     ) {
-            //         $this->_deduplicate_XY_chrom();
-            //     }
-            // }
+            if ($this->deduplicate_XY_chrom) {
+                if (
+                    ($this->deduplicate_XY_chrom === true && $this->determine_sex() == "Male")
+                    || ($this->determine_sex(chrom: $this->deduplicate_XY_chrom) == "Male")
+                ) {
+                    $this->deduplicate_XY_chrom();
+                }
+            }
 
-            // if ($this->deduplicate_MT_chrom) {
-            //     $this->_deduplicate_MT_chrom();
-            // }
+            if ($this->deduplicate_MT_chrom) {
+                echo "deduping yo...\n";
+                $this->deduplicate_MT_chrom();
+            }
         }
     }
 
@@ -935,6 +940,8 @@ class SNPs implements Countable, Iterator
     
         // Get remaining non-PAR SNPs with two alleles
         $nonParSnps = $this->_get_non_par_snps($chrom, false);
+        echo "nonParSnps\n";
+        var_dump($nonParSnps);
         $this->_deduplicate_alleles($nonParSnps);
     }
     
@@ -943,20 +950,20 @@ class SNPs implements Countable, Iterator
         $this->_deduplicate_sex_chrom("Y");
     }
     
-    private function deduplicateMTChrom() {
+    private function deduplicate_MT_chrom() {
         $heterozygousMTSnps = $this->heterozygous("MT");
     
         // Save heterozygous MT SNPs
         foreach ($heterozygousMTSnps as $snps) {
-            $this->_heterozygous_MT[] = $this->_snps[$snps];
+            $this->_heterozygous_MT[] = $snps;
         }
     
         // Drop heterozygous MT SNPs since it's ambiguous for which allele to deduplicate
         foreach ($heterozygousMTSnps as $snps) {
-            unset($this->_snps[$snps]);
+            unset($this->_snps[$snps["rsid"]]);
         }
     
-        $this->_deduplicate_alleles($this->homozygous("MT"));
+        $this->_deduplicate_alleles(array_column($this->homozygous("MT"), "rsid"));
     }
     
 }
