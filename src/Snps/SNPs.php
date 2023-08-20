@@ -51,6 +51,9 @@ class SNPs implements Countable, Iterator
     private $_resources;
     private int $_position = 0;
     private array $_keys = [];
+    private array $_duplicate;
+    private array $_discrepant_XY;
+    private array $_heterozygous_MT;
 
     /**
      * SNPs constructor.
@@ -85,9 +88,9 @@ class SNPs implements Countable, Iterator
     {
         // $this->_only_detect_source = $only_detect_source;
         $this->setSNPs(IO::get_empty_snps_dataframe());
-        // $this->_duplicate = $this->get_empty_snps_dataframe();
-        // $this->_discrepant_XY = $this->get_empty_snps_dataframe();
-        // $this->_heterozygous_MT = $this->get_empty_snps_dataframe();
+        $this->_duplicate = IO::get_empty_snps_dataframe();
+        $this->_discrepant_XY = IO::get_empty_snps_dataframe();
+        $this->_heterozygous_MT = IO::get_empty_snps_dataframe();
         // $this->_discrepant_vcf_position = $this->get_empty_snps_dataframe();
         // $this->_low_quality = $this->_snps->index;
         // $this->_discrepant_merge_positions = new DataFrame();
@@ -298,6 +301,31 @@ class SNPs implements Countable, Iterator
     public function setBuild($build)
     {
         $this->_build = $build;
+    }
+
+    /**
+     * Discrepant XY SNPs. 
+     *  
+     * Discrepant XY SNPs are SNPs that are assigned to both the X and Y chromosomes.
+     * 
+     * @return array Discrepant XY SNPs
+     */
+    public function getDiscrepantXY()
+    {
+        return $this->_discrepant_XY;
+    }
+
+    /**
+     * Get the duplicate SNPs.
+     * 
+     * A duplicate SNP has the same RSID as another SNP. The first occurrence
+     * of the RSID is not considered a duplicate SNP.
+     * 
+     * @return SNPs[] Duplicate SNPs
+     */
+    public function getDuplicate()
+    {
+        return $this->_duplicate;
     }
 
     /**
@@ -735,6 +763,202 @@ class SNPs implements Countable, Iterator
             return [];
         }
     }
+
+    /**
+     * Summary of the chromosomes of SNPs.
+     *
+     * @return string human-readable listing of chromosomes (e.g., '1-3, MT'), empty string if no chromosomes
+     */
+    public function getChromosomesSummary()
+    {
+        if (!empty($this->_snps)) {
+            $chroms = array_unique(array_column($this->_snps, "chrom"));
+
+            $int_chroms = array_filter($chroms, 'is_numeric');
+            $str_chroms = array_filter($chroms, 'is_string');
+
+            $as_range = function ($iterable) {
+                $l = array_values($iterable);
+                if (count($l) > 1) {
+                    return "{$l[0]}-{$l[-1]}";
+                } else {
+                    return "{$l[0]}";
+                }
+            };
+
+            $int_chroms_strs = [];
+            $current_range = [];
+            for ($i = 0; $i < count($int_chroms); $i++) {
+                $current_range[] = $int_chroms[$i];
+                if ($i == count($int_chroms) - 1 || $int_chroms[$i] + 1 != $int_chroms[$i + 1]) {
+                    $int_chroms_strs[] = $as_range($current_range);
+                    $current_range = [];
+                }
+            }
+            $int_chroms = implode(", ", $int_chroms_strs);
+            $str_chroms = implode(", ", $str_chroms);
+
+            if ($int_chroms != "" && $str_chroms != "") {
+                $int_chroms .= ", ";
+            }
+
+            return $int_chroms . $str_chroms;
+        } else {
+            return "";
+        }
+    }
+
+    /**
+     * Get PAR regions for the X and Y chromosomes.
+     *
+     * @param int $build Build of SNPs
+     *
+     * @return array PAR regions for the given build
+     *
+     * References:
+     * 1. Genome Reference Consortium, https://www.ncbi.nlm.nih.gov/grc/human
+     * 2. Yates et. al. (doi:10.1093/bioinformatics/btu613),
+     *    <http://europepmc.org/search/?query=DOI:10.1093/bioinformatics/btu613>
+     * 3. Zerbino et. al. (doi.org/10.1093/nar/gkx1098), https://doi.org/10.1093/nar/gkx1098
+     */
+    public static function getParRegions($build)
+    {
+        if ($build == 37) {
+            return [
+                "region" => ["PAR1", "PAR2", "PAR1", "PAR2"],
+                "chrom" => ["X", "X", "Y", "Y"],
+                "start" => [60001, 154931044, 10001, 59034050],
+                "stop" => [2699520, 155260560, 2649520, 59363566],
+            ];
+        } elseif ($build == 38) {
+            return [
+                "region" => ["PAR1", "PAR2", "PAR1", "PAR2"],
+                "chrom" => ["X", "X", "Y", "Y"],
+                "start" => [10001, 155701383, 10001, 56887903],
+                "stop" => [2781479, 156030895, 2781479, 57217415],
+            ];
+        } elseif ($build == 36) {
+            return [
+                "region" => ["PAR1", "PAR2", "PAR1", "PAR2"],
+                "chrom" => ["X", "X", "Y", "Y"],
+                "start" => [1, 154584238, 1, 57443438],
+                "stop" => [2709520, 154913754, 2709520, 57772954],
+            ];
+        } else {
+            return [];
+        }
+    }
+
+
+    private function getNonParStartStop($chrom)
+    {
+        // Get non-PAR start / stop positions for chrom
+        $pr = $this->getParRegions($this->build);
+
+        $np_start = $np_stop = 0;
+        foreach ($pr as $row) {
+            if ($row['chrom'] == $chrom && $row['region'] == 'PAR1') {
+                $np_start = $row['stop'];
+            }
+            if ($row['chrom'] == $chrom && $row['region'] == 'PAR2') {
+                $np_stop = $row['start'];
+            }
+        }
+
+        return [$np_start, $np_stop];
+    }
+
+
+    private function _get_non_par_snps($chrom, $heterozygous = true)
+    {
+        list($np_start, $np_stop) = $this->getNonParStartStop($chrom);
+        $df = $this->_filter($chrom);
+        $result = [];
+
+        foreach ($df as $index => $row) {
+            if ($row['genotype'] !== null && strlen($row['genotype']) == 2) {
+                $genotype0 = $row['genotype'][0];
+                $genotype1 = $row['genotype'][1];
+
+                if ($heterozygous && $genotype0 != $genotype1 && $row['pos'] > $np_start && $row['pos'] < $np_stop) {
+                    $result[] = $index;
+                } elseif (!$heterozygous && $genotype0 == $genotype1 && $row['pos'] > $np_start && $row['pos'] < $np_stop) {
+                    $result[] = $index;
+                }
+            }
+        }
+
+        return $result;
+    }
+
+
+    private function _deduplicate_rsids()
+    {
+        // Keep first duplicate rsid.
+
+        $rsids = array_column($this->_snps, 'rsid');
+        $duplicateRsids = array_filter(
+            $this->_snps,
+            function ($value, $key) use ($rsids) {
+                return array_search($value['rsid'], $rsids) != $key;
+            },
+            ARRAY_FILTER_USE_BOTH
+        );
+        // Save duplicate SNPs
+        $this->_duplicate = array_merge($this->_duplicate, $duplicateRsids);
+        // Deduplicate
+        $this->_snps = array_diff_key($this->_snps, $duplicateRsids);
+    }
+
+    private function _deduplicate_alleles($rsids)
+    {
+        // Remove duplicate allele
+        foreach ($rsids as $rsid) {
+            if (isset($this->_snps[$rsid])) {
+                $this->_snps[$rsid]['genotype'] = $this->_snps[$rsid]['genotype'][0];
+            }
+        }
+    }
+
+    private function _deduplicate_sex_chrom($chrom) {
+        $discrepantXYSnps = $this->_get_non_par_snps($chrom);
+    
+        // Save discrepant XY SNPs
+        foreach ($discrepantXYSnps as $snps) {
+            $this->_discrepant_XY[] = $this->_snps[$snps];
+        }
+    
+        // Drop discrepant XY SNPs since it's ambiguous for which allele to deduplicate
+        foreach ($discrepantXYSnps as $snps) {
+            unset($this->_snps[$snps]);
+        }
+    
+        // Get remaining non-PAR SNPs with two alleles
+        $nonParSnps = $this->_get_non_par_snps($chrom, false);
+        $this->_deduplicate_alleles($nonParSnps);
+    }
+    
+    public function deduplicate_XY_chrom() {
+        $this->_deduplicate_sex_chrom("X");
+        $this->_deduplicate_sex_chrom("Y");
+    }
+    
+    private function deduplicateMTChrom() {
+        $heterozygousMTSnps = $this->heterozygous("MT");
+    
+        // Save heterozygous MT SNPs
+        foreach ($heterozygousMTSnps as $snps) {
+            $this->_heterozygous_MT[] = $this->_snps[$snps];
+        }
+    
+        // Drop heterozygous MT SNPs since it's ambiguous for which allele to deduplicate
+        foreach ($heterozygousMTSnps as $snps) {
+            unset($this->_snps[$snps]);
+        }
+    
+        $this->_deduplicate_alleles($this->homozygous("MT"));
+    }
+    
 }
 
         

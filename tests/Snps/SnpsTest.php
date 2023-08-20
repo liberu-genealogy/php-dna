@@ -291,9 +291,9 @@ class SnpsTest extends BaseSNPsTestCase
             pos_step: 10000,
             genotype: "AA"
         );
-        $this->assertEquals(15528, $s->count);
+        $this->assertEquals(15528, $s->count());
         $s->deduplicate_XY_chrom();
-        $this->assertEquals(15528, $s->count);
+        $this->assertEquals(15528, $s->count());
         $this->assertEquals(0, count($s->getDiscrepantXY()));
         $this->assertEquals("Male", $s->getSex());
     }
@@ -321,10 +321,11 @@ class SnpsTest extends BaseSNPsTestCase
             pos_step: 10000,
             genotype: "AA"
         );
-        $this->assertEquals(15528, $s->count);
+        $this->assertEquals(15528, $s->count());
         // $s->getSnps()->loc["rs8001", "genotype"] = "AC";
+        $s->setValue("rs8001", "genotype", "AC");
         $s->deduplicate_XY_chrom();
-        $this->assertEquals(15527, $s->count);
+        $this->assertEquals(15527, $s->count());
         $result = $this->create_snp_df(
             rsid: ["rs8001"], chrom: ["X"], pos: [80000001], genotype: ["AC"]
         );
@@ -404,5 +405,40 @@ class SnpsTest extends BaseSNPsTestCase
             $this->assertEmpty($snps->getSnps());
         }
     }
+
+    public function testDeduplicateFalse() {
+        $snps = new SNPs("tests/input/duplicate_rsids.csv", false);
+        $result = $this->create_snp_df(["rs1", "rs1", "rs1"], ["1", "1", "1"], [101, 102, 103], ["AA", "CC", "GG"]);
+        $this->assertEquals($result, $snps->snps);
+    }
+
+    public function testDeduplicateMTChrom() {
+        $snps = new SNPs("tests/input/ancestry_mt.txt");
+        $result = $this->create_snp_df(["rs1", "rs2"], ["MT", "MT"], [101, 102], ["A", null]);
+        $this->assertEquals($result, $snps->snps);
+
+        $heterozygousMTSnps = $this->create_snp_df(["rs3"], ["MT"], [103], ["GC"]);
+        $this->assertEquals($heterozygousMTSnps, $snps->heterozygous_MT);
+    }
+
+    public function testDeduplicateMTChromFalse() {
+        $snps = new SNPs("tests/input/ancestry_mt.txt", false);
+        $result = $this->create_snp_df(["rs1", "rs2", "rs3"], ["MT", "MT", "MT"], [101, 102, 103], ["AA", null, "GC"]);
+        $this->assertEquals($result, $snps->snps);
+    }
+
+    public function testDuplicateRsids() {
+        $snps = new SNPs("tests/input/duplicate_rsids.csv");
+        $result = $this->create_snp_df(["rs1"], ["1"], [101], ["AA"]);
+        $duplicate = $this->create_snp_df(["rs1", "rs1"], ["1", "1"], [102, 103], ["CC", "GG"]);
+        $this->assertEquals($result, $snps->snps);
+        $this->assertEquals($duplicate, $snps->duplicate);
+    }
+
+    
+
+
+
+
     
 }
