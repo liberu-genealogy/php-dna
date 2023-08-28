@@ -229,6 +229,7 @@ class SNPs implements Countable, Iterator
         //         else:
         //             self._build_detected = True
         if (!empty($this->_snps)) {
+            $this->sort();
 
             if ($this->deduplicate) 
                 $this->_deduplicate_rsids();
@@ -248,7 +249,7 @@ class SNPs implements Countable, Iterator
 
             if ($this->assign_par_snps) {
                 $this->assignParSnps();
-                // self.sort()
+                $this->sort();
             }
 
             if ($this->deduplicate_XY_chrom) {
@@ -965,6 +966,48 @@ class SNPs implements Countable, Iterator
     
         $this->_deduplicate_alleles(array_column($this->homozygous("MT"), "rsid"));
     }
+
+
+    public function sort() {
+        $sortedList = $this->naturalSortChromosomes(array_unique(array_column($this->_snps, 'chrom')));
+    
+        // Move PAR and MT to the end of the array
+        if (($key = array_search("PAR", $sortedList)) !== false) {
+            unset($sortedList[$key]);
+            $sortedList[] = "PAR";
+        }
+    
+        if (($key = array_search("MT", $sortedList)) !== false) {
+            unset($sortedList[$key]);
+            $sortedList[] = "MT";
+        }
+    
+        // Sort the array based on ordered chromosome list and position
+        usort($this->_snps, function ($a, $b) use ($sortedList) {
+            $cmp = $this->naturalSortKey(array_search($a['chrom'], $sortedList), array_search($b['chrom'], $sortedList));
+            return ($cmp === 0) ? $a['pos'] - $b['pos'] : $cmp;
+        });
+    
+        $this->_snps = $this->restoreChromObject($this->_snps);
+    }
+    
+    private function naturalSortChromosomes($chromosomes) {
+        natsort($chromosomes);
+        return $chromosomes;
+    }
+    
+    private function naturalSortKey($a, $b) {
+        return strnatcasecmp($a, $b);
+    }
+    
+    private function restoreChromObject($array) {
+        // Convert the 'chrom' column back to object
+        foreach ($array as &$item) {
+            $item['chrom'] = (string)$item['chrom'];
+        }
+        return $array;
+    }
+    
     
 }
 
