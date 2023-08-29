@@ -435,7 +435,21 @@ class SnpsTest extends BaseSNPsTestCase
         $this->assertEquals($duplicate, $snps->duplicate);
     }
 
-    
+    public function _run_remap_test($f, $mappings) {
+        if ($this->downloads_enabled) {
+            $f();
+        } else {
+            $mock = $this->createMock(Resources::class);
+            $mock->method('get_assembly_mapping_data')->willReturn($mappings);
+            
+            $this->getMockBuilder(Resources::class)
+                 ->setMethods(['get_assembly_mapping_data'])
+                 ->getMock();
+                 
+            $f();
+        }
+    }
+        
 
 
 
