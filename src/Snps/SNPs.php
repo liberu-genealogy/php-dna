@@ -1058,89 +1058,6 @@ class SNPs implements Countable, Iterator
             }
     
             // find the SNPs that are being remapped for this mapping
-            $snp_indices = $temp->loc[
-                !$temp['remapped']
-                & ($temp['pos'] >= $orig_start)
-                & ($temp['pos'] <= $orig_end)
-            ].index;
-    
-            // if there are no SNPs here, skip
-            if (count($snp_indices) === 0) {
-                continue;
-            }
-    
-            $orig_range_len = $orig_end - $orig_start;
-            $mapped_range_len = $mapped_end - $mapped_start;
-    
-            // if this would change chromosome, skip
-            // TODO allow within normal chromosomes
-            // TODO flatten patches
-            if ($orig_region != $mapped_region) {
-                Logger::warning(
-                    "discrepant chroms for " . count($snp_indices) . " SNPs from $orig_region to $mapped_region"
-                );
-                continue;
-            }
-    
-            // if there is any stretching or squashing of the region
-            // observed when mapping NCBI36 -> GRCh38
-            // TODO disallow skipping a version when remapping
-            if ($orig_range_len != $mapped_range_len) {
-                Logger::warning(
-                    "discrepant coords for " . count($snp_indices) . " SNPs from $orig_region:$orig_start-$orig_end to $mapped_region:$mapped_start-$mapped_end"
-                );
-                continue;
-            }
-    
-            // remap the SNPs
-            if ($mapping['mapped']['strand'] == -1) {
-                // flip and (optionally) complement since we're mapping to minus strand
-                $diff_from_start = $temp->loc[$snp_indices, 'pos'] - $orig_start;
-                $temp->loc[$snp_indices, 'pos'] = $mapped_end - $diff_from_start;
-    
-                if ($complement_bases) {
-                    $temp->loc[$snp_indices, 'genotype'] = $temp->loc[
-                        $snp_indices, 'genotype'
-                    ]->apply([$this, '_complement_bases']);
-                }
-            } else {
-                // mapping is on the same (plus) strand, so just remap based on offset
-                $offset = $mapped_start - $orig_start;
-                $temp->loc[$snp_indices, 'pos'] = $temp['pos'] + $offset;
-            }
-    
-            // mark these SNPs as remapped
-            $temp->loc[$snp_indices, 'remapped'] = true;
-        }
-    
-        return $temp;
-    }
-
-    private function _remapper($task) {
-        $temp = $task['snps']->copy();
-        $mappings = $task['mappings'];
-        $complement_bases = $task['complement_bases'];
-    
-        $temp['remapped'] = false;
-    
-        $pos_start = (int)$temp['pos']->describe()->min;
-        $pos_end = (int)$temp['pos']->describe()->max;
-    
-        foreach ($mappings['mappings'] as $mapping) {
-            $orig_start = $mapping['original']['start'];
-            $orig_end = $mapping['original']['end'];
-            $mapped_start = $mapping['mapped']['start'];
-            $mapped_end = $mapping['mapped']['end'];
-    
-            $orig_region = $mapping['original']['seq_region_name'];
-            $mapped_region = $mapping['mapped']['seq_region_name'];
-    
-            // skip if mapping is outside of range of SNP positions
-            if ($orig_end < $pos_start || $orig_start > $pos_end) {
-                continue;
-            }
-    
-            // find the SNPs that are being remapped for this mapping
             $snp_indices = array_keys(array_filter(
                 $temp['remapped'],
                 function($value, $key) use ($temp, $orig_start, $orig_end) {
@@ -1161,9 +1078,9 @@ class SNPs implements Countable, Iterator
             // TODO allow within normal chromosomes
             // TODO flatten patches
             if ($orig_region != $mapped_region) {
-                Logger::warning(
-                    "discrepant chroms for " . count($snp_indices) . " SNPs from $orig_region to $mapped_region"
-                );
+                // Logger::warning(
+                //     "discrepant chroms for " . count($snp_indices) . " SNPs from $orig_region to $mapped_region"
+                // );
                 continue;
             }
     
@@ -1171,9 +1088,9 @@ class SNPs implements Countable, Iterator
             // observed when mapping NCBI36 -> GRCh38
             // TODO disallow skipping a version when remapping
             if ($orig_range_len != $mapped_range_len) {
-                Logger::warning(
-                    "discrepant coords for " . count($snp_indices) . " SNPs from $orig_region:$orig_start-$orig_end to $mapped_region:$mapped_start-$mapped_end"
-                );
+                // Logger::warning(
+                //     "discrepant coords for " . count($snp_indices) . " SNPs from $orig_region:$orig_start-$orig_end to $mapped_region:$mapped_start-$mapped_end"
+                // );
                 continue;
             }
     
@@ -1243,7 +1160,7 @@ public function remap($target_assembly, $complement_bases = true) {
     $snps = $this->_snps;
 
     if (empty($snps)) {
-        Logger::warning("No SNPs to remap");
+        // Logger::warning("No SNPs to remap");
         return [$chromosomes_remapped, $chromosomes_not_remapped];
     } else {
         $chromosomes = array_unique(array_column($snps, 'chrom'));
@@ -1253,7 +1170,7 @@ public function remap($target_assembly, $complement_bases = true) {
     $valid_assemblies = ["NCBI36", "GRCh37", "GRCh38", 36, 37, 38];
 
     if (!in_array($target_assembly, $valid_assemblies)) {
-        Logger::warning("Invalid target assembly");
+        // Logger::warning("Invalid target assembly");
         return [$chromosomes_remapped, $chromosomes_not_remapped];
     }
 
@@ -1299,9 +1216,9 @@ public function remap($target_assembly, $complement_bases = true) {
                 "complement_bases" => $complement_bases,
             ];
         } else {
-            Logger::warning(
-                "Chromosome $chrom not remapped; removing chromosome from SNPs for consistency"
-            );
+            // Logger::warning(
+            //     "Chromosome $chrom not remapped; removing chromosome from SNPs for consistency"
+            // );
             $snps = array_filter($snps, function ($snp) use ($chrom) {
                 return $snp['chrom'] !== $chrom;
             });
