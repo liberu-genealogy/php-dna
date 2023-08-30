@@ -1008,6 +1008,31 @@ class SNPs implements Countable, Iterator
         return $array;
     }
     
+
+    private function _complement_bases($genotype) {
+        if (is_null($genotype)) {
+            return null;
+        }
+    
+        $complement = "";
+    
+        foreach (str_split($genotype) as $base) {
+            if ($base === "A") {
+                $complement .= "T";
+            } elseif ($base === "G") {
+                $complement .= "C";
+            } elseif ($base === "C") {
+                $complement .= "G";
+            } elseif ($base === "T") {
+                $complement .= "A";
+            } else {
+                $complement .= $base;
+            }
+        }
+    
+        return $complement;
+    }
+    
     
 }
 
