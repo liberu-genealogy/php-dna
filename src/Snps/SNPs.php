@@ -7,6 +7,7 @@ use Countable;
 use Dna\Resources;
 use Dna\Snps\IO\IO;
 use Dna\Snps\IO\Reader;
+use Dna\Snps\IO\Writer;
 use Iterator;
 
 // You may need to find alternative libraries for numpy, pandas, and snps in PHP, as these libraries are specific to Python
@@ -231,7 +232,7 @@ class SNPs implements Countable, Iterator
         if (!empty($this->_snps)) {
             $this->sort();
 
-            if ($this->deduplicate) 
+            if ($this->deduplicate)
                 $this->_deduplicate_rsids();
 
             // use build detected from `read` method or comments, if any
@@ -926,96 +927,104 @@ class SNPs implements Countable, Iterator
         }
     }
 
-    private function _deduplicate_sex_chrom($chrom) {
+    private function _deduplicate_sex_chrom($chrom)
+    {
         $discrepantXYSnps = $this->_get_non_par_snps($chrom);
-    
+
         // Save discrepant XY SNPs
         foreach ($discrepantXYSnps as $snps) {
             $this->_discrepant_XY[] = $this->_snps[$snps];
         }
-    
+
         // Drop discrepant XY SNPs since it's ambiguous for which allele to deduplicate
         foreach ($discrepantXYSnps as $snps) {
             unset($this->_snps[$snps]);
         }
-    
+
         // Get remaining non-PAR SNPs with two alleles
         $nonParSnps = $this->_get_non_par_snps($chrom, false);
         echo "nonParSnps\n";
         var_dump($nonParSnps);
         $this->_deduplicate_alleles($nonParSnps);
     }
-    
-    public function deduplicate_XY_chrom() {
+
+    public function deduplicate_XY_chrom()
+    {
         $this->_deduplicate_sex_chrom("X");
         $this->_deduplicate_sex_chrom("Y");
     }
-    
-    private function deduplicate_MT_chrom() {
+
+    private function deduplicate_MT_chrom()
+    {
         $heterozygousMTSnps = $this->heterozygous("MT");
-    
+
         // Save heterozygous MT SNPs
         foreach ($heterozygousMTSnps as $snps) {
             $this->_heterozygous_MT[] = $snps;
         }
-    
+
         // Drop heterozygous MT SNPs since it's ambiguous for which allele to deduplicate
         foreach ($heterozygousMTSnps as $snps) {
             unset($this->_snps[$snps["rsid"]]);
         }
-    
+
         $this->_deduplicate_alleles(array_column($this->homozygous("MT"), "rsid"));
     }
 
 
-    public function sort() {
+    public function sort()
+    {
         $sortedList = $this->naturalSortChromosomes(array_unique(array_column($this->_snps, 'chrom')));
-    
+
         // Move PAR and MT to the end of the array
         if (($key = array_search("PAR", $sortedList)) !== false) {
             unset($sortedList[$key]);
             $sortedList[] = "PAR";
         }
-    
+
         if (($key = array_search("MT", $sortedList)) !== false) {
             unset($sortedList[$key]);
             $sortedList[] = "MT";
         }
-    
+
         // Sort the array based on ordered chromosome list and position
         usort($this->_snps, function ($a, $b) use ($sortedList) {
             $cmp = $this->naturalSortKey(array_search($a['chrom'], $sortedList), array_search($b['chrom'], $sortedList));
             return ($cmp === 0) ? $a['pos'] - $b['pos'] : $cmp;
         });
-    
+
         $this->_snps = $this->restoreChromObject($this->_snps);
     }
-    
-    private function naturalSortChromosomes($chromosomes) {
+
+    private function naturalSortChromosomes($chromosomes)
+    {
         natsort($chromosomes);
         return $chromosomes;
     }
-    
-    private function naturalSortKey($a, $b) {
+
+    private function naturalSortKey($a, $b)
+    {
         return strnatcasecmp($a, $b);
     }
-    
-    private function restoreChromObject($array) {
+
+    private function restoreChromObject($array)
+    {
         // Convert the 'chrom' column back to object
         foreach ($array as &$item) {
             $item['chrom'] = (string)$item['chrom'];
         }
         return $array;
     }
-    
 
-    private function _complement_bases($genotype) {
+
+    private function _complement_bases($genotype)
+    {
         if (is_null($genotype)) {
             return null;
         }
-    
+
         $complement = "";
-    
+
         foreach (str_split($genotype) as $base) {
             if ($base === "A") {
                 $complement .= "T";
@@ -1029,51 +1038,52 @@ class SNPs implements Countable, Iterator
                 $complement .= $base;
             }
         }
-    
+
         return $complement;
     }
 
-    private function _remapper($task) {
+    private function _remapper($task)
+    {
         $temp = $task['snps']->copy();
         $mappings = $task['mappings'];
         $complement_bases = $task['complement_bases'];
-    
+
         $temp['remapped'] = false;
-    
+
         $pos_start = (int)$temp['pos']->describe()->min;
         $pos_end = (int)$temp['pos']->describe()->max;
-    
+
         foreach ($mappings['mappings'] as $mapping) {
             $orig_start = $mapping['original']['start'];
             $orig_end = $mapping['original']['end'];
             $mapped_start = $mapping['mapped']['start'];
             $mapped_end = $mapping['mapped']['end'];
-    
+
             $orig_region = $mapping['original']['seq_region_name'];
             $mapped_region = $mapping['mapped']['seq_region_name'];
-    
+
             // skip if mapping is outside of range of SNP positions
             if ($orig_end < $pos_start || $orig_start > $pos_end) {
                 continue;
             }
-    
+
             // find the SNPs that are being remapped for this mapping
             $snp_indices = array_keys(array_filter(
                 $temp['remapped'],
-                function($value, $key) use ($temp, $orig_start, $orig_end) {
+                function ($value, $key) use ($temp, $orig_start, $orig_end) {
                     return !$value && $temp['pos'][$key] >= $orig_start && $temp['pos'][$key] <= $orig_end;
                 },
                 ARRAY_FILTER_USE_BOTH
             ));
-    
+
             // if there are no SNPs here, skip
             if (count($snp_indices) === 0) {
                 continue;
             }
-    
+
             $orig_range_len = $orig_end - $orig_start;
             $mapped_range_len = $mapped_end - $mapped_start;
-    
+
             // if this would change chromosome, skip
             // TODO allow within normal chromosomes
             // TODO flatten patches
@@ -1083,7 +1093,7 @@ class SNPs implements Countable, Iterator
                 // );
                 continue;
             }
-    
+
             // if there is any stretching or squashing of the region
             // observed when mapping NCBI36 -> GRCh38
             // TODO disallow skipping a version when remapping
@@ -1093,24 +1103,24 @@ class SNPs implements Countable, Iterator
                 // );
                 continue;
             }
-    
+
             // remap the SNPs
             if ($mapping['mapped']['strand'] == -1) {
                 // flip and (optionally) complement since we're mapping to minus strand
                 $diff_from_start = array_map(
-                    function($pos) use ($orig_start) {
+                    function ($pos) use ($orig_start) {
                         return $pos - $orig_start;
                     },
                     array_intersect_key($temp['pos'], array_flip($snp_indices))
                 );
                 $temp['pos'][array_flip($snp_indices)] = array_map(
-                    function($diff, $mapped_end) {
+                    function ($diff, $mapped_end) {
                         return $mapped_end - $diff;
                     },
                     $diff_from_start,
                     array_fill(0, count($snp_indices), $mapped_end)
                 );
-    
+
                 if ($complement_bases) {
                     $temp['genotype'][array_flip($snp_indices)] = array_map(
                         [$this, '_complement_bases'],
@@ -1121,133 +1131,255 @@ class SNPs implements Countable, Iterator
                 // mapping is on the same (plus) strand, so just remap based on offset
                 $offset = $mapped_start - $orig_start;
                 $temp['pos'][array_flip($snp_indices)] = array_map(
-                    function($pos) use ($offset) {
+                    function ($pos) use ($offset) {
                         return $pos + $offset;
                     },
                     array_intersect_key($temp['pos'], array_flip($snp_indices))
                 );
             }
-    
+
             // mark these SNPs as remapped
             $temp['remapped'][array_flip($snp_indices)] = array_fill(0, count($snp_indices), true);
         }
-    
+
         return $temp;
     }
-    
+
     /**
- * Remap SNP coordinates from one assembly to another.
- *
- * This method uses the assembly map endpoint of the Ensembl REST API service (via
- * Resources's EnsemblRestClient) to convert SNP coordinates/positions from one
- * assembly to another. After remapping, the coordinates/positions for the
- * SNPs will be that of the target assembly.
- *
- * If the SNPs are already mapped relative to the target assembly, remapping will not be
- * performed.
- *
- * @param string|int $target_assembly Assembly to remap to (e.g., 'NCBI36', 'GRCh37', 'GRCh38', 36, 37, 38)
- * @param bool $complement_bases Complement bases when remapping SNPs to the minus strand
- *
- * @return array An array containing chromosomes that were remapped and chromosomes that were not remapped
- *
- * @throws Exception If invalid target assembly is provided
- */
-public function remap($target_assembly, $complement_bases = true) {
-    $chromosomes_remapped = [];
-    $chromosomes_not_remapped = [];
+     * Remap SNP coordinates from one assembly to another.
+     *
+     * This method uses the assembly map endpoint of the Ensembl REST API service (via
+     * Resources's EnsemblRestClient) to convert SNP coordinates/positions from one
+     * assembly to another. After remapping, the coordinates/positions for the
+     * SNPs will be that of the target assembly.
+     *
+     * If the SNPs are already mapped relative to the target assembly, remapping will not be
+     * performed.
+     *
+     * @param string|int $target_assembly Assembly to remap to (e.g., 'NCBI36', 'GRCh37', 'GRCh38', 36, 37, 38)
+     * @param bool $complement_bases Complement bases when remapping SNPs to the minus strand
+     *
+     * @return array An array containing chromosomes that were remapped and chromosomes that were not remapped
+     *
+     * @throws Exception If invalid target assembly is provided
+     */
+    public function remap($target_assembly, $complement_bases = true)
+    {
+        $chromosomes_remapped = [];
+        $chromosomes_not_remapped = [];
 
-    $snps = $this->_snps;
+        $snps = $this->_snps;
 
-    if (empty($snps)) {
-        // Logger::warning("No SNPs to remap");
-        return [$chromosomes_remapped, $chromosomes_not_remapped];
-    } else {
-        $chromosomes = array_unique(array_column($snps, 'chrom'));
-        $chromosomes_not_remapped = $chromosomes;
-    }
-
-    $valid_assemblies = ["NCBI36", "GRCh37", "GRCh38", 36, 37, 38];
-
-    if (!in_array($target_assembly, $valid_assemblies)) {
-        // Logger::warning("Invalid target assembly");
-        return [$chromosomes_remapped, $chromosomes_not_remapped];
-    }
-
-    if (is_int($target_assembly)) {
-        if ($target_assembly == 36) {
-            $target_assembly = "NCBI36";
+        if (empty($snps)) {
+            // Logger::warning("No SNPs to remap");
+            return [$chromosomes_remapped, $chromosomes_not_remapped];
         } else {
-            $target_assembly = "GRCh" . strval($target_assembly);
+            $chromosomes = array_unique(array_column($snps, 'chrom'));
+            $chromosomes_not_remapped = $chromosomes;
         }
-    }
 
-    if ($this->_build == 36) {
-        $source_assembly = "NCBI36";
-    } else {
-        $source_assembly = "GRCh" . strval($this->_build);
-    }
+        $valid_assemblies = ["NCBI36", "GRCh37", "GRCh38", 36, 37, 38];
 
-    if ($source_assembly == $target_assembly) {
-        return [$chromosomes_remapped, $chromosomes_not_remapped];
-    }
+        if (!in_array($target_assembly, $valid_assemblies)) {
+            // Logger::warning("Invalid target assembly");
+            return [$chromosomes_remapped, $chromosomes_not_remapped];
+        }
 
-    $assembly_mapping_data = $this->_resources->getAssemblyMappingData(
-        $source_assembly,
-        $target_assembly
-    );
+        if (is_int($target_assembly)) {
+            if ($target_assembly == 36) {
+                $target_assembly = "NCBI36";
+            } else {
+                $target_assembly = "GRCh" . strval($target_assembly);
+            }
+        }
 
-    if (empty($assembly_mapping_data)) {
-        return [$chromosomes_remapped, $chromosomes_not_remapped];
-    }
-
-    $tasks = [];
-
-    foreach ($chromosomes as $chrom) {
-        if (array_key_exists($chrom, $assembly_mapping_data)) {
-            $chromosomes_remapped[] = $chrom;
-            $chromosomes_not_remapped = array_diff($chromosomes_not_remapped, [$chrom]);
-            $mappings = $assembly_mapping_data[$chrom];
-            $tasks[] = [
-                "snps" => array_filter($snps, function ($snp) use ($chrom) {
-                    return $snp['chrom'] === $chrom;
-                }),
-                "mappings" => $mappings,
-                "complement_bases" => $complement_bases,
-            ];
+        if ($this->_build == 36) {
+            $source_assembly = "NCBI36";
         } else {
-            // Logger::warning(
-            //     "Chromosome $chrom not remapped; removing chromosome from SNPs for consistency"
+            $source_assembly = "GRCh" . strval($this->_build);
+        }
+
+        if ($source_assembly == $target_assembly) {
+            return [$chromosomes_remapped, $chromosomes_not_remapped];
+        }
+
+        $assembly_mapping_data = $this->_resources->getAssemblyMappingData(
+            $source_assembly,
+            $target_assembly
+        );
+
+        if (empty($assembly_mapping_data)) {
+            return [$chromosomes_remapped, $chromosomes_not_remapped];
+        }
+
+        $tasks = [];
+
+        foreach ($chromosomes as $chrom) {
+            if (array_key_exists($chrom, $assembly_mapping_data)) {
+                $chromosomes_remapped[] = $chrom;
+                $chromosomes_not_remapped = array_diff($chromosomes_not_remapped, [$chrom]);
+                $mappings = $assembly_mapping_data[$chrom];
+                $tasks[] = [
+                    "snps" => array_filter($snps, function ($snp) use ($chrom) {
+                        return $snp['chrom'] === $chrom;
+                    }),
+                    "mappings" => $mappings,
+                    "complement_bases" => $complement_bases,
+                ];
+            } else {
+                // Logger::warning(
+                //     "Chromosome $chrom not remapped; removing chromosome from SNPs for consistency"
+                // );
+                $snps = array_filter($snps, function ($snp) use ($chrom) {
+                    return $snp['chrom'] !== $chrom;
+                });
+            }
+        }
+
+        // remap SNPs
+        $remapped_snps = array_map([$this, '_remapper'], $tasks);
+        $remapped_snps = array_merge(...$remapped_snps);
+
+        // update SNP positions and genotypes
+        foreach ($remapped_snps as $snp) {
+            $rsid = $snp['rsid'];
+            $this->_snps[$rsid]['pos'] = $snp['pos'];
+            $this->_snps[$rsid]['genotype'] = $snp['genotype'];
+        }
+
+        foreach ($snps as &$snp) {
+            $snp['pos'] = (int)$snp['pos'];
+        }
+
+        $this->_snps = $snps;
+        $this->sort();
+        $this->_build = (int)substr($target_assembly, -2);
+
+        return [$chromosomes_remapped, $chromosomes_not_remapped];
+    }
+
+    /**
+     * Save SNPs to a file.
+     *
+     * @param string $filename
+     * @param bool $vcf
+     * @param bool $atomic
+     * @param string $vcf_alt_unavailable
+     * @param string $vcf_chrom_prefix
+     * @param bool $vcf_qc_only
+     * @param bool $vcf_qc_filter
+     * @param array $kwargs
+     *
+     * @return string
+     */
+    public function save(
+        $filename = "",
+        $vcf = false,
+        $atomic = true,
+        $vcf_alt_unavailable = ".",
+        $vcf_chrom_prefix = "",
+        $vcf_qc_only = false,
+        $vcf_qc_filter = false,
+        $kwargs = []
+    ) {
+        if (!array_key_exists("sep", $kwargs)) {
+            $kwargs["sep"] = "\t";
+        }
+
+        $w = new Writer(
+            [
+                'snps' => $this,
+                'filename' => $filename,
+                'vcf' => $vcf,
+                'atomic' => $atomic,
+                'vcf_alt_unavailable' => $vcf_alt_unavailable,
+                'vcf_chrom_prefix' => $vcf_chrom_prefix,
+                'vcf_qc_only' => $vcf_qc_only,
+                'vcf_qc_filter' => $vcf_qc_filter
+            ],
+            $kwargs
+        );
+
+        $result = $w->write();
+        [$path, $extra] = $result;
+
+        if (count($extra) == 1 && !$extra[0]->isEmpty()) {
+            $this->_discrepant_vcf_position = $extra[0];
+            $this->_discrepant_vcf_position->setIndex("rsid");
+            // logger::warning(
+            //     count($this->discrepant_vcf_position) . " SNP positions were found to be discrepant when saving VCF"
             // );
-            $snps = array_filter($snps, function ($snp) use ($chrom) {
-                return $snp['chrom'] !== $chrom;
-            });
         }
+
+        return $path;
     }
 
-    // remap SNPs
-    $remapped_snps = array_map([$this, '_remapper'], $tasks);
-    $remapped_snps = array_merge(...$remapped_snps);
 
-    // update SNP positions and genotypes
-    foreach ($remapped_snps as $snp) {
-        $rsid = $snp['rsid'];
-        $this->_snps[$rsid]['pos'] = $snp['pos'];
-        $this->_snps[$rsid]['genotype'] = $snp['genotype'];
+    /**
+     * Output SNPs as comma-separated values.
+     *
+     * @param string $filename
+     * @param bool $atomic
+     * @param array $kwargs
+     *
+     * @return string
+     */
+    public function toCsv($filename = "", $atomic = true, $kwargs = [])
+    {
+        $kwargs["delimiter"] = ",";
+        return $this->save($filename, $atomic, $kwargs);
     }
 
-    foreach ($snps as &$snp) {
-        $snp['pos'] = (int)$snp['pos'];
+    /**
+     * Output SNPs as tab-separated values.
+     *
+     * @param string $filename
+     * @param bool $atomic
+     * @param array $kwargs
+     *
+     * @return string
+     */
+    public function toTsv($filename = "", $atomic = true, $kwargs = [])
+    {
+        $kwargs["delimiter"] = "\t";
+        return $this->save($filename, $atomic, $kwargs);
     }
 
-    $this->_snps = $snps;
-    $this->sort();
-    $this->_build = (int)substr($target_assembly, -2);
-
-    return [$chromosomes_remapped, $chromosomes_not_remapped];
-}
-
-    
+    /**
+     * Output SNPs as Variant Call Format (VCF).
+     *
+     * @param string $filename
+     * @param bool $atomic
+     * @param string $alt_unavailable
+     * @param string $chrom_prefix
+     * @param bool $qc_only
+     * @param bool $qc_filter
+     * @param array $kwargs
+     *
+     * @return string
+     */
+    public function toVcf(
+        $filename = "",
+        $atomic = true,
+        $alt_unavailable = ".",
+        $chrom_prefix = "",
+        $qc_only = false,
+        $qc_filter = false,
+        $kwargs = []
+    ) {
+        return $this->save(
+            $filename,
+            true,
+            [
+                'vcf' => true,
+                'atomic' => $atomic,
+                'vcf_alt_unavailable' => $alt_unavailable,
+                'vcf_chrom_prefix' => $chrom_prefix,
+                'vcf_qc_only' => $qc_only,
+                'vcf_qc_filter' => $qc_filter,
+            ] + $kwargs
+        );
+    }
 }
 
         
