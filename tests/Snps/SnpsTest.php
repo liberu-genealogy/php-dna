@@ -450,7 +450,18 @@ class SnpsTest extends BaseSNPsTestCase
         }
     }
         
-
+    public function test_remap_36_to_37() {
+        $this->_run_remap_test(function () {
+            $s = new SNPs("tests/input/NCBI36.csv");
+            list($chromosomes_remapped, $chromosomes_not_remapped) = $s->remap(37);
+            $this->assertEquals(37, $s->build);
+            $this->assertEquals("GRCh37", $s->assembly);
+            $this->assertCount(2, $chromosomes_remapped);
+            $this->assertCount(0, $chromosomes_not_remapped);
+            $this->assertEquals($this->snps_GRCh37(), $s->getSnps());
+        }, $this->NCBI36_GRCh37());
+    }
+    
 
 
 
