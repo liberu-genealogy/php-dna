@@ -1032,7 +1032,304 @@ class SNPs implements Countable, Iterator
     
         return $complement;
     }
+
+    private function _remapper($task) {
+        $temp = $task['snps']->copy();
+        $mappings = $task['mappings'];
+        $complement_bases = $task['complement_bases'];
     
+        $temp['remapped'] = false;
+    
+        $pos_start = (int)$temp['pos']->describe()->min;
+        $pos_end = (int)$temp['pos']->describe()->max;
+    
+        foreach ($mappings['mappings'] as $mapping) {
+            $orig_start = $mapping['original']['start'];
+            $orig_end = $mapping['original']['end'];
+            $mapped_start = $mapping['mapped']['start'];
+            $mapped_end = $mapping['mapped']['end'];
+    
+            $orig_region = $mapping['original']['seq_region_name'];
+            $mapped_region = $mapping['mapped']['seq_region_name'];
+    
+            // skip if mapping is outside of range of SNP positions
+            if ($orig_end < $pos_start || $orig_start > $pos_end) {
+                continue;
+            }
+    
+            // find the SNPs that are being remapped for this mapping
+            $snp_indices = $temp->loc[
+                !$temp['remapped']
+                & ($temp['pos'] >= $orig_start)
+                & ($temp['pos'] <= $orig_end)
+            ].index;
+    
+            // if there are no SNPs here, skip
+            if (count($snp_indices) === 0) {
+                continue;
+            }
+    
+            $orig_range_len = $orig_end - $orig_start;
+            $mapped_range_len = $mapped_end - $mapped_start;
+    
+            // if this would change chromosome, skip
+            // TODO allow within normal chromosomes
+            // TODO flatten patches
+            if ($orig_region != $mapped_region) {
+                Logger::warning(
+                    "discrepant chroms for " . count($snp_indices) . " SNPs from $orig_region to $mapped_region"
+                );
+                continue;
+            }
+    
+            // if there is any stretching or squashing of the region
+            // observed when mapping NCBI36 -> GRCh38
+            // TODO disallow skipping a version when remapping
+            if ($orig_range_len != $mapped_range_len) {
+                Logger::warning(
+                    "discrepant coords for " . count($snp_indices) . " SNPs from $orig_region:$orig_start-$orig_end to $mapped_region:$mapped_start-$mapped_end"
+                );
+                continue;
+            }
+    
+            // remap the SNPs
+            if ($mapping['mapped']['strand'] == -1) {
+                // flip and (optionally) complement since we're mapping to minus strand
+                $diff_from_start = $temp->loc[$snp_indices, 'pos'] - $orig_start;
+                $temp->loc[$snp_indices, 'pos'] = $mapped_end - $diff_from_start;
+    
+                if ($complement_bases) {
+                    $temp->loc[$snp_indices, 'genotype'] = $temp->loc[
+                        $snp_indices, 'genotype'
+                    ]->apply([$this, '_complement_bases']);
+                }
+            } else {
+                // mapping is on the same (plus) strand, so just remap based on offset
+                $offset = $mapped_start - $orig_start;
+                $temp->loc[$snp_indices, 'pos'] = $temp['pos'] + $offset;
+            }
+    
+            // mark these SNPs as remapped
+            $temp->loc[$snp_indices, 'remapped'] = true;
+        }
+    
+        return $temp;
+    }
+
+    private function _remapper($task) {
+        $temp = $task['snps']->copy();
+        $mappings = $task['mappings'];
+        $complement_bases = $task['complement_bases'];
+    
+        $temp['remapped'] = false;
+    
+        $pos_start = (int)$temp['pos']->describe()->min;
+        $pos_end = (int)$temp['pos']->describe()->max;
+    
+        foreach ($mappings['mappings'] as $mapping) {
+            $orig_start = $mapping['original']['start'];
+            $orig_end = $mapping['original']['end'];
+            $mapped_start = $mapping['mapped']['start'];
+            $mapped_end = $mapping['mapped']['end'];
+    
+            $orig_region = $mapping['original']['seq_region_name'];
+            $mapped_region = $mapping['mapped']['seq_region_name'];
+    
+            // skip if mapping is outside of range of SNP positions
+            if ($orig_end < $pos_start || $orig_start > $pos_end) {
+                continue;
+            }
+    
+            // find the SNPs that are being remapped for this mapping
+            $snp_indices = array_keys(array_filter(
+                $temp['remapped'],
+                function($value, $key) use ($temp, $orig_start, $orig_end) {
+                    return !$value && $temp['pos'][$key] >= $orig_start && $temp['pos'][$key] <= $orig_end;
+                },
+                ARRAY_FILTER_USE_BOTH
+            ));
+    
+            // if there are no SNPs here, skip
+            if (count($snp_indices) === 0) {
+                continue;
+            }
+    
+            $orig_range_len = $orig_end - $orig_start;
+            $mapped_range_len = $mapped_end - $mapped_start;
+    
+            // if this would change chromosome, skip
+            // TODO allow within normal chromosomes
+            // TODO flatten patches
+            if ($orig_region != $mapped_region) {
+                Logger::warning(
+                    "discrepant chroms for " . count($snp_indices) . " SNPs from $orig_region to $mapped_region"
+                );
+                continue;
+            }
+    
+            // if there is any stretching or squashing of the region
+            // observed when mapping NCBI36 -> GRCh38
+            // TODO disallow skipping a version when remapping
+            if ($orig_range_len != $mapped_range_len) {
+                Logger::warning(
+                    "discrepant coords for " . count($snp_indices) . " SNPs from $orig_region:$orig_start-$orig_end to $mapped_region:$mapped_start-$mapped_end"
+                );
+                continue;
+            }
+    
+            // remap the SNPs
+            if ($mapping['mapped']['strand'] == -1) {
+                // flip and (optionally) complement since we're mapping to minus strand
+                $diff_from_start = array_map(
+                    function($pos) use ($orig_start) {
+                        return $pos - $orig_start;
+                    },
+                    array_intersect_key($temp['pos'], array_flip($snp_indices))
+                );
+                $temp['pos'][array_flip($snp_indices)] = array_map(
+                    function($diff, $mapped_end) {
+                        return $mapped_end - $diff;
+                    },
+                    $diff_from_start,
+                    array_fill(0, count($snp_indices), $mapped_end)
+                );
+    
+                if ($complement_bases) {
+                    $temp['genotype'][array_flip($snp_indices)] = array_map(
+                        [$this, '_complement_bases'],
+                        array_intersect_key($temp['genotype'], array_flip($snp_indices))
+                    );
+                }
+            } else {
+                // mapping is on the same (plus) strand, so just remap based on offset
+                $offset = $mapped_start - $orig_start;
+                $temp['pos'][array_flip($snp_indices)] = array_map(
+                    function($pos) use ($offset) {
+                        return $pos + $offset;
+                    },
+                    array_intersect_key($temp['pos'], array_flip($snp_indices))
+                );
+            }
+    
+            // mark these SNPs as remapped
+            $temp['remapped'][array_flip($snp_indices)] = array_fill(0, count($snp_indices), true);
+        }
+    
+        return $temp;
+    }
+    
+    /**
+ * Remap SNP coordinates from one assembly to another.
+ *
+ * This method uses the assembly map endpoint of the Ensembl REST API service (via
+ * Resources's EnsemblRestClient) to convert SNP coordinates/positions from one
+ * assembly to another. After remapping, the coordinates/positions for the
+ * SNPs will be that of the target assembly.
+ *
+ * If the SNPs are already mapped relative to the target assembly, remapping will not be
+ * performed.
+ *
+ * @param string|int $target_assembly Assembly to remap to (e.g., 'NCBI36', 'GRCh37', 'GRCh38', 36, 37, 38)
+ * @param bool $complement_bases Complement bases when remapping SNPs to the minus strand
+ *
+ * @return array An array containing chromosomes that were remapped and chromosomes that were not remapped
+ *
+ * @throws Exception If invalid target assembly is provided
+ */
+public function remap($target_assembly, $complement_bases = true) {
+    $chromosomes_remapped = [];
+    $chromosomes_not_remapped = [];
+
+    $snps = $this->_snps;
+
+    if (empty($snps)) {
+        Logger::warning("No SNPs to remap");
+        return [$chromosomes_remapped, $chromosomes_not_remapped];
+    } else {
+        $chromosomes = array_unique(array_column($snps, 'chrom'));
+        $chromosomes_not_remapped = $chromosomes;
+    }
+
+    $valid_assemblies = ["NCBI36", "GRCh37", "GRCh38", 36, 37, 38];
+
+    if (!in_array($target_assembly, $valid_assemblies)) {
+        Logger::warning("Invalid target assembly");
+        return [$chromosomes_remapped, $chromosomes_not_remapped];
+    }
+
+    if (is_int($target_assembly)) {
+        if ($target_assembly == 36) {
+            $target_assembly = "NCBI36";
+        } else {
+            $target_assembly = "GRCh" . strval($target_assembly);
+        }
+    }
+
+    if ($this->_build == 36) {
+        $source_assembly = "NCBI36";
+    } else {
+        $source_assembly = "GRCh" . strval($this->_build);
+    }
+
+    if ($source_assembly == $target_assembly) {
+        return [$chromosomes_remapped, $chromosomes_not_remapped];
+    }
+
+    $assembly_mapping_data = $this->_resources->getAssemblyMappingData(
+        $source_assembly,
+        $target_assembly
+    );
+
+    if (empty($assembly_mapping_data)) {
+        return [$chromosomes_remapped, $chromosomes_not_remapped];
+    }
+
+    $tasks = [];
+
+    foreach ($chromosomes as $chrom) {
+        if (array_key_exists($chrom, $assembly_mapping_data)) {
+            $chromosomes_remapped[] = $chrom;
+            $chromosomes_not_remapped = array_diff($chromosomes_not_remapped, [$chrom]);
+            $mappings = $assembly_mapping_data[$chrom];
+            $tasks[] = [
+                "snps" => array_filter($snps, function ($snp) use ($chrom) {
+                    return $snp['chrom'] === $chrom;
+                }),
+                "mappings" => $mappings,
+                "complement_bases" => $complement_bases,
+            ];
+        } else {
+            Logger::warning(
+                "Chromosome $chrom not remapped; removing chromosome from SNPs for consistency"
+            );
+            $snps = array_filter($snps, function ($snp) use ($chrom) {
+                return $snp['chrom'] !== $chrom;
+            });
+        }
+    }
+
+    // remap SNPs
+    $remapped_snps = array_map([$this, '_remapper'], $tasks);
+    $remapped_snps = array_merge(...$remapped_snps);
+
+    // update SNP positions and genotypes
+    foreach ($remapped_snps as $snp) {
+        $rsid = $snp['rsid'];
+        $this->_snps[$rsid]['pos'] = $snp['pos'];
+        $this->_snps[$rsid]['genotype'] = $snp['genotype'];
+    }
+
+    foreach ($snps as &$snp) {
+        $snp['pos'] = (int)$snp['pos'];
+    }
+
+    $this->_snps = $snps;
+    $this->sort();
+    $this->_build = (int)substr($target_assembly, -2);
+
+    return [$chromosomes_remapped, $chromosomes_not_remapped];
+}
+
     
 }
 
