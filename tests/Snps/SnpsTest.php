@@ -461,6 +461,67 @@ class SnpsTest extends BaseSNPsTestCase
             $this->assertEquals($this->snps_GRCh37(), $s->getSnps());
         }, $this->NCBI36_GRCh37());
     }
+
+    public function test_remap_36_to_37_multiprocessing() {
+        $this->runRemapTest(function () {
+            $s = new SNPs("tests/input/NCBI36.csv", true);
+            [$chromosomes_remapped, $chromosomes_not_remapped] = $s->remap(37);
+            $this->assertEquals(37, $s->build);
+            $this->assertEquals("GRCh37", $s->assembly);
+            $this->assertCount(2, $chromosomes_remapped);
+            $this->assertCount(0, $chromosomes_not_remapped);
+            $this->assertSnpsArrayEquals($s->snps, $this->snps_GRCh37(), true);
+        }, $this->NCBI36_GRCh37());
+    }
+    
+    public function test_remap_37_to_36() {
+        $this->runRemapTest(function () {
+            $s = new SNPs("tests/input/GRCh37.csv");
+            [$chromosomes_remapped, $chromosomes_not_remapped] = $s->remap(36);
+            $this->assertEquals(36, $s->build);
+            $this->assertEquals("NCBI36", $s->assembly);
+            $this->assertCount(2, $chromosomes_remapped);
+            $this->assertCount(0, $chromosomes_not_remapped);
+            $this->assertSnpsArrayEquals($s->snps, $this->snps_NCBI36(), true);
+        }, $this->GRCh37_NCBI36());
+    }
+    
+    public function test_remap_37_to_38() {
+        $this->runRemapTest(function () {
+            $s = new SNPs("tests/input/GRCh37.csv");
+            [$chromosomes_remapped, $chromosomes_not_remapped] = $s->remap(38);
+            $this->assertEquals(38, $s->build);
+            $this->assertEquals("GRCh38", $s->assembly);
+            $this->assertCount(2, $chromosomes_remapped);
+            $this->assertCount(0, $chromosomes_not_remapped);
+            $this->assertSnpsArrayEquals($s->snps, $this->snps_GRCh38(), true);
+        }, $this->GRCh37_GRCh38());
+    }
+    
+    public function test_remap_37_to_38_with_PAR_SNP() {
+        $this->runRemapTest(function () {
+            $s = $this->loadAssignPARSNPs("tests/input/GRCh37_PAR.csv");
+            $this->assertEquals(4, $s->count);
+            [$chromosomes_remapped, $chromosomes_not_remapped] = $s->remap(38);
+            $this->assertEquals(38, $s->build);
+            $this->assertEquals("GRCh38", $s->assembly);
+            $this->assertCount(2, $chromosomes_remapped);
+            $this->assertCount(1, $chromosomes_not_remapped);
+            $this->assertEquals(3, $s->count);
+            $this->assertSnpsArrayEquals($s->snps, $this->snps_GRCh38_PAR(), true);
+        }, $this->GRCh37_GRCh38_PAR());
+    }
+    
+    public function test_remap_37_to_37() {
+        $s = new SNPs("tests/input/GRCh37.csv");
+        [$chromosomes_remapped, $chromosomes_not_remapped] = $s->remap(37);
+        $this->assertEquals(37, $s->build);
+        $this->assertEquals("GRCh37", $s->assembly);
+        $this->assertCount(0, $chromosomes_remapped);
+        $this->assertCount(2, $chromosomes_not_remapped);
+        $this->assertSnpsArrayEquals($s->snps, $this->snps_GRCh37(), true);
+    }
+    
     
 
 

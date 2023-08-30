@@ -255,6 +255,26 @@ abstract class BaseSNPsTestCase extends TestCase
     //     )
     //     self.make_normalized_dataframe_assertions(snps.snps)
 
+    protected function assertSnpsArrayEquals($actual, $expected, $checkExact = false) {
+        $this->assertEquals(count($expected), count($actual));
+        
+        foreach ($expected as $rsid => $expectedSnp) {
+            $this->assertArrayHasKey($rsid, $actual);
+    
+            $actualSnp = $actual[$rsid];
+    
+            if ($checkExact) {
+                $this->assertEquals($expectedSnp, $actualSnp);
+            } else {
+                foreach ($expectedSnp as $key => $value) {
+                    $this->assertArrayHasKey($key, $actualSnp);
+                    $this->assertEquals($value, $actualSnp[$key]);
+                }
+            }
+        }
+    }
+    
+
     protected function make_parsing_assertions(
         SNPs $snps,
         $source,
