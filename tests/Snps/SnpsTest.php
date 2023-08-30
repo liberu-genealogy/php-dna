@@ -522,6 +522,22 @@ class SnpsTest extends BaseSNPsTestCase
         $this->assertSnpsArrayEquals($s->snps, $this->snps_GRCh37(), true);
     }
     
+    public function test_remap_invalid_assembly() {
+        $s = new SNPs("tests/input/GRCh37.csv");
+        [$chromosomes_remapped, $chromosomes_not_remapped] = $s->remap(-1);
+        $this->assertEquals(37, $s->build);
+        $this->assertEquals("GRCh37", $s->assembly);
+        $this->assertCount(0, $chromosomes_remapped);
+        $this->assertCount(2, $chromosomes_not_remapped);
+    }
+    
+    public function test_remap_no_snps() {
+        $s = new SNPs();
+        [$chromosomes_remapped, $chromosomes_not_remapped] = $s->remap(38);
+        $this->assertFalse($s->build);
+        $this->assertCount(0, $chromosomes_remapped);
+        $this->assertCount(0, $chromosomes_not_remapped);
+    }
     
 
 
