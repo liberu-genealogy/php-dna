@@ -209,6 +209,14 @@ abstract class BaseSNPsTestCase extends TestCase
         );
     }
 
+    protected function makeNormalizedArrayAssertions($array)
+    {
+        $this->assertEquals(array_keys($array), array_column($array, 'rsid'));
+        // $this->assertTrue($this->isObjectDtype(array_column($array, 'rsid')));
+        // $this->assertTrue($this->isObjectDtype(array_column($array, 'chrom')));
+        // $this->assertTrue($this->isUnsignedIntegerDtype(array_column($array, 'pos')));
+        // $this->assertTrue($this->isObjectDtype(array_column($array, 'genotype')));
+    }
 
     public function run_parse_tests(
         $file,
@@ -255,14 +263,15 @@ abstract class BaseSNPsTestCase extends TestCase
     //     )
     //     self.make_normalized_dataframe_assertions(snps.snps)
 
-    protected function assertSnpsArrayEquals($actual, $expected, $checkExact = false) {
+    protected function assertSnpsArrayEquals($actual, $expected, $checkExact = false)
+    {
         $this->assertEquals(count($expected), count($actual));
-        
+
         foreach ($expected as $rsid => $expectedSnp) {
             $this->assertArrayHasKey($rsid, $actual);
-    
+
             $actualSnp = $actual[$rsid];
-    
+
             if ($checkExact) {
                 $this->assertEquals($expectedSnp, $actualSnp);
             } else {
@@ -273,7 +282,7 @@ abstract class BaseSNPsTestCase extends TestCase
             }
         }
     }
-    
+
 
     protected function make_parsing_assertions(
         SNPs $snps,
@@ -749,5 +758,64 @@ abstract class BaseSNPsTestCase extends TestCase
 
             return $snps;
         }
+    }
+
+
+    protected function runParsingTestsVcf($file, $source = "vcf", $phased = false, $unannotated = false, $rsids = [], $build = 37, $buildDetected = false, $snpsDf = null)
+    {
+        // Make assertions using parseFile
+        $this->makeParsingAssertionsVcf($this->parseFile($file, $rsids), $source, $phased, $unannotated, $rsids, $build, $buildDetected, $snpsDf);
+
+        // Make assertions using parseBytes
+        $this->makeParsingAssertionsVcf($this->parseBytes($file, $rsids), $source, $phased, $unannotated, $rsids, $build, $buildDetected, $snpsDf);
+
+        $tmpdir = sys_get_temp_dir() . '/' . uniqid();
+        mkdir($tmpdir);
+
+        $base = basename($file);
+        $dest = $tmpdir . '/' . $base . '.gz';
+        gzip_file($file, $dest);
+
+        // Make assertions using parseFile with gzipped file
+        $this->makeParsingAssertionsVcf($this->parseFile($dest, $rsids), $source, $phased, $unannotated, $rsids, $build, $buildDetected, $snpsDf);
+
+        // Make assertions using parseBytes with gzipped file
+        $this->makeParsingAssertionsVcf($this->parseBytes($dest, $rsids), $source, $phased, $unannotated, $rsids, $build, $buildDetected, $snpsDf);
+
+        // Remove .gz extension
+        $destWithoutGz = substr($dest, 0, -3);
+
+        rename($dest, $destWithoutGz);
+
+        // Make assertions using parseFile with removed .gz extension
+        $this->makeParsingAssertionsVcf($this->parseFile($destWithoutGz, $rsids), $source, $phased, $unannotated, $rsids, $build, $buildDetected, $snpsDf);
+    }
+
+    protected function parseBytes($file, $rsids = [])
+    {
+        $data = file_get_contents($file);
+        return new SNPs($data, rsids: $rsids);
+    }
+
+    protected function makeParsingAssertionsVcf($snps, $source, $phased, $unannotated, $rsids, $build, $buildDetected, $snpsArray)
+    {
+        if ($snpsArray === null) {
+            $snpsArray = $this->genericSnpsVcfArray();
+        }
+
+        $this->assertEquals($snps->getSource(), $source);
+
+        if ($unannotated) {
+            $this->assertTrue($snps->isUnannotatedVcf());
+            $this->assertEquals(0, $snps->getCount());
+        } else {
+            $this->assertFalse($snps->isUnannotatedVcf());
+            $this->assertEquals($snps->getSnps(), $snpsArray); // Custom array comparison method
+        }
+
+        $phased ? $this->assertTrue($snps->isPhased()) : $this->assertFalse($snps->isPhased());
+        $this->assertEquals($snps->getBuild(), $build);
+        $buildDetected ? $this->assertTrue($snps->isBuildDetected()) : $this->assertFalse($snps->isBuildDetected());
+        $this->makeNormalizedArrayAssertions($snps->getSnps());
     }
 }
