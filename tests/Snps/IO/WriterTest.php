@@ -200,4 +200,108 @@ final class WriterTest extends BaseSNPsTestCase
         rmdir($tmpdir2);
     }
 
+
+    public function testSaveSnpsVcfPhased()
+    {
+        $tmpdir1 = sys_get_temp_dir() . '/tmpdir1';
+        mkdir($tmpdir1);
+
+        // Instantiate SNPs with input phased VCF file and output directory
+        $s = new SNPs("tests/input/testvcf_phased.vcf", ["output_dir" => $tmpdir1]);
+
+        // Setup resource to use test FASTA reference sequence
+        $r = new Resources();
+        $r->_reference_sequences["GRCh37"] = [];
+
+        $output = $tmpdir1 . "/vcf_GRCh37.vcf";
+        $tmpdir2 = sys_get_temp_dir() . '/tmpdir2';
+        mkdir($tmpdir2);
+
+        $dest = $tmpdir2 . "/generic.fa.gz";
+        gzip_file("tests/input/generic.fa", $dest);
+
+        $seq = new ReferenceSequence(["ID" => "1", "path" => $dest]);
+
+        $r->_reference_sequences["GRCh37"]["1"] = $seq;
+
+        // Save phased data to VCF
+        $this->assertEquals($output, $s->toVcf());
+
+        // Read saved VCF with phased data
+        $this->runParsingTestsVcf($output, true);
+
+        // Clean up
+        unlink($output);
+        rmdir($tmpdir1);
+        unlink($dest);
+        rmdir($tmpdir2);
+    }
+
+
+    public function testSaveSnpsPhased()
+    {
+        $tmpdir = sys_get_temp_dir() . '/tmpdir';
+        mkdir($tmpdir);
+
+        // Instantiate SNPs with input phased VCF file and output directory
+        $s = new SNPs("tests/input/testvcf_phased.vcf", ["output_dir" => $tmpdir]);
+
+        $dest = $tmpdir . "/vcf_GRCh37.txt";
+
+        // Save phased data to TSV
+        $this->assertEquals($dest, $s->toTsv());
+
+        // Read saved TSV with phased data
+        $this->runParsingTestsVcf($dest, true);
+
+        // Clean up
+        unlink($dest);
+        rmdir($tmpdir);
+    }
+
+
+    public function runVcfQcTest($expectedOutput, $vcfQcOnly, $vcfQcFilter, $cluster = "c1")
+    {
+        $tmpdir1 = sys_get_temp_dir() . '/tmpdir1';
+        mkdir($tmpdir1);
+
+        // Instantiate SNPs with input CSV file and output directory
+        $s = new SNPs("tests/input/generic.csv", ["output_dir" => $tmpdir1]);
+
+        // Setup resource to use test FASTA reference sequence
+        $r = new Resources();
+        $r->setReferenceSequences(["GRCh37" => []]);
+
+        $output = $tmpdir1 . "/generic_GRCh37.vcf";
+
+        $tmpdir2 = sys_get_temp_dir() . '/tmpdir2';
+        mkdir($tmpdir2);
+        $dest = $tmpdir2 . "/generic.fa.gz";
+        gzipFile("tests/input/generic.fa", $dest);
+
+        $seq = new ReferenceSequence(["ID" => "1", "path" => $dest]);
+        $r->getReferenceSequences("GRCh37")["1"] = $seq;
+
+        // Save data to VCF with quality control settings
+        $options = ["qc_only" => $vcfQcOnly, "qc_filter" => $vcfQcFilter];
+        $this->assertEquals($output, $s->toVcf($options));
+
+        // Read result
+        $actual = file_get_contents($output);
+
+        // Read expected result
+        $expected = file_get_contents($expectedOutput);
+
+        $this->assertStringContainsString($expected, $actual);
+
+        if (!$vcfQcFilter || !$cluster) {
+            $this->assertStringNotContainsString("##FILTER=<ID=lq", $actual);
+        }
+
+        // Clean up
+        unlink($output);
+        unlink($dest);
+        rmdir($tmpdir2);
+        rmdir($tmpdir1);
+    }
 }
