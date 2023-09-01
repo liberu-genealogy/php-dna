@@ -221,7 +221,7 @@ class SnpsTest extends BaseSNPsTestCase
         );
     }
 
-  
+
     public function test_summary_no_snps()
     {
         foreach ($this->empty_snps() as $snps) {
@@ -229,9 +229,9 @@ class SnpsTest extends BaseSNPsTestCase
         }
     }
 
-//     def test_chromosomes(self):
-//     s = SNPs("tests/input/chromosomes.csv")
-//     self.assertListEqual(s.chromosomes, ["1", "2", "3", "5", "PAR", "MT"])
+    //     def test_chromosomes(self):
+    //     s = SNPs("tests/input/chromosomes.csv")
+    //     self.assertListEqual(s.chromosomes, ["1", "2", "3", "5", "PAR", "MT"])
 
     public function test_chromosomes()
     {
@@ -247,7 +247,7 @@ class SnpsTest extends BaseSNPsTestCase
         }
     }
 
-  
+
     public function test_sex_Female_X_chrom()
     {
         $s = $this->simulate_snps(
@@ -260,7 +260,7 @@ class SnpsTest extends BaseSNPsTestCase
         $this->assertEquals("Female", $s->getSex());
     }
 
-       public function test_sex_Female_Y_chrom()
+    public function test_sex_Female_Y_chrom()
     {
         $s = $this->simulate_snps(
             chrom: "Y",
@@ -327,7 +327,10 @@ class SnpsTest extends BaseSNPsTestCase
         $s->deduplicate_XY_chrom();
         $this->assertEquals(15527, $s->count());
         $result = $this->create_snp_df(
-            rsid: ["rs8001"], chrom: ["X"], pos: [80000001], genotype: ["AC"]
+            rsid: ["rs8001"],
+            chrom: ["X"],
+            pos: [80000001],
+            genotype: ["AC"]
         );
         $this->assertEquals($result, $s->getDiscrepantXY());
         $this->assertEquals("Male", $s->getSex());
@@ -406,13 +409,15 @@ class SnpsTest extends BaseSNPsTestCase
         }
     }
 
-    public function testDeduplicateFalse() {
+    public function testDeduplicateFalse()
+    {
         $snps = new SNPs("tests/input/duplicate_rsids.csv", deduplicate: false);
         $result = $this->create_snp_df(["rs1", "rs1", "rs1"], ["1", "1", "1"], [101, 102, 103], ["AA", "CC", "GG"]);
         $this->assertEquals($result, $snps->snps);
     }
 
-    public function testDeduplicateMTChrom() {
+    public function testDeduplicateMTChrom()
+    {
         $snps = new SNPs("tests/input/ancestry_mt.txt");
         $result = $this->create_snp_df(["rs1", "rs2"], ["MT", "MT"], [101, 102], ["A", null]);
         $this->assertEquals($result, $snps->snps);
@@ -421,13 +426,15 @@ class SnpsTest extends BaseSNPsTestCase
         $this->assertEquals($heterozygousMTSnps, $snps->heterozygous_MT);
     }
 
-    public function testDeduplicateMTChromFalse() {
+    public function testDeduplicateMTChromFalse()
+    {
         $snps = new SNPs("tests/input/ancestry_mt.txt", deduplicate: false);
         $result = $this->create_snp_df(["rs1", "rs2", "rs3"], ["MT", "MT", "MT"], [101, 102, 103], ["AA", null, "GC"]);
         $this->assertEquals($result, $snps->snps);
     }
 
-    public function testDuplicateRsids() {
+    public function testDuplicateRsids()
+    {
         $snps = new SNPs("tests/input/duplicate_rsids.csv");
         $result = $this->create_snp_df(["rs1"], ["1"], [101], ["AA"]);
         $duplicate = $this->create_snp_df(["rs1", "rs1"], ["1", "1"], [102, 103], ["CC", "GG"]);
@@ -435,22 +442,24 @@ class SnpsTest extends BaseSNPsTestCase
         $this->assertEquals($duplicate, $snps->duplicate);
     }
 
-    public function _run_remap_test($f, $mappings) {
+    public function _run_remap_test($f, $mappings)
+    {
         if ($this->downloads_enabled) {
             $f();
         } else {
             $mock = $this->createMock(Resources::class);
             $mock->method('get_assembly_mapping_data')->willReturn($mappings);
-            
+
             $this->getMockBuilder(Resources::class)
-                 ->setMethods(['get_assembly_mapping_data'])
-                 ->getMock();
-                 
+                ->setMethods(['get_assembly_mapping_data'])
+                ->getMock();
+
             $f();
         }
     }
-        
-    public function test_remap_36_to_37() {
+
+    public function test_remap_36_to_37()
+    {
         $this->_run_remap_test(function () {
             $s = new SNPs("tests/input/NCBI36.csv");
             list($chromosomes_remapped, $chromosomes_not_remapped) = $s->remap(37);
@@ -462,7 +471,8 @@ class SnpsTest extends BaseSNPsTestCase
         }, $this->NCBI36_GRCh37());
     }
 
-    public function test_remap_36_to_37_multiprocessing() {
+    public function test_remap_36_to_37_multiprocessing()
+    {
         $this->_run_remap_test(function () {
             $s = new SNPs("tests/input/NCBI36.csv", true);
             [$chromosomes_remapped, $chromosomes_not_remapped] = $s->remap(37);
@@ -473,8 +483,9 @@ class SnpsTest extends BaseSNPsTestCase
             $this->assertSnpsArrayEquals($s->snps, $this->snps_GRCh37(), true);
         }, $this->NCBI36_GRCh37());
     }
-    
-    public function test_remap_37_to_36() {
+
+    public function test_remap_37_to_36()
+    {
         $this->_run_remap_test(function () {
             $s = new SNPs("tests/input/GRCh37.csv");
             [$chromosomes_remapped, $chromosomes_not_remapped] = $s->remap(36);
@@ -485,8 +496,9 @@ class SnpsTest extends BaseSNPsTestCase
             $this->assertSnpsArrayEquals($s->snps, $this->snps_NCBI36(), true);
         }, $this->GRCh37_NCBI36());
     }
-    
-    public function test_remap_37_to_38() {
+
+    public function test_remap_37_to_38()
+    {
         $this->_run_remap_test(function () {
             $s = new SNPs("tests/input/GRCh37.csv");
             [$chromosomes_remapped, $chromosomes_not_remapped] = $s->remap(38);
@@ -497,8 +509,9 @@ class SnpsTest extends BaseSNPsTestCase
             $this->assertSnpsArrayEquals($s->snps, $this->snps_GRCh38(), true);
         }, $this->GRCh37_GRCh38());
     }
-    
-    public function test_remap_37_to_38_with_PAR_SNP() {
+
+    public function test_remap_37_to_38_with_PAR_SNP()
+    {
         $this->_run_remap_test(function () {
             $s = $this->loadAssignPARSNPs("tests/input/GRCh37_PAR.csv");
             $this->assertEquals(4, $s->count);
@@ -511,8 +524,9 @@ class SnpsTest extends BaseSNPsTestCase
             $this->assertSnpsArrayEquals($s->snps, $this->snps_GRCh38_PAR(), true);
         }, $this->GRCh37_GRCh38_PAR());
     }
-    
-    public function test_remap_37_to_37() {
+
+    public function test_remap_37_to_37()
+    {
         $s = new SNPs("tests/input/GRCh37.csv");
         [$chromosomes_remapped, $chromosomes_not_remapped] = $s->remap(37);
         $this->assertEquals(37, $s->build);
@@ -521,8 +535,9 @@ class SnpsTest extends BaseSNPsTestCase
         $this->assertCount(2, $chromosomes_not_remapped);
         $this->assertSnpsArrayEquals($s->snps, $this->snps_GRCh37(), true);
     }
-    
-    public function test_remap_invalid_assembly() {
+
+    public function test_remap_invalid_assembly()
+    {
         $s = new SNPs("tests/input/GRCh37.csv");
         [$chromosomes_remapped, $chromosomes_not_remapped] = $s->remap(-1);
         $this->assertEquals(37, $s->build);
@@ -530,15 +545,16 @@ class SnpsTest extends BaseSNPsTestCase
         $this->assertCount(0, $chromosomes_remapped);
         $this->assertCount(2, $chromosomes_not_remapped);
     }
-    
-    public function test_remap_no_snps() {
+
+    public function test_remap_no_snps()
+    {
         $s = new SNPs();
         [$chromosomes_remapped, $chromosomes_not_remapped] = $s->remap(38);
         $this->assertFalse($s->build);
         $this->assertCount(0, $chromosomes_remapped);
         $this->assertCount(0, $chromosomes_not_remapped);
     }
-    
+
     public function testSaveBufferBinary()
     {
         $s = new SNPs("tests/input/generic.csv");
@@ -563,7 +579,7 @@ class SnpsTest extends BaseSNPsTestCase
     public function testSaveSource()
     {
         $tmpdir = sys_get_temp_dir();
-        $s = new SNPs("tests/input/GRCh38.csv", ['output_dir' => $tmpdir]);
+        $s = new SNPs("tests/input/GRCh38.csv", output_dir: $tmpdir);
         $dest = $tmpdir . DIRECTORY_SEPARATOR . "generic_GRCh38.txt";
         $this->assertEquals($s->toTsv(), $dest);
         $snps = new SNPs($dest);
@@ -571,9 +587,74 @@ class SnpsTest extends BaseSNPsTestCase
         $this->assertTrue($snps->buildDetected);
         $this->assertEquals($snps->source, "generic");
         $this->assertEquals($snps->_source, ["generic"]);
-        // You need to implement equivalent assertions for frame equality based on your class structure.
+        $this->assertEquals($this->snps_GRCh38(), $snps->getSnps());
     }
 
+    private function makeAncestryAssertions($d)
+    {
+        $this->assertEquals($d["population_code"], "ITU");
+        $this->assertEquals($d["population_description"], "Indian Telugu in the UK");
+        $this->assertIsFloat($d["population_percent"]);
+        $this->assertGreaterThanOrEqual(0.2992757864426246 - 0.00001, $d["population_percent"]);
+        $this->assertLessThanOrEqual(0.2992757864426246 + 0.00001, $d["population_percent"]);
+        $this->assertEquals($d["superpopulation_code"], "SAS");
+        $this->assertEquals($d["superpopulation_description"], "South Asian Ancestry");
+        $this->assertIsFloat($d["superpopulation_percent"]);
+        $this->assertGreaterThanOrEqual(0.827977563875996 - 0.00001, $d["superpopulation_percent"]);
+        $this->assertLessThanOrEqual(0.827977563875996 + 0.00001, $d["superpopulation_percent"]);
+        $this->assertArrayHasKey("predicted_population_population", $d["ezancestry_df"]);
+        $this->assertArrayHasKey("predicted_population_superpopulation", $d["ezancestry_df"]);
+    }
+
+    // public function testAncestry()
+    // {
+    //     $ezancestryMods = ["ezancestry", "ezancestry.commands"];
+    //     $poppedMods = $this->popModules($ezancestryMods);
+
+    //     if (extension_loaded("ezancestry")) {
+    //         // Test with ezancestry if installed
+    //         $s = new SNPs("tests/input/generic.csv");
+    //         $this->makeAncestryAssertions($s->predictAncestry());
+    //     }
+
+    //     // Mock ezancestry modules
+    //     foreach ($ezancestryMods as $mod) {
+    //         $this->setMockedModule($mod);
+    //     }
+
+    //     // Mock the predict function
+    //     $mockedData = [
+    //         "predicted_population_population" => ["ITU"],
+    //         "population_description" => ["Indian Telugu in the UK"],
+    //         "ITU" => [0.2992757864426246],
+    //         "predicted_population_superpopulation" => ["SAS"],
+    //         "superpopulation_name" => ["South Asian Ancestry"],
+    //         "SAS" => [0.827977563875996],
+    //     ];
+
+    //     $this->setMockedFunction("ezancestry.commands", "predict", $mockedData);
+
+    //     // Test with mocked ezancestry
+    //     $s = new SNPs("tests/input/generic.csv");
+    //     $this->makeAncestryAssertions($s->predictAncestry());
+
+    //     // Unload mocked ezancestry modules
+    //     $this->popModules($ezancestryMods);
+
+    //     // Restore ezancestry modules if ezancestry is installed
+    //     $this->restoreModules($poppedMods);
+    // }
+
+    public function testAncestryModuleNotFoundError()
+    {
+        if (!extension_loaded("ezancestry")) {
+            // Test when ezancestry is not installed
+            $s = new SNPs("tests/input/generic.csv");
+            $this->expectException(ModuleNotFoundError::class);
+            $this->expectExceptionMessage("Ancestry prediction requires the ezancestry package; please install it using `composer require ezancestry/ezancestry`");
+            $s->predictAncestry();
+        }
+    }
 
     
 }
