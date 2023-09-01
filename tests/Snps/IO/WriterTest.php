@@ -304,4 +304,80 @@ final class WriterTest extends BaseSNPsTestCase
         rmdir($tmpdir2);
         rmdir($tmpdir1);
     }
+
+    public function testSaveVcfQcOnlyFalseQcFilterFalse()
+    {
+        $this->runVcfQcTest(
+            "tests/output/vcf_qc/qc_only_F_qc_filter_F.vcf",
+            false,
+            false
+        );
+    }
+
+    public function testSaveVcfQcOnlyFalseQcFilterTrue()
+    {
+        $this->runVcfQcTest(
+            "tests/output/vcf_qc/qc_only_F_qc_filter_T.vcf",
+            false,
+            true
+        );
+    }
+
+    public function testSaveVcfQcOnlyTrueQcFilterFalse()
+    {
+        $this->runVcfQcTest(
+            "tests/output/vcf_qc/qc_only_T_qc_filter_F.vcf",
+            true,
+            false
+        );
+    }
+
+    public function testSaveVcfQcOnlyTrueQcFilterTrue()
+    {
+        $this->runVcfQcTest(
+            "tests/output/vcf_qc/qc_only_T_qc_filter_T.vcf",
+            true,
+            true
+        );
+    }
+
+    public function testSaveVcfNoClusterQcOnlyFalseQcFilterFalse()
+    {
+        $this->runVcfQcTest(
+            "tests/output/vcf_qc/qc_only_F_qc_filter_F.vcf",
+            false,
+            false,
+            ""
+        );
+    }
+
+    public function testSaveVcfNoClusterQcOnlyFalseQcFilterTrue()
+    {
+        $this->runVcfQcTest(
+            "tests/output/vcf_qc/qc_only_F_qc_filter_T.vcf",
+            false,
+            true,
+            ""
+        );
+    }
+
+    public function testSaveVcfNoClusterQcOnlyTrueQcFilterFalse()
+    {
+        $this->runVcfQcTest(
+            "tests/output/vcf_qc/qc_only_T_qc_filter_F.vcf",
+            true,
+            false,
+            ""
+        );
+    }
+
+    public function testSaveVcfNoClusterQcOnlyTrueQcFilterTrue()
+    {
+        $this->runVcfQcTest(
+            "tests/output/vcf_qc/qc_only_T_qc_filter_T.vcf",
+            true,
+            true,
+            ""
+        );
+    }
 }
