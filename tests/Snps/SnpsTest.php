@@ -656,5 +656,63 @@ class SnpsTest extends BaseSNPsTestCase
         }
     }
 
-    
+    private function getChipClusters($pos = [101, 102, 103, 104, 105, 106, 107, 108], $cluster = "c1", $length = 8)
+    {
+        $data = [];
+        for ($i = 0; $i < $length; $i++) {
+            $data[] = [
+                "chrom" => "1",
+                "pos" => $pos[$i],
+                "clusters" => $cluster
+            ];
+        }
+
+        return collect($data);
+    }
+
+    public function runClusterTest($f, $chipClusters)
+    {
+        $mock = $this->getMockBuilder(Resources::class)
+            ->setMethods(['getChipClusters'])
+            ->getMock();
+
+        $mock->method('getChipClusters')
+            ->willReturn($chipClusters);
+
+        $this->assertInstanceOf(Resources::class, $mock);
+        $f($mock);
+    }
+
+    public function testCluster()
+    {
+        $this->runClusterTest(function ($mock) {
+            $s = new SNPs("tests/input/23andme.txt", $mock);
+            $this->assertEquals($s->getCluster(), "c1");
+        }, $this->getChipClusters());
+    }
+
+    public function testChip()
+    {
+        $this->runClusterTest(function ($mock) {
+            $s = new SNPs("tests/input/23andme.txt", $mock);
+            $this->assertEquals($s->getChip(), "HTS iSelect HD");
+        }, $this->_getChipClusters());
+    }
+
+    public function testChipVersion()
+    {
+        $this->runClusterTest(function ($mock) {
+            $s = new SNPs("tests/input/23andme.txt", $mock);
+            $this->assertEquals($s->getChipVersion(), "v4");
+        }, $this->getChipClusters());
+    }
+
+    public function testChipVersionNA()
+    {
+        $this->runClusterTest(function ($mock) {
+            $s = new SNPs("tests/input/myheritage.csv", $mock);
+            $this->assertEquals($s->getCluster(), "c3");
+            $this->assertEquals($s->getChipVersion(), "");
+        }, $this->getChipClusters("c3"));
+    }
 }
