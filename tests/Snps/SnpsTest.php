@@ -715,4 +715,126 @@ class SnpsTest extends BaseSNPsTestCase
             $this->assertEquals($s->getChipVersion(), "");
         }, $this->getChipClusters("c3"));
     }
+
+    public function testComputeClusterOverlapSetPropertyValues()
+    {
+        $this->runClusterTest(function ($mock) {
+            $s = new SNPs("tests/input/23andme.txt", $mock);
+            $s->computeClusterOverlap();
+            $this->assertEquals($s->getCluster(), "c1");
+            $this->assertEquals($s->getChip(), "HTS iSelect HD");
+            $this->assertEquals($s->getChipVersion(), "v4");
+        }, $this->_getChipClusters());
+    }
+
+    public function testComputeClusterOverlapThresholdNotMet()
+    {
+        $this->runClusterTest(function ($mock) {
+            $s = new SNPs("tests/input/23andme.txt", $mock);
+            $this->assertEquals($s->getCluster(), "");
+        }, $this->_getChipClusters(range(104, 112)));
+    }
+
+    public function testComputeClusterOverlapSourceWarning()
+    {
+        $this->runClusterTest(function ($mock) {
+            $s = new SNPs("tests/input/generic.csv", $mock);
+            $this->assertEquals($s->getCluster(), "c1");
+        }, $this->_getChipClusters());
+
+        $logs = $this->getActualOutput();
+
+        $this->assertStringContainsString(
+            "Detected SNPs data source not found in cluster's company composition",
+            $logs
+        );
+    }
+
+    public function testComputeClusterOverlapRemap()
+    {
+        $this->runClusterTest(function ($mock) {
+            $s = new SNPs("tests/input/23andme.txt", $mock);
+            // drop SNPs not currently remapped by test mapping data
+            $snps = $s->getSnps();
+            unset($snps["rs4"]);
+            unset($snps["rs5"]);
+            unset($snps["rs6"]);
+            unset($snps["rs7"]);
+            unset($snps["rs8"]);
+            $s->setBuild(36);  // manually set build 36
+            $this->assertEquals($s->getCluster(), "c1");
+            $this->assertEquals($s->getBuild(), 36);  // ensure copy gets remapped
+        }, $this->_getChipClusters(["pos" => range(101, 104)], 3));
+    }
+
+    public function testSnpsQc()
+    {
+        // Simulate the creation of your SNP object with the provided CSV data
+        $s = new SNPs("tests/input/generic.csv");
+
+        // Identify quality controlled SNPs and get them as an array or other data structure
+        $snpsQc = $s->getSnpsQc();
+
+        // Create an array that represents your expected QC SNPs, excluding rs4 and rs6
+        $expectedQcSnps = $this->genericSnps();
+        unset($expectedQcSnps['rs4']);
+        unset($expectedQcSnps['rs6']);
+
+        // Assert that the computed QC SNPs match the expected QC SNPs
+        $this->assertEquals($expectedQcSnps, $snpsQc);
+    }
+
+    public function testLowQuality()
+    {
+        // Simulate the creation of your SNP object with the provided CSV data
+        $s = new SNPs("tests/input/generic.csv");
+
+        // Identify low-quality SNPs and get them as an array or other data structure
+        $lowQualitySnps = $s->getLowQualitySnps();
+
+        // Create an array that represents your expected low-quality SNPs, including rs4 and rs6
+        $expectedLowQualitySnps = $this->genericSnps();
+
+        // Assert that the computed low-quality SNPs match the expected low-quality SNPs
+        $this->assertEquals($expectedLowQualitySnps, $lowQualitySnps);
+    }
+
+    public function testSnpsQcLowQualityNoCluster() {
+        function f() {
+            $s = new SNPs("tests/input/generic.csv");
+            // Identify low-quality SNPs
+            $this->assertEquals($s->low_quality, $this->getLowQualitySnps()['rs4', 'rs6']);
+            // Return already identified low-quality SNPs (test branch)
+            $this->assertEquals($s->low_quality, $this->getLowQualitySnps()['rs4', 'rs6']);
+        }
+    
+        $this->runLowQualitySnpsTest('f', $this->getLowQualitySnps(), ['cluster' => '']);
+    }
+
+    public function testIdentifyLowQualitySnpsRemap() {
+        function f() {
+            $s = new SNPs("tests/input/generic.csv");
+            // Drop SNPs not currently remapped by test mapping data
+            $s->_snps->drop(["rs4", "rs5", "rs6", "rs7", "rs8"], 1);
+            $s->_build = 36;  // Manually set build 36
+            $s->identifyLowQualitySnps();
+            PHPUnit_Framework_Assert::assertEquals($s->snpsQc, $this->getLowQualitySnps()['rs1', 'rs3']);
+            PHPUnit_Framework_Assert::assertEquals($s->lowQuality, $this->getLowQualitySnps()['rs2']);
+            $this->assertEquals($s->build, 36);  // Ensure copy gets remapped
+        }
+    
+        $mock = $this->getMockBuilder('Resources')
+            ->setMethods(['getAssemblyMappingData'])
+            ->getMock();
+        $mock->expects($this->any())
+            ->method('getAssemblyMappingData')
+            ->willReturn($this->getTestAssemblyMappingData(
+                "NCBI36",
+                "GRCh37",
+                array_fill(0, 8, 1),
+                array(101, 101, 102, 102, 103, 103, 0, 0)
+            ));
+    
+        $this->runLowQualitySnpsTest('f', $this->getLowQualitySnps(array(102, 1001)));
+    }
 }
