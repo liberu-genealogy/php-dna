@@ -1,6 +1,10 @@
 import re
 import ast
 
+pycodefile = 'tests/test_snps.py'
+phpcodefile = '../../../php-dna/tests/Snps/SnpsTest.php'
+
+
 def normalize_function_name(name):
     # Convert to lowercase
     name = name.lower()
@@ -38,7 +42,7 @@ def get_function_names_in_class(python_code, class_name):
 
 
 # Step 1: Read Python Code from the File
-with open('tests/test_snps.py', 'r') as python_file:
+with open(pycodefile, 'r') as python_file:
     python_code = python_file.read()
 
 # Step 2: Extract Functions within the TestSnps Class
@@ -49,7 +53,7 @@ python_functions = get_function_names_in_class(python_code, "TestSnps")
 normalized_python_functions = [normalize_function_name(func) for func in python_functions]
 
 # Step 4: Read PHP Code from the File
-with open('../../../php-dna/tests/Snps/SnpsTest.php', 'r') as php_file:
+with open(phpcodefile, 'r') as php_file:
     php_code = php_file.read()
 
 # Step 5: Extract PHP Function Names
