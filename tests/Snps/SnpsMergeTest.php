@@ -124,11 +124,12 @@ class SnpsMergeTest extends SnpsTest
         $this->assertResults($results, $expectedResults);
     }
 
-    public function testMergeRemapFalse() {
+    public function testMergeRemapFalse()
+    {
         $s = new SNPs("tests/input/NCBI36.csv");
-        
+
         $results = $s->merge([new SNPs("tests/input/GRCh37.csv")], false);
-    
+
         // Check the count of discrepancies in merge positions
         $this->assertCount(4, $s->getDiscrepantMergePositions());
         // Compare the discrepancies in merge positions with the expected results
@@ -136,7 +137,7 @@ class SnpsMergeTest extends SnpsTest
             $s->getDiscrepantMergePositions(),
             $results[0]["discrepant_position_rsids"]
         );
-    
+
         // Check the count of discrepancies in merge genotypes
         $this->assertCount(1, $s->getDiscrepantMergeGenotypes());
         // Compare the discrepancies in merge genotypes with the expected results
@@ -144,7 +145,7 @@ class SnpsMergeTest extends SnpsTest
             $s->getDiscrepantMergeGenotypes(),
             $results[0]["discrepant_genotype_rsids"]
         );
-    
+
         // Check the count of discrepancies in both positions and genotypes
         $this->assertCount(4, $s->getDiscrepantMergePositionsGenotypes());
         // Compare the discrepancies in both positions and genotypes with the expected results
@@ -152,14 +153,14 @@ class SnpsMergeTest extends SnpsTest
             $s->getDiscrepantMergePositionsGenotypes(),
             $results[0]["discrepant_position_rsids"]
         );
-    
+
         // Define the expected array for snps_NCBI36 with the discrepant genotype set to null/NA
         $expected = self::snps_NCBI36();
         $expected["rs11928389"]["genotype"] = null;
-    
+
         // Compare the 'snps' attribute of 's' with the expected array directly
         $this->assertEquals($s->getSnps(), $expected);
-    
+
         // Check the results of the merge operation
         $expectedResults = [
             [
@@ -182,5 +183,78 @@ class SnpsMergeTest extends SnpsTest
         $this->assertResults($results, $expectedResults);
     }
 
-    
+
+    public function testMergePhased()
+    {
+        $s1 = new SNPs("tests/input/generic.csv");
+        $s2 = new SNPs("tests/input/generic.csv");
+        $s1->setPhased(true);
+        $s2->setPhased(true);
+
+        $results = $s1->merge([$s2]);
+
+        // Check if 's1' is marked as phased
+        $this->assertTrue($s1->isPhased());
+
+        // Compare the 'snps' attribute of 's1' with the expected array directly
+        $this->assertEquals($s1->getSnps(), self::genericSnps());
+
+        // Check the results of the merge operation
+        $expectedResults = [
+            [
+                "merged" => true,
+                "common_rsids" => [
+                    "rs1", "rs2", "rs3", "rs4",
+                    "rs5", "rs6", "rs7", "rs8"
+                ],
+            ],
+        ];
+        $this->assertResults($results, $expectedResults);
+    }
+
+    public function testMergeUnphased()
+    {
+        $s1 = new SNPs("tests/input/generic.csv");
+        $s2 = new SNPs("tests/input/generic.csv");
+        $s1->setPhased(true);
+
+        $results = $s1->merge([$s2]);
+
+        // Check if 's1' is marked as unphased (not phased)
+        $this->assertFalse($s1->isPhased());
+
+        // Compare the 'snps' attribute of 's1' with the expected array directly
+        $this->assertEquals($s1->getSnps(), self::genericSnps());
+
+        // Check the results of the merge operation
+        $expectedResults = [
+            [
+                "merged" => true,
+                "common_rsids" => [
+                    "rs1", "rs2", "rs3", "rs4",
+                    "rs5", "rs6", "rs7", "rs8"
+                ],
+            ],
+        ];
+        $this->assertResults($results, $expectedResults);
+    }
+
+    public function testMergeNonExistentFile()
+    {
+        $s = new SNPs();
+        $results = $s->merge([
+            new SNPs("tests/input/non_existent_file.csv"),
+            new SNPs("tests/input/GRCh37.csv")
+        ]);
+
+        // Compare the 'snps' attribute of 's' with the expected array directly
+        $this->assertEquals($s->getSnps(), self::snps_GRCh37());
+
+        // Check the results of the merge operation
+        $expectedResults = [
+            [], // No merge for the non-existent file
+            ["merged" => true],
+        ];
+        $this->assertResults($results, $expectedResults);
+    }
 }
