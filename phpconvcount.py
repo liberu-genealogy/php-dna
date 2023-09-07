@@ -1,21 +1,18 @@
 import re
 import ast
 
-pycodefile = 'tests/test_snps.py'
-phpcodefile = '../../../php-dna/tests/Snps/SnpsTest.php'
+pycodefile = '../Projects/geneology/snps/tests/test_snps.py'
+phpcodefile = 'tests/Snps/SnpsTest.php'
 
 
 def normalize_function_name(name):
-    # Convert to lowercase
-    name = name.lower()
-    
+    # Check if the name is already in camelCase with mixed case
+    if any(c.islower() and name[i+1:i+2].isupper() for i, c in enumerate(name[:-1])):
+        return name
     # Handle snake_case to camelCase conversion
     name_parts = name.split('_')
-    if len(name_parts) > 1:
-        name = name_parts[0] + ''.join(word.capitalize() for word in name_parts[1:])
-    
+    name = name_parts[0] + ''.join(word.strip().capitalize() for word in name_parts[1:])    
     return name
-
 
 def get_function_names_in_class(python_code, class_name):
     # Parse the Python code using the ast module
@@ -57,13 +54,17 @@ with open(phpcodefile, 'r') as php_file:
     php_code = php_file.read()
 
 # Step 5: Extract PHP Function Names
-# Extract function names from the SnpsTest class
-php_functions = re.findall(r'function ([a-zA-Z_][a-zA-Z0-9_]*)\(', php_code)
+php_functions = re.findall(r'(public|private|protected) function ([a-zA-Z_][a-zA-Z0-9_]*)\(', php_code)
+
+php_functions = [name for (visibility, name) in php_functions]
+
+
 # Step 6: Normalize PHP Function Names
 normalized_php_functions = [normalize_function_name(func) for func in php_functions]
 
 # Step 7: Compare Python and PHP Function Names
 missing_functions = set(normalized_python_functions) - set(normalized_php_functions)
+extra_functions = set(normalized_php_functions) - set(normalized_python_functions)
 
 # Count of functions in Python and PHP
 python_function_count = len(normalized_python_functions)
@@ -73,7 +74,14 @@ php_function_count = len(normalized_php_functions)
 print("Number of Functions in Python:", python_function_count)
 print("Number of Functions in PHP:", php_function_count)
 
+# print(normalized_python_functions)
+
 # Print missing functions in PHP compared to Python
 print("\nMissing Functions in PHP:")
 for func in missing_functions:
+    print(func)
+
+
+print("\nExtra Functions in PHP:")
+for func in extra_functions:
     print(func)
