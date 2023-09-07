@@ -72,4 +72,28 @@ class SnpsMergeTest extends SnpsTest
         $this->assertEquals($initial->getSnps(), $fromFile->getSnps());
         $this->assertResults($fromFile, [["merged" => true]]);
     }
+
+    public function testMergeList() {
+        $s = new SNPs();
+        $results = $s->merge([new SNPs("tests/input/GRCh37.csv"), new SNPs("tests/input/GRCh37.csv")]);
+        $this->assertEquals($s->getSnps(), self::snps_GRCh37());
+        $this->assertEquals($s->getSource(), "generic, generic");
+        $this->assertEquals($s->getAllSources(), ["generic", "generic"]);
+
+        $expectedResults = [
+            ["merged" => true],
+            [
+                "merged" => true,
+                "common_rsids" => [
+                    "rs3094315",
+                    "rs2500347",
+                    "rsIndelTest",
+                    "rs11928389",
+                ],
+            ],
+        ];
+        $this->assertResults($results, $expectedResults);
+    }
+
+    
 }
