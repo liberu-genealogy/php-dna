@@ -183,7 +183,7 @@ abstract class BaseSNPsTestCase extends TestCase
     ) {
         $df = [];
         foreach ($rsid as $i => $r) {
-            $df[] = [
+            $df[$r] = [
                 "rsid" => $r,
                 "chrom" => is_array($chrom) ? $chrom[$i] : $chrom,
                 "pos" => is_array($pos) ? $pos[$i] : $pos,
@@ -191,7 +191,7 @@ abstract class BaseSNPsTestCase extends TestCase
             ];
         }
 
-        var_dump($df);
+        // var_dump($df);
         return $df;
     }
 
@@ -229,6 +229,7 @@ abstract class BaseSNPsTestCase extends TestCase
         $snps = $this->parse_file($file);
         // echo "snps:\n";
         // print_r($snps);
+        // var_dump($snps);
 
         $this->make_parsing_assertions(
             $snps,
@@ -306,6 +307,7 @@ abstract class BaseSNPsTestCase extends TestCase
         // print_r(count($snps_df));
         // print_r($snps_df['info']());
 
+        
         $this->assertEquals($source, $snps->getSource());
         $this->assertEquals($snps_df, $snps->getSnps());
         // $this->assertTrue($snps['phased']) ?: $this->assertFalse($snps['phased']);

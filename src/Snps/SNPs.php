@@ -121,22 +121,18 @@ class SNPs implements Countable, Iterator
 
     public function current(): SNPs
     {
-        return $this->_snps[$this->_position];
+        $key = $this->_keys[$this->_position];
+        return $this->_snps[$key];
     }
 
     public function key(): string
     {
-        return $this->_position;
+        return $this->_keys[$this->_position];
     }
 
     public function next(): void
     {
-        $this->_position++;
-    }
-
-    public function previous(): void
-    {
-        $this->_position--;
+        ++$this->_position;
     }
 
     public function rewind(): void
@@ -146,7 +142,7 @@ class SNPs implements Countable, Iterator
 
     public function valid(): bool
     {
-        return $this->_position >= 0 && $this->_position < $this->get_count(); 
+        return isset($this->_keys[$this->_position]);
     }
 
 
@@ -234,14 +230,12 @@ class SNPs implements Countable, Iterator
         //             self._build = 37  # assume Build 37 / GRCh37 if not detected
         //         else:
         //             self._build_detected = True
-        echo "\n============================\n";
-        var_dump($this->getSnps());
-        echo "\n============================\n";
+        
         if (!empty($this->_snps)) {
-            $this->sort();
+            // $this->sort();
 
-            if ($this->deduplicate)
-                $this->_deduplicate_rsids();
+            // if ($this->deduplicate)
+            //     $this->_deduplicate_rsids();
 
             // use build detected from `read` method or comments, if any
             // otherwise use SNP positions to detect build
@@ -256,25 +250,26 @@ class SNPs implements Countable, Iterator
                 }
             }
 
-            if ($this->assign_par_snps) {
-                $this->assignParSnps();
-                $this->sort();
-            }
+            // if ($this->assign_par_snps) {
+            //     $this->assignParSnps();
+            //     $this->sort();
+            // }
 
-            if ($this->deduplicate_XY_chrom) {
-                if (
-                    ($this->deduplicate_XY_chrom === true && $this->determine_sex() == "Male")
-                    || ($this->determine_sex(chrom: $this->deduplicate_XY_chrom) == "Male")
-                ) {
-                    $this->deduplicate_XY_chrom();
-                }
-            }
+            // if ($this->deduplicate_XY_chrom) {
+            //     if (
+            //         ($this->deduplicate_XY_chrom === true && $this->determine_sex() == "Male")
+            //         || ($this->determine_sex(chrom: $this->deduplicate_XY_chrom) == "Male")
+            //     ) {
+            //         $this->deduplicate_XY_chrom();
+            //     }
+            // }
 
-            if ($this->deduplicate_MT_chrom) {
-                echo "deduping yo...\n";
-                $this->deduplicate_MT_chrom();
-            }
+            // if ($this->deduplicate_MT_chrom) {
+            //     echo "deduping yo...\n";                
+            //     $this->deduplicate_MT_chrom();
+            // }
         }
+        
     }
 
     protected function readRawData($file, $only_detect_source, $rsids = [])
@@ -510,15 +505,15 @@ class SNPs implements Countable, Iterator
                 if ($response !== null) {
                     // print_r($response["primary_snapshot_data"]["placements_with_allele"]);
                     foreach ($response["primary_snapshot_data"]["placements_with_allele"] as $item) {
-                        print_r($item["seq_id"]);
-                        var_dump(str_starts_with($item["seq_id"], "NC_000023"));
-                        var_dump(str_starts_with($item["seq_id"], "NC_000024"));
+                        // print_r($item["seq_id"]);
+                        // var_dump(str_starts_with($item["seq_id"], "NC_000023"));
+                        // var_dump(str_starts_with($item["seq_id"], "NC_000024"));
                         if (str_starts_with($item["seq_id"], "NC_000023")) {
                             $assigned = $this->assignSnp($rsid, $item["alleles"], "X");
-                            var_dump($assigned);
+                            // var_dump($assigned);
                         } elseif (str_starts_with($item["seq_id"], "NC_000024")) {
                             $assigned = $this->assignSnp($rsid, $item["alleles"], "Y");
-                            var_dump($assigned);
+                            // var_dump($assigned);
                         } else {
                             $assigned = false;
                         }
@@ -549,9 +544,9 @@ class SNPs implements Countable, Iterator
         foreach ($alleles as $allele) {
             $allele_pos = $allele["allele"]["spdi"]["position"];
             // ref SNP positions seem to be 0-based...
-            print_r($this->get($rsid)["pos"] - 1);
-            echo "\n";
-            print_r($allele_pos);
+            // print_r($this->get($rsid)["pos"] - 1);
+            // echo "\n";
+            // print_r($allele_pos);
             if ($allele_pos == $this->get($rsid)["pos"] - 1) {
                 $this->setValue($rsid, "chrom", $chrom);
                 return true;
@@ -562,25 +557,13 @@ class SNPs implements Countable, Iterator
 
     public function get($rsid)
     {
-        foreach ($this->_snps as $snp)
-        {
-            if ($snp["rsid"] == $rsid)
-                return $snp;
-        }
-        return null;
+        return $this->_snps[$rsid] ?? null;
     }
 
     public function setValue($rsid, $key, $value)
     {
         echo "Setting {$rsid} {$key} to {$value}\n";
-        foreach ($this->_snps as $idx => $snp)
-        {
-            if ($snp["rsid"] == $rsid) 
-            {
-                $this->_snps[$idx][$key] = $value;
-                break;
-            }
-        }
+        $this->_snps[$rsid][$key] = $value;
     }
 
 
@@ -782,9 +765,9 @@ class SNPs implements Countable, Iterator
                     $chromosomes[] = $snp["chrom"];
             }
 
-            var_dump($chromosomes);
+            // var_dump($chromosomes);
             sort($chromosomes);
-            var_dump($chromosomes);
+            // var_dump($chromosomes);
             return $chromosomes;
         } else {
             return [];
@@ -934,7 +917,7 @@ class SNPs implements Countable, Iterator
         // Save duplicate SNPs
         $this->_duplicate = array_merge($this->_duplicate, $duplicateRsids);
         // Deduplicate
-        $this->_snps = array_diff_key($this->_snps, $duplicateRsids);
+        $this->setSNPs(array_diff_key($this->_snps, $duplicateRsids));
     }
 
     private function _deduplicate_alleles($rsids)
@@ -963,8 +946,8 @@ class SNPs implements Countable, Iterator
 
         // Get remaining non-PAR SNPs with two alleles
         $nonParSnps = $this->_get_non_par_snps($chrom, false);
-        echo "nonParSnps\n";
-        var_dump($nonParSnps);
+        // echo "nonParSnps\n";
+        // var_dump($nonParSnps);
         $this->_deduplicate_alleles($nonParSnps);
     }
 
@@ -1010,11 +993,15 @@ class SNPs implements Countable, Iterator
         }
 
         // Sort the array based on ordered chromosome list and position
-        usort($this->_snps, function ($a, $b) use ($sortedList) {
-            $cmp = $this->naturalSortKey(array_search($a['chrom'], $sortedList), array_search($b['chrom'], $sortedList));
+        uasort($this->_snps, function ($a, $b) use ($sortedList) {
+            $cmp = $this->naturalSortKey(
+                array_search($a['chrom'], $sortedList), 
+                array_search($b['chrom'], $sortedList)
+            );
             return ($cmp === 0) ? $a['pos'] - $b['pos'] : $cmp;
         });
 
+        
         
         $this->setSNPs($this->restoreChromObject($this->_snps));
         
@@ -1275,7 +1262,7 @@ class SNPs implements Countable, Iterator
             $snp['pos'] = (int)$snp['pos'];
         }
 
-        $this->_snps = $snps;
+        $this->setSNPs($snps);
         $this->sort();
         $this->_build = (int)substr($target_assembly, -2);
 
