@@ -803,9 +803,15 @@ class SnpsTest extends BaseSNPsTestCase
         function f() {
             $s = new SNPs("tests/input/generic.csv");
             // Identify low-quality SNPs
-            $this->assertEquals($s->low_quality, $this->getLowQualitySnps()['rs4', 'rs6']);
+            $this->assertEquals(
+                $s->low_quality, 
+                $this->getLowQualitySnps(['rs4', 'rs6'])
+            );
             // Return already identified low-quality SNPs (test branch)
-            $this->assertEquals($s->low_quality, $this->getLowQualitySnps()['rs4', 'rs6']);
+            $this->assertEquals(
+                $s->low_quality, 
+                $this->getLowQualitySnps(['rs4', 'rs6'])
+            );
         }
     
         $this->runLowQualitySnpsTest('f', $this->getLowQualitySnps(), ['cluster' => '']);
@@ -818,8 +824,8 @@ class SnpsTest extends BaseSNPsTestCase
             $s->_snps->drop(["rs4", "rs5", "rs6", "rs7", "rs8"], 1);
             $s->_build = 36;  // Manually set build 36
             $s->identifyLowQualitySnps();
-            PHPUnit_Framework_Assert::assertEquals($s->snpsQc, $this->getLowQualitySnps()['rs1', 'rs3']);
-            PHPUnit_Framework_Assert::assertEquals($s->lowQuality, $this->getLowQualitySnps()['rs2']);
+            $this->assertEquals($s->snpsQc, $this->getLowQualitySnps(['rs1', 'rs3']));
+            $this->assertEquals($s->lowQuality, $this->getLowQualitySnps()['rs2']);
             $this->assertEquals($s->build, 36);  // Ensure copy gets remapped
         }
     

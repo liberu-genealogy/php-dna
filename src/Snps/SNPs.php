@@ -88,7 +88,7 @@ class SNPs implements Countable, Iterator
     ) //, $only_detect_source, $output_dir, $resources_dir, $parallelize, $processes)
     {
         // $this->_only_detect_source = $only_detect_source;
-        $this->setSNPs(IO::get_empty_snps_dataframe());
+        $this->setSNPs(IO::get_empty_snps_dataframe());        
         $this->_duplicate = IO::get_empty_snps_dataframe();
         $this->_discrepant_XY = IO::get_empty_snps_dataframe();
         $this->_heterozygous_MT = IO::get_empty_snps_dataframe();
@@ -121,18 +121,22 @@ class SNPs implements Countable, Iterator
 
     public function current(): SNPs
     {
-        $key = $this->_keys[$this->_position];
-        return $this->_snps[$key];
+        return $this->_snps[$this->_position];
     }
 
     public function key(): string
     {
-        return $this->_keys[$this->_position];
+        return $this->_position;
     }
 
     public function next(): void
     {
-        ++$this->_position;
+        $this->_position++;
+    }
+
+    public function previous(): void
+    {
+        $this->_position--;
     }
 
     public function rewind(): void
@@ -142,8 +146,9 @@ class SNPs implements Countable, Iterator
 
     public function valid(): bool
     {
-        return isset($this->_keys[$this->_position]);
+        return $this->_position >= 0 && $this->_position < $this->get_count(); 
     }
+
 
 
     /**
@@ -229,6 +234,9 @@ class SNPs implements Countable, Iterator
         //             self._build = 37  # assume Build 37 / GRCh37 if not detected
         //         else:
         //             self._build_detected = True
+        echo "\n============================\n";
+        var_dump($this->getSnps());
+        echo "\n============================\n";
         if (!empty($this->_snps)) {
             $this->sort();
 
@@ -974,8 +982,10 @@ class SNPs implements Countable, Iterator
 
     public function sort()
     {
+        
         $sortedList = $this->naturalSortChromosomes(array_unique(array_column($this->_snps, 'chrom')));
 
+        
         // Move PAR and MT to the end of the array
         if (($key = array_search("PAR", $sortedList)) !== false) {
             unset($sortedList[$key]);
@@ -993,7 +1003,9 @@ class SNPs implements Countable, Iterator
             return ($cmp === 0) ? $a['pos'] - $b['pos'] : $cmp;
         });
 
-        $this->_snps = $this->restoreChromObject($this->_snps);
+        
+        $this->setSNPs($this->restoreChromObject($this->_snps));
+        
     }
 
     private function naturalSortChromosomes($chromosomes)

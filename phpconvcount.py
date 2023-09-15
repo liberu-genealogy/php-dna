@@ -47,7 +47,7 @@ with open(pycodefile, 'r') as python_file:
 python_functions = get_function_names_in_class(python_code, "TestSnps")
 
 # Step 3: Normalize Python Function Names
-normalized_python_functions = [normalize_function_name(func) for func in python_functions]
+normalized_python_functions = list(set(normalize_function_name(func) for func in python_functions))
 
 # Step 4: Read PHP Code from the File
 with open(phpcodefile, 'r') as php_file:
