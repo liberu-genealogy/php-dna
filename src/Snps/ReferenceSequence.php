@@ -21,12 +21,12 @@ class ReferenceSequence
     private int $length; // Length of the sequence
 
     public function __construct(
-        string $ID = "",
-        string $url = "",
-        string $path = "",
-        string $assembly = "",
-        string $species = "",
-        string $taxonomy = ""
+        private string $ID = "",
+        private string $url = "",
+        private string $path = "",
+        private string $assembly = "",
+        private string $species = "",
+        private string $taxonomy = ""
     ) {
         /* Initialize a ReferenceSequence object.
         

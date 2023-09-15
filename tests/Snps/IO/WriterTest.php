@@ -279,7 +279,7 @@ final class WriterTest extends BaseSNPsTestCase
         $dest = $tmpdir2 . "/generic.fa.gz";
         gzipFile("tests/input/generic.fa", $dest);
 
-        $seq = new ReferenceSequence(["ID" => "1", "path" => $dest]);
+        $seq = new ReferenceSequence(ID: "1", path: $dest);
         $r->getReferenceSequences("GRCh37")["1"] = $seq;
 
         // Save data to VCF with quality control settings
