@@ -573,7 +573,14 @@ class SNPs implements Countable, Iterator
     public function setValue($rsid, $key, $value)
     {
         echo "Setting {$rsid} {$key} to {$value}\n";
-        $this->_snps[$rsid][$key] = $value;
+        foreach ($this->_snps as $idx => $snp)
+        {
+            if ($snp["rsid"] == $rsid) 
+            {
+                $this->_snps[$idx][$key] = $value;
+                break;
+            }
+        }
     }
 
 
