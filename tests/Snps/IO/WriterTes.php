@@ -8,7 +8,13 @@ use DnaTest\Snps\BaseSNPsTestCase;
 final class WriterTest extends BaseSNPsTestCase
 {
 
-    protected function runWriterTest($funcStr, $filename = "", $outputFile = "", $expectedOutput = "", $kwargs)
+    protected function runWriterTest(
+        mixed $funcStr, 
+        string $filename = "", 
+        string $outputFile = "", 
+        string $expectedOutput = "", 
+        mixed $kwargs = []
+    )
     {
         if ($funcStr === "to_vcf") {
             $tmpdir1 = sys_get_temp_dir() . '/' . uniqid();
@@ -74,47 +80,45 @@ final class WriterTest extends BaseSNPsTestCase
 
     public function testToCsv()
     {
-        $this->runWriterTest("to_csv", "generic_GRCh37.csv");
+        $this->runWriterTest("to_csv", outputFile: "generic_GRCh37.csv");
     }
 
     public function testToCsvFilename()
     {
-        $this->runWriterTest("to_csv", "generic.csv", "generic.csv");
+        $this->runWriterTest("to_csv", filename: "generic.csv", outputFile: "generic.csv");
     }
 
     public function testToTsv()
     {
-        $this->runWriterTest("to_tsv", "generic_GRCh37.txt");
+        $this->runWriterTest("to_tsv", outputFile: "generic_GRCh37.txt");
     }
 
     public function testToTsvFilename()
     {
-        $this->runWriterTest("to_tsv", "generic.txt", "generic.txt");
+        $this->runWriterTest("to_tsv", filename: "generic.txt", outputFile: "generic.txt");
     }
 
     public function testToVcf()
     {
         $this->runWriterTest(
             "to_vcf",
-            "vcf_GRCh37.vcf",
-            "tests/output/vcf_generic.vcf"
+            outputFile: "vcf_GRCh37.vcf",
+            expectedOutput: "tests/output/vcf_generic.vcf"
         );
     }
 
     public function testToVcfFilename()
     {
-        $this->runWriterTest("to_vcf", ["filename" => "vcf.vcf", "output_file" => "vcf.vcf"]);
+        $this->runWriterTest("to_vcf", filename: "vcf.vcf", outputFile: "vcf.vcf");
     }
 
     public function testToVcfChromPrefix()
     {
         $this->runWriterTest(
             "to_vcf",
-            [
-                "output_file" => "vcf_GRCh37.vcf",
-                "expected_output" => "tests/output/vcf_chrom_prefix_chr.vcf",
-                "chrom_prefix" => "chr",
-            ]
+            outputFile: "vcf_GRCh37.vcf",
+            expectedOutput: "tests/output/vcf_chrom_prefix_chr.vcf",
+            kwargs: ["chrom_prefix" => "chr"]
         );
     }
 
