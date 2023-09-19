@@ -232,7 +232,7 @@ class SNPs implements Countable, Iterator
         //             self._build_detected = True
         
         if (!empty($this->_snps)) {
-            // $this->sort();
+            $this->sort();
 
             // if ($this->deduplicate)
             //     $this->_deduplicate_rsids();
@@ -766,7 +766,7 @@ class SNPs implements Countable, Iterator
             }
 
             // var_dump($chromosomes);
-            sort($chromosomes);
+            // sort($chromosomes);
             // var_dump($chromosomes);
             return $chromosomes;
         } else {
@@ -979,7 +979,6 @@ class SNPs implements Countable, Iterator
     {
         
         $sortedList = $this->naturalSortChromosomes(array_unique(array_column($this->_snps, 'chrom')));
-
         
         // Move PAR and MT to the end of the array
         if (($key = array_search("PAR", $sortedList)) !== false) {
@@ -991,8 +990,7 @@ class SNPs implements Countable, Iterator
             unset($sortedList[$key]);
             $sortedList[] = "MT";
         }
-
-        // Sort the array based on ordered chromosome list and position
+        
         uasort($this->_snps, function ($a, $b) use ($sortedList) {
             $cmp = $this->naturalSortKey(
                 array_search($a['chrom'], $sortedList), 
@@ -1000,8 +998,6 @@ class SNPs implements Countable, Iterator
             );
             return ($cmp === 0) ? $a['pos'] - $b['pos'] : $cmp;
         });
-
-        
         
         $this->setSNPs($this->restoreChromObject($this->_snps));
         
