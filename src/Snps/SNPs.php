@@ -88,7 +88,7 @@ class SNPs implements Countable, Iterator
     ) //, $only_detect_source, $output_dir, $resources_dir, $parallelize, $processes)
     {
         // $this->_only_detect_source = $only_detect_source;
-        $this->setSNPs(IO::get_empty_snps_dataframe());        
+        $this->setSNPs(IO::get_empty_snps_dataframe());
         $this->_duplicate = IO::get_empty_snps_dataframe();
         $this->_discrepant_XY = IO::get_empty_snps_dataframe();
         $this->_heterozygous_MT = IO::get_empty_snps_dataframe();
@@ -230,12 +230,12 @@ class SNPs implements Countable, Iterator
         //             self._build = 37  # assume Build 37 / GRCh37 if not detected
         //         else:
         //             self._build_detected = True
-        
+
         if (!empty($this->_snps)) {
             $this->sort();
 
-            // if ($this->deduplicate)
-            //     $this->_deduplicate_rsids();
+            if ($this->deduplicate)
+                $this->_deduplicate_rsids();
 
             // use build detected from `read` method or comments, if any
             // otherwise use SNP positions to detect build
@@ -269,7 +269,6 @@ class SNPs implements Countable, Iterator
             //     $this->deduplicate_MT_chrom();
             // }
         }
-        
     }
 
     protected function readRawData($file, $only_detect_source, $rsids = [])
@@ -905,19 +904,27 @@ class SNPs implements Countable, Iterator
     private function _deduplicate_rsids()
     {
         // Keep first duplicate rsid.
-
+        print_r($this->_snps);
         $rsids = array_column($this->_snps, 'rsid');
         $duplicateRsids = array_filter(
             $this->_snps,
             function ($value, $key) use ($rsids) {
-                return array_search($value['rsid'], $rsids) != $key;
+                $keys = array_keys($rsids, $value['rsid']);
+                return count($keys) > 1 && in_array($key, $keys);
             },
             ARRAY_FILTER_USE_BOTH
         );
+
         // Save duplicate SNPs
         $this->_duplicate = array_merge($this->_duplicate, $duplicateRsids);
+
         // Deduplicate
+        echo "\nrrrrrrrrrrrrrrrrr\n";
+        print_r($duplicateRsids);
         $this->setSNPs(array_diff_key($this->_snps, $duplicateRsids));
+
+        echo "\nddddddddddddddddddd\n";
+        print_r($this->_snps);
     }
 
     private function _deduplicate_alleles($rsids)
@@ -977,9 +984,9 @@ class SNPs implements Countable, Iterator
 
     public function sort()
     {
-        
+
         $sortedList = $this->naturalSortChromosomes(array_unique(array_column($this->_snps, 'chrom')));
-        
+
         // Move PAR and MT to the end of the array
         if (($key = array_search("PAR", $sortedList)) !== false) {
             unset($sortedList[$key]);
@@ -990,17 +997,16 @@ class SNPs implements Countable, Iterator
             unset($sortedList[$key]);
             $sortedList[] = "MT";
         }
-        
+
         uasort($this->_snps, function ($a, $b) use ($sortedList) {
             $cmp = $this->naturalSortKey(
-                array_search($a['chrom'], $sortedList), 
+                array_search($a['chrom'], $sortedList),
                 array_search($b['chrom'], $sortedList)
             );
             return ($cmp === 0) ? $a['pos'] - $b['pos'] : $cmp;
         });
-        
+
         $this->setSNPs($this->restoreChromObject($this->_snps));
-        
     }
 
     private function naturalSortChromosomes($chromosomes)

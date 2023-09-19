@@ -229,10 +229,6 @@ class SnpsTest extends BaseSNPsTestCase
         }
     }
 
-    //     def test_chromosomes(self):
-    //     s = SNPs("tests/input/chromosomes.csv")
-    //     self.assertListEqual(s.chromosomes, ["1", "2", "3", "5", "PAR", "MT"])
-
     public function test_chromosomes()
     {
         $s = new SNPs("tests/input/chromosomes.csv");
@@ -438,7 +434,7 @@ class SnpsTest extends BaseSNPsTestCase
         $snps = new SNPs("tests/input/duplicate_rsids.csv");
         $result = $this->create_snp_df(["rs1"], ["1"], [101], ["AA"]);
         $duplicate = $this->create_snp_df(["rs1", "rs1"], ["1", "1"], [102, 103], ["CC", "GG"]);
-        $this->assertEquals($result, $snps->snps);
+        $this->assertEquals($result, $snps->getSnps());
         $this->assertEquals($duplicate, $snps->duplicate);
     }
 
