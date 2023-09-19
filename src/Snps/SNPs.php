@@ -57,7 +57,7 @@ class SNPs implements Countable, Iterator
     private array $_heterozygous_MT;
     private $_chip;
     private $_chip_version;
-
+    private $_cluster;
 
 
     /**
@@ -107,7 +107,7 @@ class SNPs implements Countable, Iterator
         // $this->_output_dir = $output_dir;
         $this->_resources = new Resources($resources_dir);
         // $this->_parallelizer = new Parallelizer($parallelize, $processes);
-        // $this->_cluster = "";
+        $this->_cluster = "";
         $this->_chip = "";
         $this->_chip_version = "";
 
@@ -371,7 +371,7 @@ class SNPs implements Countable, Iterator
      *   Biotechnology Journal, Volume 19, 2021, Pages 3747-3754, ISSN
      *   2001-0370.
      */
-    public function computeClusterOverlap($clusterOverlapThreshold = 0.95)
+    public function computeClusterOverlap($cluster_overlap_threshold = 0.95)
     {
         $data = [
             "cluster_id" => ["c1", "c3", "c4", "c5", "v5"],
@@ -395,14 +395,83 @@ class SNPs implements Countable, Iterator
 
 
         $keys = array_keys($data);
-        $result = [];
+        $df = [];
         foreach ($data['cluster_id'] as $index => $cluster_id) {
             $entry = ['cluster_id' => $cluster_id];
             foreach ($keys as $key) {
                 $entry[$key] = $data[$key][$index];
             }
-            $result[] = $entry;
+            $df[] = $entry;
         }
+
+        if ($this->build != 37) {
+            // Create a deep copy of the current object
+            $toRemap = clone $this;
+            // Call the remap method on the copied object
+            $toRemap->remap(37); // clusters are relative to Build 37
+            // Extract "chrom" and "pos" values from snps and remove duplicates
+            $selfSnps = [];
+            foreach ($toRemap->snps as $snp) {
+                if (
+                    !in_array($snp["chrom"], array_column($selfSnps, "chrom")) ||
+                    !in_array($snp["pos"], array_column($selfSnps, "pos"))
+                ) {
+                    $selfSnps[] = $snp;
+                }
+            }
+        } else {
+            // Extract "chrom" and "pos" values from snps and remove duplicates
+            $selfSnps = [];
+            foreach ($this->snps as $snp) {
+                if (
+                    !in_array($snp["chrom"], array_column($selfSnps, "chrom")) ||
+                    !in_array($snp["pos"], array_column($selfSnps, "pos"))
+                ) {
+                    $selfSnps[] = $snp;
+                }
+            }
+        }
+
+        $chip_clusters = $this->_resources->get_chip_clusters();
+
+        foreach ($df as $cluster => $row) {
+            $cluster_snps = array_filter($chip_clusters, function ($chip_cluster) use ($cluster) {
+                return strpos($chip_cluster['clusters'], $cluster) !== false;
+            });
+
+            $df[$cluster]["snps_in_cluster"] = count($cluster_snps);
+            $df[$cluster]["snps_in_common"] = count(array_uintersect($selfSnps, $cluster_snps, function ($a, $b) {
+                return $a["chrom"] == $b["chrom"] && $a["pos"] == $b["pos"] ? 0 : 1;
+            }));
+        }
+
+        foreach ($df as &$row) {
+            $row["overlap_with_cluster"] = $row["snps_in_common"] / $row["snps_in_cluster"];
+            $row["overlap_with_self"] = $row["snps_in_common"] / count($selfSnps);
+        }
+
+        $max_overlap = array_keys($df, max($df))[0];
+
+        if (
+            $df["overlap_with_cluster"][$max_overlap] > $cluster_overlap_threshold
+            && $df["overlap_with_self"][$max_overlap] > $cluster_overlap_threshold
+        ) {
+            $this->_cluster = $max_overlap;
+            $this->_chip = $df["chip_base_deduced"][$max_overlap];
+
+            $company_composition = $df["company_composition"][$max_overlap];
+
+            if ($this->source === "23andMe" || $this->source === "AncestryDNA") {
+                $i = strpos($company_composition, "v");
+                if ($i !== false) {
+                    $this->_chip_version = substr($company_composition, $i, 2);
+                }
+            } else {
+                error_log("Detected SNPs data source not found in cluster's company composition");
+            }
+        }
+
+        return $df;
     }
 
 
