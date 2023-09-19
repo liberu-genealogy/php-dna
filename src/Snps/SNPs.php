@@ -55,6 +55,10 @@ class SNPs implements Countable, Iterator
     private array $_duplicate;
     private array $_discrepant_XY;
     private array $_heterozygous_MT;
+    private $_chip;
+    private $_chip_version;
+
+
 
     /**
      * SNPs constructor.
@@ -104,8 +108,8 @@ class SNPs implements Countable, Iterator
         $this->_resources = new Resources($resources_dir);
         // $this->_parallelizer = new Parallelizer($parallelize, $processes);
         // $this->_cluster = "";
-        // $this->_chip = "";
-        // $this->_chip_version = "";
+        $this->_chip = "";
+        $this->_chip_version = "";
 
         $this->ensemblRestClient = $ensemblRestClient ?? new EnsemblRestClient("https://api.ncbi.nlm.nih.gov", 1);
 
@@ -123,27 +127,27 @@ class SNPs implements Countable, Iterator
     {
         return $this->_snps[$this->_position];
     }
-    
+
     public function key(): int
     {
         return $this->_position;
     }
-    
+
     public function next(): void
     {
         ++$this->_position;
     }
-    
+
     public function rewind(): void
     {
         $this->_position = 0;
     }
-    
+
     public function valid(): bool
     {
         return isset($this->_snps[$this->_position]);
     }
-    
+
     /**
      * Get the SNPs as a DataFrame.
      *
@@ -209,8 +213,7 @@ class SNPs implements Countable, Iterator
         // var_dump($d["build"]);
         // var_dump($this->_build_detected);
         // $this->_cluster = $d["cluster"];
-        // $this->_chip = $d["chip"];
-        // $this->_chip_version = $d["chip_version"];
+
         // if not self._snps.empty:
         //     self.sort()
 
@@ -308,6 +311,100 @@ class SNPs implements Countable, Iterator
     {
         $this->_build = $build;
     }
+
+    /**
+     * Detected deduced genotype / chip array, if any, per computeClusterOverlap.
+     *
+     * @return string Detected chip array, else an empty string.
+     */
+    public function getChip()
+    {
+        if (empty($this->_chip)) {
+            $this->computeClusterOverlap();
+        }
+        return $this->_chip;
+    }
+
+    /**
+     * Detected genotype / chip array version, if any, per
+     * computeClusterOverlap.
+     *
+     * Chip array version is only applicable to 23andMe (v3, v4, v5) and AncestryDNA (v1, v2) files.
+     *
+     * @return string Detected chip array version, e.g., 'v4', else an empty string.
+     */
+    public function getChipVersion()
+    {
+        if (!$this->_chip_version) {
+            $this->computeClusterOverlap();
+        }
+        return $this->_chip_version;
+    }
+
+    /**
+     * Compute overlap with chip clusters.
+     *
+     * Chip clusters, which are defined in [1]_, are associated with deduced genotype /
+     * chip arrays and DTC companies.
+     *
+     * This method also sets the values returned by the `cluster`, `chip`, and
+     * `chip_version` properties, based on max overlap, if the specified threshold is
+     * satisfied.
+     *
+     * @param float $clusterOverlapThreshold
+     *   Threshold for cluster to overlap this SNPs object, and vice versa, to set
+     *   values returned by the `cluster`, `chip`, and `chip_version` properties.
+     *
+     * @return array
+     *   Associative array with the following keys:
+     *   - `companyComposition`: DTC company composition of associated cluster from [1]_
+     *   - `chipBaseDeduced`: Deduced genotype / chip array of associated cluster from [1]_
+     *   - `snpsInCluster`: Count of SNPs in cluster
+     *   - `snpsInCommon`: Count of SNPs in common with cluster (inner merge with cluster)
+     *   - `overlapWithCluster`: Percentage overlap of `snpsInCommon` with cluster
+     *   - `overlapWithSelf`: Percentage overlap of `snpsInCommon` with this SNPs object
+     *
+     * @see https://doi.org/10.1016/j.csbj.2021.06.040
+     *   Chang Lu, Bastian Greshake Tzovaras, Julian Gough, A survey of
+     *   direct-to-consumer genotype data, and quality control tool
+     *   (GenomePrep) for research, Computational and Structural
+     *   Biotechnology Journal, Volume 19, 2021, Pages 3747-3754, ISSN
+     *   2001-0370.
+     */
+    public function computeClusterOverlap($clusterOverlapThreshold = 0.95)
+    {
+        $data = [
+            "cluster_id" => ["c1", "c3", "c4", "c5", "v5"],
+            "company_composition" => [
+                "23andMe-v4",
+                "AncestryDNA-v1, FTDNA, MyHeritage",
+                "23andMe-v3",
+                "AncestryDNA-v2",
+                "23andMe-v5, LivingDNA",
+            ],
+            "chip_base_deduced" => [
+                "HTS iSelect HD",
+                "OmniExpress",
+                "OmniExpress plus",
+                "OmniExpress plus",
+                "Illumina GSAs",
+            ],
+            "snps_in_cluster" => [0, 0, 0, 0, 0],
+            "snps_in_common" => [0, 0, 0, 0, 0],
+        ];
+
+
+        $keys = array_keys($data);
+        $result = [];
+        foreach ($data['cluster_id'] as $index => $cluster_id) {
+            $entry = ['cluster_id' => $cluster_id];
+            foreach ($keys as $key) {
+                $entry[$key] = $data[$key][$index];
+            }
+            $result[] = $entry;
+        }
+    }
+
 
     /**
      * Discrepant XY SNPs. 

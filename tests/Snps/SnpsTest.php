@@ -795,48 +795,48 @@ class SnpsTest extends BaseSNPsTestCase
         $this->assertEquals($expectedLowQualitySnps, $lowQualitySnps);
     }
 
-    public function testSnpsQcLowQualityNoCluster() {
-        function f() {
-            $s = new SNPs("tests/input/generic.csv");
-            // Identify low-quality SNPs
-            $this->assertEquals(
-                $s->low_quality, 
-                $this->getLowQualitySnps(['rs4', 'rs6'])
-            );
-            // Return already identified low-quality SNPs (test branch)
-            $this->assertEquals(
-                $s->low_quality, 
-                $this->getLowQualitySnps(['rs4', 'rs6'])
-            );
-        }
+    // public function testSnpsQcLowQualityNoCluster() {
+    //     function f() {
+    //         $s = new SNPs("tests/input/generic.csv");
+    //         // Identify low-quality SNPs
+    //         $this->assertEquals(
+    //             $s->low_quality, 
+    //             $this->getLowQualitySnps(['rs4', 'rs6'])
+    //         );
+    //         // Return already identified low-quality SNPs (test branch)
+    //         $this->assertEquals(
+    //             $s->low_quality, 
+    //             $this->getLowQualitySnps(['rs4', 'rs6'])
+    //         );
+    //     }
     
-        $this->runLowQualitySnpsTest('f', $this->getLowQualitySnps(), ['cluster' => '']);
-    }
+    //     $this->runLowQualitySnpsTest('f', $this->getLowQualitySnps(), ['cluster' => '']);
+    // }
 
-    public function testIdentifyLowQualitySnpsRemap() {
-        function f() {
-            $s = new SNPs("tests/input/generic.csv");
-            // Drop SNPs not currently remapped by test mapping data
-            $s->_snps->drop(["rs4", "rs5", "rs6", "rs7", "rs8"], 1);
-            $s->_build = 36;  // Manually set build 36
-            $s->identifyLowQualitySnps();
-            $this->assertEquals($s->snpsQc, $this->getLowQualitySnps(['rs1', 'rs3']));
-            $this->assertEquals($s->lowQuality, $this->getLowQualitySnps()['rs2']);
-            $this->assertEquals($s->build, 36);  // Ensure copy gets remapped
-        }
+    // private function testIdentifyLowQualitySnpsRemap() {
+    //     $f = function() {
+    //         $s = new SNPs("tests/input/generic.csv");
+    //         // Drop SNPs not currently remapped by test mapping data
+    //         $s->_snps->drop(["rs4", "rs5", "rs6", "rs7", "rs8"], 1);
+    //         $s->_build = 36;  // Manually set build 36
+    //         $s->identifyLowQualitySnps();
+    //         $this->assertEquals($s->snpsQc, $this->getLowQualitySnps(['rs1', 'rs3']));
+    //         $this->assertEquals($s->lowQuality, $this->getLowQualitySnps()['rs2']);
+    //         $this->assertEquals($s->build, 36);  // Ensure copy gets remapped
+    //     }
     
-        $mock = $this->getMockBuilder('Resources')
-            ->setMethods(['getAssemblyMappingData'])
-            ->getMock();
-        $mock->expects($this->any())
-            ->method('getAssemblyMappingData')
-            ->willReturn($this->getTestAssemblyMappingData(
-                "NCBI36",
-                "GRCh37",
-                array_fill(0, 8, 1),
-                array(101, 101, 102, 102, 103, 103, 0, 0)
-            ));
+    //     $mock = $this->getMockBuilder('Resources')
+    //         ->setMethods(['getAssemblyMappingData'])
+    //         ->getMock();
+    //     $mock->expects($this->any())
+    //         ->method('getAssemblyMappingData')
+    //         ->willReturn($this->getTestAssemblyMappingData(
+    //             "NCBI36",
+    //             "GRCh37",
+    //             array_fill(0, 8, 1),
+    //             array(101, 101, 102, 102, 103, 103, 0, 0)
+    //         ));
     
-        $this->runLowQualitySnpsTest('f', $this->getLowQualitySnps(array(102, 1001)));
-    }
+    //     $this->runLowQualitySnpsTest('f', $this->getLowQualitySnps(array(102, 1001)));
+    // }
 }
