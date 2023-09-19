@@ -121,32 +121,29 @@ class SNPs implements Countable, Iterator
 
     public function current(): SNPs
     {
-        $key = $this->_keys[$this->_position];
-        return $this->_snps[$key];
+        return $this->_snps[$this->_position];
     }
-
-    public function key(): string
+    
+    public function key(): int
     {
-        return $this->_keys[$this->_position];
+        return $this->_position;
     }
-
+    
     public function next(): void
     {
         ++$this->_position;
     }
-
+    
     public function rewind(): void
     {
         $this->_position = 0;
     }
-
+    
     public function valid(): bool
     {
-        return isset($this->_keys[$this->_position]);
+        return isset($this->_snps[$this->_position]);
     }
-
-
-
+    
     /**
      * Get the SNPs as a DataFrame.
      *

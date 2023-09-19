@@ -503,7 +503,7 @@ class Reader
                     $row["genotype"] = $row["allele1"] . $row["allele2"];
                     unset($row["allele1"], $row["allele2"]);
                 }
-                $df[$row["rsid"]] = $row;
+                $df[] = $row;
             }
 
             $df = array_map(function ($row) use ($mapping) {
@@ -596,7 +596,7 @@ class Reader
                         break;
                 }
 
-                $data[$entry["rsid"]] = $entry;
+                $data[] = $entry;
             }
 
             // print_r(count($data));
@@ -692,7 +692,7 @@ class Reader
             $firstrsid = null;
             foreach ($records as $offset => $record) {
                 if ($offset == 0) $firstrsid = $record["rsid"];
-                $dataArr[$record["rsid"]] = $record;
+                $dataArr[] = $record;
             }
 
             // Ensure that 'rsid', 'chrom', 'pos' and 'genotype' are not in the column names
@@ -887,7 +887,7 @@ class Reader
 
                     $key = explode(",", $record["rsid"], 2)[0];
                     $record["rsid"] = $key;
-                    $results[$key] = $record;
+                    $results[] = $record;
                 }
 
                 return $results;
