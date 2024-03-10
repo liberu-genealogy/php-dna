@@ -57,11 +57,8 @@ class Parallelizer
             // Implement parallel (multi-process) execution using pthreads, parallel or another multi-processing library
             // For example, using the parallel extension:
             $runtime = new \parallel\Runtime();
-            $promises = [];
-            foreach ($tasks as $task) {
-                $promises[] = $runtime->run($f, [$task]);
-            }
-            return array_map(fn ($promise) => $promise->value(), $promises);
+            $promises = array_map(fn($task) => $runtime->run($f, [$task]), $tasks);
+            return array_map(fn($promise) => $promise->value(), $promises);
         } else {
             return array_map($f, $tasks);
         }
