@@ -8,52 +8,20 @@ namespace Dna\Snps;
 class ReferenceSequence
 {
 
-    private string $_ID; // The ID of the reference sequence chromosome.
-    private string $_url; // The URL to the Ensembl reference sequence.
-    private string $_path; // The path to the local reference sequence.
-    private string $_assembly; // The reference sequence assembly (e.g., "GRCh37").
-    private string $_species; // The reference sequence species.
-    private string $_taxonomy; // The reference sequence taxonomy.
-    private array $sequence; // Array to store the sequence
-    private string $md5; // MD5 hash of the sequence
-    private int $start; // Start position of the sequence
-    private int $end; // End position of the sequence
-    private int $length; // Length of the sequence
-
     public function __construct(
-        private string $ID = "",
-        private string $url = "",
-        private string $path = "",
-        private string $assembly = "",
-        private string $species = "",
-        private string $taxonomy = ""
+        private readonly string $ID = "",
+        private readonly string $url = "",
+        private readonly string $path = "",
+        private readonly string $assembly = "",
+        private readonly string $species = "",
+        private readonly string $taxonomy = ""
     ) {
-        /* Initialize a ReferenceSequence object.
-        
-        Parameters:
-          ID: reference sequence chromosome
-          url: url to Ensembl reference sequence
-          path: path to local reference sequence
-          assembly: reference sequence assembly (e.g., "GRCh37")
-          species: reference sequence species
-          taxonomy: reference sequence taxonomy
-        
-        References:
-          1. The Variant Call Format (VCF) Version 4.2 Specification, 8 Mar 2019,
-            https://samtools.github.io/hts-specs/VCFv4.2.pdf
-        */
-        $this->_ID = $ID;
-        $this->_url = $url;
-        $this->_path = $path;
-        $this->_assembly = $assembly;
-        $this->_species = $species;
-        $this->_taxonomy = $taxonomy;
-        $this->sequence = array();
+        $this->sequence = [];
         $this->md5 = "";
         $this->start = 0;
         $this->end = 0;
         $this->length = 0;
-        $this->clear(); // Initialize the object with default values
+        $this->clear();
         $this->loadSequence();
     }
 
@@ -202,7 +170,7 @@ class ReferenceSequence
             $data = file_get_contents($this->_path);
 
             // check if file is gzipped
-            if (substr($data, 0, 2) === "\x1f\x8b") {
+            if (str_starts_with($data, "\x1f\x8b")) {
                 // Decompress the file
                 $data = gzdecode($data);
             }
@@ -240,12 +208,12 @@ class ReferenceSequence
     private function parseFirstLine(string $firstLine): array
     {
         $items = explode(":", $firstLine);
-        $index = array_search($this->_ID, $items);
-        $item1 = $items[$index + 1] ?? "";
-        $item2 = $items[$index + 2] ?? "";
-        return [
-            intval($item1),
-            intval($item2)
-        ];
+        return match(true) {
+            ($index = array_search($this->ID, $items)) !== false => [
+                intval($items[$index + 1] ?? ""),
+                intval($items[$index + 2] ?? "")
+            ],
+            default => [0, 0]
+        };
     }
 }
