@@ -46,43 +46,29 @@ class EnsemblRestClient
             $this->req_count = 0;
         }
 
-        $context_options = [
-            "http" => [
-                "method" => "GET",
-                "header" => $hdrs,
-            ],
+        $client = new \Symfony\Component\HttpClient\HttpClient();
+        $url = $this->server . $endpoint;
+        $options = [
+            'headers' => $hdrs,
+            'query' => $params,
         ];
 
-        $context = stream_context_create($context_options);
-        $url = $this->server . $endpoint;
-
         try {
-            $response = file_get_contents($url, false, $context);
-            $statusCode = http_response_code();
+            $response = $client->request('GET', $url, $options);
+            $statusCode = $response->getStatusCode();
 
-            if ($response) {
-                $data = json_decode($response, true);
+            if ($statusCode === 200) {
+                $data = $response->toArray();
+            } else {
+                throw new Exception("HTTP request failed with status code {$statusCode}.");
             }
 
             $this->req_count++;
-
         } catch (Exception $e) {
-            // check if we are being rate limited by the server
             if ($statusCode == 429) {
-                $retryAfterHeader = '';
-                foreach ($http_response_header as $header) {
-                    if (str_starts_with($header, 'Retry-After')) {
-                        $retryAfterHeader = $header;
-                        break;
-                    }
-                }
-
-                if ($retryAfterHeader !== '') {
-                    $retry = substr($retryAfterHeader, strlen('Retry-After: '));
-                    sleep($retry);
-                    
-                    return $this->perform_rest_action($endpoint, $hdrs, $params);
-                }
+                $retryAfter = $response->getHeaders()['retry-after'][0] ?? 0;
+                sleep($retryAfter);
+                return $this->perform_rest_action($endpoint, $hdrs, $params);
             } else {
                 error_log("Request failed for {$endpoint}: Status code: {$statusCode} Reason: {$e->getMessage()}\n");
             }
