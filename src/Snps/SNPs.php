@@ -44,9 +44,9 @@ use Iterator;
 class SNPs implements Countable, Iterator
 {
 
-    private $_source;
-    private array $_snps;
-    private $_build;
+    private array $_source = [];
+    private array $_snps = [];
+    private int $_build = 0;
     private $_phased;
     private $_build_detected;
     private $_resources;
@@ -552,7 +552,7 @@ class SNPs implements Countable, Iterator
      *    rs11928389, rs2500347, rs964481, rs2341354, rs3850290, and rs1329546
      *    (dbSNP Build ID: 151). Available from: http://www.ncbi.nlm.nih.gov/SNP/
      */
-    protected function detect_build()
+    protected function detect_build(): int
     {
         // print_r($this->_snps);
         $lookup_build_with_snp_pos = function ($pos, $s) {
