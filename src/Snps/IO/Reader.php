@@ -32,12 +32,11 @@ class Reader
      *   rsids to extract if loading a VCF file.
      */
     public function __construct(
-        private string $file = '',
-        private bool $_only_detect_source = false,
-        private ?SNPsResources $resources = null,
-        private array $rsids = []
-    ) {
-    }
+        private string $file,
+        private bool $_only_detect_source,
+        private ?SNPsResources $resources,
+        private array $rsids
+    ) {}
 
     /**
      * Read and parse a raw data / genotype file.
@@ -59,7 +58,6 @@ class Reader
             "phased" => false,
             "build" => 0,
         );
-
         // Peek into files to determine the data format
         // var_dump($file);
         if (is_string($file) && file_exists($file)) {
