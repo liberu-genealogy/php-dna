@@ -1,7 +1,5 @@
 <?php
 
-require 'vendor/autoload.php';
-
 use League\Csv\Reader;
 use League\Csv\Writer;
 
