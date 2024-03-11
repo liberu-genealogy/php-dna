@@ -27,17 +27,16 @@ class Writer
      * @param array $kwargs Additional parameters to `pandas.DataFrame.to_csv`
      */
     public function __construct(
-        protected ?SNPs $snps = null,
-        protected $filename = '',
-        protected bool $vcf = false,
-        protected bool $atomic = true,
-        protected string $vcfAltUnavailable = '.',
-        protected string $vcfChromPrefix = '',
-        protected bool $vcfQcOnly = false,
-        protected bool $vcfQcFilter = false,
-        protected array $kwargs = []
-    ) {
-    }
+        protected readonly ?SNPs $snps = null,
+        protected readonly string|resource $filename = '',
+        protected readonly bool $vcf = false,
+        protected readonly bool $atomic = true,
+        protected readonly string $vcfAltUnavailable = '.',
+        protected readonly string $vcfChromPrefix = '',
+        protected readonly bool $vcfQcOnly = false,
+        protected readonly bool $vcfQcFilter = false,
+        protected readonly array $kwargs = []
+    ) {}
 
     /**
      * Write SNPs to file or buffer.

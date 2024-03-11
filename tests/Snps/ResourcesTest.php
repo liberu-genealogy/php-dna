@@ -70,8 +70,8 @@ class ResourcesTest extends BaseSNPsTestCase
             return $this->resource->getAssemblyMappingData("NCBI36", "GRCh37");
         };
 
-        $assembly_mapping_data = ($this->downloads_enabled) ?
-            $this->resource->getAssemblyMappingData("NCBI36", "GRCh37") :
+        $assembly_mapping_data = $this->downloads_enabled ?
+            $this->resource->getAssemblyMappingData(assembly: "NCBI36", target: "GRCh37") :
             $f();
 
         $this->assertCount(25, $assembly_mapping_data);
@@ -103,7 +103,7 @@ class ResourcesTest extends BaseSNPsTestCase
         }
 
         $mockResponse = new Response(200, [], $s);
-        $httpClient = $this->createMockHttpClient([$mockResponse], true);
+        $httpClient = $this->createMockHttpClient(responses: [$mockResponse], mockDownload: true);
         $this->resource->setHttpClient($httpClient);
         $this->resource->getGsaRsid();
 
@@ -147,7 +147,7 @@ class ResourcesTest extends BaseSNPsTestCase
             $mock = $this->getMockBuilder(EnsemblRestClient::class)
                 ->getMock();
             $mock->method("perform_rest_action")
-                ->willReturnOnConsecutiveCalls(...array_fill(0, 6, $effects));
+                ->willReturnOnConsecutiveCalls(...array_fill(start_index: 0, count: 6, value: $effects));
 
             $this->resource->setRestClient($mock);
             return $this->resource->getAllResources();
@@ -164,7 +164,7 @@ class ResourcesTest extends BaseSNPsTestCase
         $responseContent = "1:1\tc1\n" . str_repeat("1:1\tc1\n", 2135213);
 
         $mockResponse = new Response(200, [], $responseContent);
-        $httpClient = $this->createMockHttpClient([$mockResponse], true);
+        $httpClient = $this->createMockHttpClient(responses: [$mockResponse], mockDownload: true);
         $this->resource->setHttpClient($httpClient);
 
         return $this->resource->get_chip_clusters();
@@ -225,7 +225,8 @@ class ResourcesTest extends BaseSNPsTestCase
     public function testGetPathsReferenceSequencesInvalidAssembly()
     {
         [$assembly, $chroms, $urls, $paths] = $this->resource->getPathsReferenceSequences(
-            assembly: "36"
+            assembly: "36",
+            chroms: []
         );
 
         $chroms = $chroms;
@@ -263,8 +264,10 @@ class ResourcesTest extends BaseSNPsTestCase
     {
         $f = function () use ($assemblyExpect, $urlExpect) {
             [$assembly, $chroms, $urls, $paths] = $this->resource->getPathsReferenceSequences(
-                assembly: $assemblyExpect,
-                chroms: ["MT"]
+                assembly: $assemblyExpect, 
+                chroms: ["MT"], 
+                urls: [], 
+                paths: []
             );
             $seqs = $this->resource->create_reference_sequences($assembly, $chroms, $urls, $paths);
 
@@ -316,8 +319,10 @@ class ResourcesTest extends BaseSNPsTestCase
     {
         $this->runReferenceSequencesTest(function () {
             list($assembly, $chroms, $urls, $paths) = $this->resource->getPathsReferenceSequences(
-                assembly: "GRCh37",
-                chroms: ["MT"]
+                assembly: "GRCh37", 
+                chroms: ["MT"], 
+                urls: [], 
+                paths: []
             );
             $paths[0] = "";
             $seqs = $this->resource->create_reference_sequences($assembly, $chroms, $urls, $paths);
@@ -374,6 +379,7 @@ class ResourcesTest extends BaseSNPsTestCase
     {
         $this->runReferenceSequencesTest(function () {
             $seqs = $this->resource->getReferenceSequences(
+                assembly: "GRCh37", 
                 chroms: ['MT']
             );
             $this->assertCount(1, $seqs);
@@ -434,9 +440,9 @@ class ResourcesTest extends BaseSNPsTestCase
     public function testGetReferenceSequencesChromNotAvailable()
     {
         $this->runReferenceSequencesTest(function () {
-            $this->resource->getReferenceSequences(chroms: ['MT']);
-            unset($this->resource->getReferenceSequences()['GRCh37']['MT']);
-            $seqs = $this->resource->getReferenceSequences(chroms: ['MT']);
+            $this->resource->getReferenceSequences(assembly: "GRCh37", chroms: ['MT']);
+            unset($this->resource->getReferenceSequences(assembly: "GRCh37")['MT']);
+            $seqs = $this->resource->getReferenceSequences(assembly: "GRCh37", chroms: ['MT']);
             $this->assertCount(1, $seqs);
             $this->assertEquals(
                 $seqs['MT']->__toString(),
