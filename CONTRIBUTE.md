@@ -28,3 +28,12 @@ $result = $ensemblClient->someMethod();
 ```
 
 Explore the `src/Snps/` directory for more scripts and classes that can be used from the CLI or programmatically.
+## Documentation of New Functionalities
+
+When adding new CLI or handler functionalities, please ensure to update the `README.md` with the following details to keep the documentation consistent and comprehensive:
+
+- **Brief Description:** A short summary of what the functionality does.
+- **Usage Examples:** Provide at least one example of how to use the new functionality from the CLI and, if applicable, programmatically.
+- **Parameters/Configurations:** List any necessary parameters or configurations required for using the functionality.
+
+This will help users understand and utilize the new features effectively.
