@@ -54,17 +54,27 @@ function plot_chromosomes($matchedData, $path, $title, $build, $format) {
     foreach ($collections as $collection) {
     if ($format == 'svg') {
         $svgFile = fopen($path, 'w');
-        fwrite($svgFile, "<svg width='650' height='900' xmlns='http://www.w3.org/2000/svg'>\n");
+        fwrite($svgFile, "<svg width='1300' height='1800' xmlns='http://www.w3.org/2000/svg'>\n");
         foreach ($collections as $collection) {
-            $color = sprintf("#%02x%02x%02x", $collection['colors'][0] * 255, $collection['colors'][1] * 255, $collection['colors'][2] * 255);
+            // Enhanced color scheme
+            $colorIndex = array_search($collection, $collections);
+            $color = $colors[$colorIndex];
             foreach ($collection['xranges'] as $xrange) {
                 fwrite($svgFile, "<rect x='{$xrange['start']}' y='{$collection['yrange'][0]}' width='{$xrange['width']}' height='" . ($collection['yrange'][1] - $collection['yrange'][0]) . "' fill='{$color}' />\n");
             }
+        }
+        // Adding labels to the SVG
+        foreach ($collections as $index => $collection) {
+            $labelX = $collection['xranges'][0]['start'];
+            $labelY = $collection['yrange'][0] - 10; // Adjust label position above the rectangle
+            $label = "Chromosome " . ($index + 1);
+            fwrite($svgFile, "<text x='{$labelX}' y='{$labelY}' font-family='Arial' font-size='14' fill='black'>{$label}</text>\n");
         }
         fwrite($svgFile, "</svg>");
         fclose($svgFile);
         return;
     }
+    $colors = generate_color_scheme(count($collections));
         CSVGenerator::generate($matchedData, str_replace('.svg', '.csv', $path));
         $color = imagecolorallocate($image, $collection['colors'][0] * 255, $collection['colors'][1] * 255, $collection['colors'][2] * 255);
         foreach ($collection['xranges'] as $xrange) {
@@ -81,3 +91,11 @@ function generate_csv($matchedData, $path) {
     fclose($csvFile);
 }
         CSVGenerator::generate($matchedData, str_replace(['.png', '.jpeg', '.jpg'], '.csv', $path));
+function generate_color_scheme($numColors) {
+    $colors = [];
+    for ($i = 0; $i < $numColors; $i++) {
+        $hue = $i * (360 / $numColors);
+        $colors[] = "hsl(" . $hue . ", 100%, 50%)";
+    }
+    return $colors;
+}
