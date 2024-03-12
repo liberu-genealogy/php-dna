@@ -2,6 +2,7 @@
 
 use League\Csv\Reader;
 use League\Csv\Writer;
+use src\Helpers\CSVGenerator;
 
 function _chromosome_collections($df, $y_positions, $height) {
     $collections = [];
@@ -64,6 +65,7 @@ function plot_chromosomes($matchedData, $path, $title, $build, $format) {
         fclose($svgFile);
         return;
     }
+        CSVGenerator::generate($matchedData, str_replace('.svg', '.csv', $path));
         $color = imagecolorallocate($image, $collection['colors'][0] * 255, $collection['colors'][1] * 255, $collection['colors'][2] * 255);
         foreach ($collection['xranges'] as $xrange) {
             imagerectangle($image, $xrange['start'], $collection['yrange'][0], $xrange['start'] + $xrange['width'], $collection['yrange'][1], $color);
@@ -78,3 +80,4 @@ function generate_csv($matchedData, $path) {
     }
     fclose($csvFile);
 }
+        CSVGenerator::generate($matchedData, str_replace(['.png', '.jpeg', '.jpg'], '.csv', $path));
