@@ -35,6 +35,12 @@ class CsvReader
     }
 
     public function setColumnTypes($columnTypes)
+    private $enclosure;
+
+    public function setEnclosure($enclosure)
+    {
+        $this->enclosure = $enclosure;
+    }
     {
         $this->columnTypes = $columnTypes;
     }
@@ -45,10 +51,10 @@ class CsvReader
 
         if (($handle = fopen($this->filePath, "r")) !== false) {
             if ($this->header) {
-                fgetcsv($handle, 0, $this->separator); // Skip the header row
+                fgetcsv($handle, 0, $this->separator, $this->enclosure); // Skip the header row
             }
 
-            while (($row = fgetcsv($handle, 0, $this->separator)) !== false) {
+            while (($row = fgetcsv($handle, 0, $this->separator, $this->enclosure)) !== false) {
                 if (!empty($this->columnNames)) {
                     print_r($row);
                     $row = array_combine($this->columnNames, $row);
