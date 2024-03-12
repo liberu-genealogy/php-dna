@@ -35,7 +35,10 @@ function _patch_chromosomal_features($cytobands, $one_chrom_match, $two_chrom_ma
     return $df;
 }
 
-function plot_chromosomes($one_chrom_match, $two_chrom_match, $cytobands, $path, $title, $build) {
+function plot_chromosomes($matchedData, $path, $title, $build) {
+    $one_chrom_match = $matchedData;
+    $two_chrom_match = []; // Assuming no data for two chromosome matches in this context
+    $cytobands = []; // Assuming cytobands data needs to be integrated or is not required for matched SNP visualization
     $image = imagecreatetruecolor(650, 900);
     $background_color = imagecolorallocate($image, 202, 202, 202);
     imagefill($image, 0, 0, $background_color);
