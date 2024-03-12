@@ -2,13 +2,14 @@
 
 namespace Dna\Snps\IO;
 
-use Dna\Snps\SNPs;
-use Dna\Snps\SNPsResources;
-use League\Csv\Info;
-use League\Csv\Reader as CsvReader;
-use League\Csv\Statement;
-use php_user_filter;
+use Dna\Snps\EnsemblRestClient;
+use Dna\Snps\IO\FileHandler;
+use Dna\Snps\IO\DataManipulator;
+use Symfony\Component\HttpClient\HttpClient;
+use League\Csv\Writer as CsvWriter;
+use League\Csv\CannotInsertRecord;
 use ZipArchive;
+use Exception;
 
 class Writer
 {
@@ -46,10 +47,14 @@ class Writer
      */
     public function write()
     {
-        if ($this->_vcf) {
+        // Determine the file format based on the extension or the $vcf flag
+        $fileExtension = strtolower(pathinfo($this->filename, PATHINFO_EXTENSION));
+        if ($this->vcf || $fileExtension === 'vcf') {
             return $this->_writeVcf();
+        } elseif ($fileExtension === 'csv' || $fileExtension === 'txt') {
+            return $this->_writeCsv();
         } else {
-            return [$this->_writeCsv()];
+            throw new Exception("Unsupported file format: " . $fileExtension);
         }
     }
 
@@ -100,38 +105,27 @@ class Writer
          *
          * @return string Path to file in the output directory if SNPs were saved, else an empty string
          */
-        $filename = $this->_filename;
-        if (empty($filename)) {
-            $ext = ".txt";
+        // Prepare CSV writer
+        $csvWriter = CsvWriter::createFromPath($this->filename, 'w+');
+        $csvWriter->setOutputBOM(CsvWriter::BOM_UTF8);
 
-            if (array_key_exists("sep", $this->_kwargs) && $this->_kwargs["sep"] == ",") {
-                $ext = ".csv";
+        // Set headers if specified
+        if (!empty($this->kwargs['header'])) {
+            try {
+                $csvWriter->insertOne($this->kwargs['header']);
+            } catch (CannotInsertRecord $e) {
+                throw new Exception("Failed to insert header: " . $e->getMessage());
             }
-
-            $filename = cleanStr($this->_snps->source) . "_" . $this->_snps->assembly . $ext;
         }
 
-        $comment = "# Source(s): " . $this->_snps->source . "\n"
-            . "# Build: " . $this->_snps->build . "\n"
-            . "# Build Detected: " . ($this->_snps->build_detected ? "true" : "false") . "\n"
-            . "# Phased: " . ($this->_snps->phased ? "true" : "false") . "\n"
-            . "# SNPs: " . $this->_snps->count . "\n"
-            . "# Chromosomes: " . $this->_snps->chromosomesSummary . "\n";
-
-        if (array_key_exists("header", $this->_kwargs)) {
-            if (is_bool($this->_kwargs["header"])) {
-                if ($this->_kwargs["header"]) {
-                    $this->_kwargs["header"] = ["chromosome", "position", "genotype"];
-                }
-            } else {
-                $this->_kwargs["header"] = ["chromosome", "position", "genotype"];
-            }
-        } else {
-            $this->_kwargs["header"] = ["chromosome", "position", "genotype"];
+        // Insert data
+        try {
+            $csvWriter->insertAll($this->snps->toArray());
+        } catch (CannotInsertRecord $e) {
+            throw new Exception("Failed to write CSV data: " . $e->getMessage());
         }
 
-        return saveArrayAsCsv(
-            $this->_snps->_snps,
+        return $this->filename;
             $this->_snps->_output_dir,
             $filename,
             $comment,
