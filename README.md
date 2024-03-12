@@ -1,5 +1,17 @@
 # php-dna
 
+## Running MatchKits from the Command Line
+
+To run the MatchKits script from the command line, navigate to the root directory of the php-dna project.
+
+Ensure you have PHP installed on your system. You can check this by running `php -v` in your command line. If PHP is not installed, please install it from the official PHP website.
+
+Execute the script by running the following command: `php src/MatchKits.php`.
+
+The script will prompt you to enter the file paths for Kit 1 and Kit 2. Please enter the full path for each file when prompted.
+
+After entering the file paths, the script will process the data and generate a matched data visualization. The output file named 'matched_data.png' will be saved in the root directory.
+
 ## Requirements
 
 * php-dna 1.0+ requires PHP 8.3 (or later).
