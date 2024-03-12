@@ -32,7 +32,7 @@ use Iterator;
 // from pandas.api.types import CategoricalDtype // If using php-dataframe, check documentation for similar functionality
 
 // For snps.ensembl, snps.resources, snps.io, and snps.utils, you'll need to find suitable PHP alternatives or adapt the Python code
-// from snps.ensembl import EnsemblRestClient
+use Dna\Snps\Ensembl;
 // from snps.resources import Resources
 // from snps.io import Reader, Writer, get_empty_snps_dataframe
 // from snps.utils import Parallelizer
