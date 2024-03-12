@@ -37,29 +37,27 @@ class Reader
         private ?SNPsResources $resources,
         private array $rsids
     ) {}
+    }
 
     /**
      * Read and parse a raw data / genotype file.
      *
-     * @return array
-     *   An array with the following items:
-     *   - snps (pandas.DataFrame): Dataframe of parsed SNPs.
-     *   - source (string): Detected source of SNPs.
-     *   - phased (bool): Flag indicating if SNPs are phased.
+     * @return array An array with the following items:
+     *               - 'snps': Array of parsed SNPs.
+     *               - 'source': Detected source of SNPs.
+     *               - 'phased': Flag indicating if SNPs are phased.
+     *               - 'build': Detected build of SNPs.
      */
     public function read(): array
     {
         $file = $this->file;
-        $compression = "infer";
         $read_data = [];
-        $d = array(
-            "snps" => IO::get_empty_snps_dataframe(),
+        $d = [
+            "snps" => [],
             "source" => "",
             "phased" => false,
             "build" => 0,
-        );
-        // Peek into files to determine the data format
-        // var_dump($file);
+        ];
         if (is_string($file) && file_exists($file)) {
             if (strpos($file, ".zip") !== false) {
                 $zip = new ZipArchive(ZipArchive::RDONLY);
