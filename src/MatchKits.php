@@ -4,13 +4,13 @@ require_once 'SNPs.php';
 require_once 'Visualization.php';
 
 class MatchKits {
-    private $kit1Data;
-    private $kit2Data;
+    private $kitsData = [];
     private $matchedData;
 
-    public function loadKitsData($kit1Path, $kit2Path) {
-        $this->kit1Data = new Dna\Snps\SNPs($kit1Path);
-        $this->kit2Data = new Dna\Snps\SNPs($kit2Path);
+    public function loadKitsData($kitPaths) {
+        foreach ($kitPaths as $path) {
+            $this->kitsData[] = new Dna\Snps\SNPs($path);
+        }
     }
 
     public function matchKits() {
@@ -32,15 +32,26 @@ class MatchKits {
 
 if (php_sapi_name() == "cli") {
     $matchKits = new MatchKits();
-    echo "Enter file path for Kit 1: ";
-    $kit1Path = trim(fgets(STDIN));
-    echo "Enter file path for Kit 2: ";
-    $kit2Path = trim(fgets(STDIN));
+    echo "Enter the number of kits to compare: ";
+    $numKits = trim(fgets(STDIN));
+    $kitPaths = [];
+    for ($i = 0; $i < $numKits; $i++) {
+        echo "Enter file path for Kit " . ($i + 1) . ": ";
+        $kitPaths[] = trim(fgets(STDIN));
+    }
 
-    $matchKits->loadKitsData($kit1Path, $kit2Path);
+    $matchKits->loadKitsData($kitPaths);
     $matchKits->matchKits();
     $matchKits->visualizeMatchedData();
 
     echo "Matched data visualization has been generated.\n";
 }
 ?>
+    public function triangulateKits() {
+        $this->matchedData = []; // Initialize matched data array
+        $snpsLists = array_map(function($kit) { return $kit->getSnps(); }, $this->kitsData);
+        $commonSnps = call_user_func_array('array_intersect_key', $snpsLists);
+        foreach ($commonSnps as $snp) {
+            $this->matchedData[] = $snp; // Add common SNP to matched data
+        }
+    }
