@@ -33,8 +33,9 @@ use Iterator;
 
 // For snps.ensembl, snps.resources, snps.io, and snps.utils, you'll need to find suitable PHP alternatives or adapt the Python code
 use Dna\Snps\Ensembl;
-// from snps.resources import Resources
-// from snps.io import Reader, Writer, get_empty_snps_dataframe
+use Dna\Snps\IO\SnpFileReader;
+use Dna\Snps\Analysis\BuildDetector;
+use Dna\Snps\Analysis\ClusterOverlapCalculator;
 // from snps.utils import Parallelizer
 
 // Set up logging
@@ -95,14 +96,16 @@ class SNPs implements Countable, Iterator
             ) //, $only_detect_source, $output_dir, $resources_dir, $parallelize, $processes)
             {
                 // $this->_only_detect_source = $only_detect_source;
-                $this->setSNPs(IO::get_empty_snps_dataframe());
-                $this->_duplicate = IO::get_empty_snps_dataframe();
-                $this->_discrepant_XY = IO::get_empty_snps_dataframe();
-                $this->_heterozygous_MT = IO::get_empty_snps_dataframe();
-                // $this->_discrepant_vcf_position = $this->get_empty_snps_dataframe();
-                // $this->_low_quality = $this->_snps->index;
-                // $this->_discrepant_merge_positions = new DataFrame();
-                // $this->_discrepant_merge_genotypes = new DataFrame();
+        $this->snpFileReader = new SnpFileReader($this->_resources, $this->ensemblRestClient);
+        $this->buildDetector = new BuildDetector();
+        $this->clusterOverlapCalculator = new ClusterOverlapCalculator($this->_resources);
+        $this->_source = [];
+        $this->_phased = null;
+        $this->_build = 0;
+        $this->_build_detected = null;
+        $this->_cluster = "";
+        $this->_chip = "";
+        $this->_chip_version = "";
                 $this->_source = [];
                 // $this->_phased = false;
                 $this->_build = 0;
@@ -202,10 +205,7 @@ class SNPs implements Countable, Iterator
         $this->_keys = array_keys($snps);
     }
 
-    protected function readFile()
-    {
-        // print_r($this->file);
-        $d = $this->readRawData($this->file, $this->only_detect_source, $this->rsids);
+    // Method readFile has been removed and its functionality is refactored with SnpFileReader class
         $this->setSNPs($d["snps"]);
         $this->_source = (strpos($d["source"], ", ") !== false) ? explode(", ", $d["source"]) : [$d["source"]];
         $this->_phased = $d["phased"];
@@ -274,10 +274,7 @@ class SNPs implements Countable, Iterator
         }
     }
 
-    protected function readRawData($file, $only_detect_source, $rsids = [])
-    {
-        $r = new Reader($file, $only_detect_source, $this->_resources, $rsids);
-        return $r->read();
+    // Method readRawData has been removed and its functionality is refactored with SnpFileReader class
     }
 
     /**
@@ -374,26 +371,7 @@ class SNPs implements Countable, Iterator
      *   Biotechnology Journal, Volume 19, 2021, Pages 3747-3754, ISSN
      *   2001-0370.
      */
-    public function computeClusterOverlap($cluster_overlap_threshold = 0.95)
-    {
-        $data = [
-            "cluster_id" => ["c1", "c3", "c4", "c5", "v5"],
-            "company_composition" => [
-                "23andMe-v4",
-                "AncestryDNA-v1, FTDNA, MyHeritage",
-                "23andMe-v3",
-                "AncestryDNA-v2",
-                "23andMe-v5, LivingDNA",
-            ],
-            "chip_base_deduced" => [
-                "HTS iSelect HD",
-                "OmniExpress",
-                "OmniExpress plus",
-                "OmniExpress plus",
-                "Illumina GSAs",
-            ],
-            "snps_in_cluster" => [0, 0, 0, 0, 0],
-            "snps_in_common" => [0, 0, 0, 0, 0],
+    // Method computeClusterOverlap has been removed and its functionality is refactored with ClusterOverlapCalculator class
         ];
 
 
@@ -555,26 +533,7 @@ class SNPs implements Countable, Iterator
      *    rs11928389, rs2500347, rs964481, rs2341354, rs3850290, and rs1329546
      *    (dbSNP Build ID: 151). Available from: http://www.ncbi.nlm.nih.gov/SNP/
      */
-    protected function detect_build(): int
-    {
-        // print_r($this->_snps);
-        $lookup_build_with_snp_pos = function ($pos, $s) {
-            foreach ($s as $index => $value) {
-                if ($value == $pos) {
-                    return $index;
-                }
-            }
-            return 0;
-        };
-
-        $build = 0;
-
-        $rsids = [
-            "rs3094315",
-            "rs11928389",
-            "rs2500347",
-            "rs964481",
-            "rs2341354",
+    // Method detect_build has been removed and its functionality is refactored with BuildDetector class
             "rs3850290",
             "rs1329546",
         ];
