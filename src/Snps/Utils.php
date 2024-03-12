@@ -43,9 +43,8 @@ use ZipArchive;
 class Parallelizer
 {
     private bool $_parallelize;
-    private int $_processes;
-
-    public function __construct(bool $parallelize = false, int $processes = null)
+    private ?int $_processes;
+    public function __construct(bool $parallelize = false, ?int $processes = null): void
     {
         $this->_parallelize = $parallelize;
         $this->_processes = $processes ?? os_cpu_count();
@@ -78,7 +77,7 @@ class Parallelizer
 
 class Utils
 {
-    public static function gzip_file($src, $dest)
+    public static function gzip_file(string $src, string $dest): string
     {
         /**
          * Gzip a file.

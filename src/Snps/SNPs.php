@@ -47,9 +47,12 @@ class SNPs implements Countable, Iterator
     private array $_source = [];
     private array $_snps = [];
     private int $_build = 0;
-    private $_phased;
-    private $_build_detected;
-    private $_resources;
+    private ?bool $_phased = null;
+    private ?bool $_build_detected = null;
+    private ?Resources $_resources = null;
+    private ?string $_chip = null;
+    private ?string $_chip_version = null;
+    private ?string $_cluster = null;
     private int $_position = 0;
     private array $_keys = [];
     private array $_duplicate;
