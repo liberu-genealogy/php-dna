@@ -92,29 +92,29 @@ class SNPs implements Countable, Iterator
         private int $processes = 1, // cpu count
         private array $rsids = [],
         private $ensemblRestClient = null,
-    ) //, $only_detect_source, $output_dir, $resources_dir, $parallelize, $processes)
-    {
-        // $this->_only_detect_source = $only_detect_source;
-        $this->setSNPs(IO::get_empty_snps_dataframe());
-        $this->_duplicate = IO::get_empty_snps_dataframe();
-        $this->_discrepant_XY = IO::get_empty_snps_dataframe();
-        $this->_heterozygous_MT = IO::get_empty_snps_dataframe();
-        // $this->_discrepant_vcf_position = $this->get_empty_snps_dataframe();
-        // $this->_low_quality = $this->_snps->index;
-        // $this->_discrepant_merge_positions = new DataFrame();
-        // $this->_discrepant_merge_genotypes = new DataFrame();
-        $this->_source = [];
-        // $this->_phased = false;
-        $this->_build = 0;
-        $this->_build_detected = false;
-        // $this->_output_dir = $output_dir;
-        $this->_resources = new Resources($resources_dir);
-        // $this->_parallelizer = new Parallelizer($parallelize, $processes);
-        $this->_cluster = "";
-        $this->_chip = "";
-        $this->_chip_version = "";
-
-        $this->ensemblRestClient = $ensemblRestClient ?? new EnsemblRestClient("https://api.ncbi.nlm.nih.gov", 1);
+            ) //, $only_detect_source, $output_dir, $resources_dir, $parallelize, $processes)
+            {
+                // $this->_only_detect_source = $only_detect_source;
+                $this->setSNPs(IO::get_empty_snps_dataframe());
+                $this->_duplicate = IO::get_empty_snps_dataframe();
+                $this->_discrepant_XY = IO::get_empty_snps_dataframe();
+                $this->_heterozygous_MT = IO::get_empty_snps_dataframe();
+                // $this->_discrepant_vcf_position = $this->get_empty_snps_dataframe();
+                // $this->_low_quality = $this->_snps->index;
+                // $this->_discrepant_merge_positions = new DataFrame();
+                // $this->_discrepant_merge_genotypes = new DataFrame();
+                $this->_source = [];
+                // $this->_phased = false;
+                $this->_build = 0;
+                $this->_build_detected = false;
+                // $this->_output_dir = $output_dir;
+                $this->_resources = new Resources($resources_dir);
+                // $this->_parallelizer = new Parallelizer($parallelize, $processes);
+                $this->_cluster = "";
+                $this->_chip = "";
+                $this->_chip_version = "";
+        
+                $this->ensemblRestClient = $ensemblRestClient ?? new Ensembl("https://api.ncbi.nlm.nih.gov", 1);
 
         if (!empty($file)) {
             $this->readFile();
