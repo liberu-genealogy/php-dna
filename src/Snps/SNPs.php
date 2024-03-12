@@ -2461,6 +2461,33 @@ class SNPs implements Countable, Iterator
 //             // If there are no SNPs here, skip
 //             if (count($snp_indices) === 0) {
 //                 continue;
+    /**
+     * Matches SNPs with another SNPs object and returns a new SNPs object with the matching SNPs.
+     * 
+     * @param SNPs $otherKit The other SNPs object to match with.
+     * @return SNPs A new SNPs object containing the matching SNPs.
+     */
+    public function matchWith(SNPs $otherKit): SNPs
+    {
+        $matchedSnps = []; // Initialize an array to store the matched SNPs
+
+        // Iterate over the SNPs in the current object
+        foreach ($this->_snps as $snp) {
+            // Iterate over the SNPs in the other object
+            foreach ($otherKit->getSnps() as $otherSnp) {
+                // Check if the SNP positions and alleles match
+                if ($snp['pos'] == $otherSnp['pos'] && $snp['genotype'] == $otherSnp['genotype']) {
+                    $matchedSnps[] = $snp; // Add the matching SNP to the array
+                }
+            }
+        }
+
+        // Create a new SNPs object with the matched SNPs
+        $matchedSnpsObject = new SNPs();
+        $matchedSnpsObject->setSNPs($matchedSnps);
+
+        return $matchedSnpsObject; // Return the new SNPs object
+    }
 //             }
     
 //             $orig_range_len = $orig_end - $orig_start;
