@@ -24,9 +24,9 @@ class MatchKits {
         }
     }
 
-    public function visualizeMatchedData() {
+    public function visualizeMatchedData($format) {
         $visualization = new Visualization();
-        $visualization->plot_chromosomes($this->matchedData, "matched_data.png", "Matched SNP Data", "Build");
+        $visualization->plot_chromosomes($this->matchedData, "matched_data." . $format, "Matched SNP Data", "Build", $format);
     }
 }
 
