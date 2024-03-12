@@ -17,3 +17,4 @@ class ExtraTabsFilter extends php_user_filter
         return PSFS_PASS_ON;
     }
 }
+stream_filter_register("extra_tabs_filter", "Dna\\Snps\\IO\\ExtraTabsFilter");
