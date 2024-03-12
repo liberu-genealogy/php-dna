@@ -62,7 +62,7 @@ class Reader
         // var_dump($file);
         if (is_string($file) && file_exists($file)) {
             if (strpos($file, ".zip") !== false) {
-                $zip = new ZipArchive();
+                $zip = new ZipArchive(ZipArchive::RDONLY);
                 if ($zip->open($file) === true) {
                     $firstEntry = $zip->getNameIndex(0);
                     $firstEntryFile = $zip->getStream($firstEntry);
@@ -72,7 +72,7 @@ class Reader
                 }
             } elseif (strpos($file, ".gz") !== false) {
                 $fileContents = file_get_contents($file);
-                $fileContents = gzdecode($fileContents);
+                $fileContents = zlib_decode($fileContents);
 
                 $read_data = $this->_extract_comments($fileContents);
                 $compression = "gzip";
@@ -84,7 +84,7 @@ class Reader
             $fileContents = $file;
             $read_data = $this->_handle_bytes_data($fileContents);
 
-            $tempfile = tmpfile();
+            $tempfile = fopen('php://temp', 'w+');
             fwrite($tempfile, $fileContents);
             $meta_data = stream_get_meta_data($tempfile);
             $file_path = $meta_data['uri'];
@@ -263,6 +263,7 @@ class Reader
     {
         $phased = false;
         $build = 0;
+        $snps = [];
 
         if ($this->_only_detect_source) {
             $snps = array();
@@ -843,7 +844,7 @@ class Reader
         $parser = function () use ($file, $compression, $skip) {
             $parse = function ($sep, $use_cols = false) use ($file, $skip, $compression) {
                 // Stream filter for compressed file, if needed
-                $filter = $compression ? 'compress.zlib://' : '';
+                $filter = $compression === "gzip" ? 'compress.zlib://' : '';
 
              
                 // CSV Reader setup
