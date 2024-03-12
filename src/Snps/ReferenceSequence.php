@@ -9,12 +9,12 @@ class ReferenceSequence
 {
 
     public function __construct(
-        private readonly string $ID = "",
-        private readonly string $url = "",
-        private readonly string $path = "",
-        private readonly string $assembly = "",
-        private readonly string $species = "",
-        private readonly string $taxonomy = ""
+        private string $ID = "",
+        private string $url = "",
+        private string $path = "",
+        private string $assembly = "",
+        private string $species = "",
+        private string $taxonomy = ""
     ) {
         $this->sequence = [];
         $this->md5 = "";
@@ -37,7 +37,7 @@ class ReferenceSequence
      */
     public function getID(): string
     {
-        return $this->_ID;
+        return $this->ID;
     }
 
     /**
@@ -47,7 +47,7 @@ class ReferenceSequence
      */
     public function getChrom(): string
     {
-        return $this->_ID;
+        return $this->ID;
     }
 
     /**
@@ -57,7 +57,7 @@ class ReferenceSequence
      */
     public function getUrl(): string
     {
-        return $this->_url;
+        return $this->url;
     }
 
     /**
@@ -67,7 +67,7 @@ class ReferenceSequence
      */
     public function getPath(): string
     {
-        return $this->_path;
+        return $this->path;
     }
 
     /**
@@ -77,7 +77,7 @@ class ReferenceSequence
      */
     public function getAssembly(): string
     {
-        return $this->_assembly;
+        return $this->assembly;
     }
 
     /**
@@ -87,7 +87,7 @@ class ReferenceSequence
      */
     public function getBuild(): string
     {
-        return "B" . substr($this->_assembly, -2);
+        return "B" . substr($this->assembly, -2);
     }
     /**
      * Returns the species of the reference sequence.
@@ -96,7 +96,7 @@ class ReferenceSequence
      */
     public function getSpecies(): string
     {
-        return $this->_species;
+        return $this->species;
     }
 
     /**
@@ -106,7 +106,7 @@ class ReferenceSequence
      */
     public function getTaxonomy(): string
     {
-        return $this->_taxonomy;
+        return $this->taxonomy;
     }
 
     /**
@@ -167,7 +167,7 @@ class ReferenceSequence
     {
         if (!count($this->sequence)) {
             // Decompress and read file
-            $data = file_get_contents($this->_path);
+            $data = file_get_contents($this->path);
 
             // check if file is gzipped
             if (str_starts_with($data, "\x1f\x8b")) {
