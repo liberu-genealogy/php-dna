@@ -23,11 +23,6 @@ use Dna\Snps\Utils;
  * alternative to constructor and lets clients access the same instance of this
  * class over and over.
  */
-
-// import datetime; // PHP has built-in date functions
-// import gzip; // PHP has built-in gzip functions
-// import io; // PHP has built-in I/O functions
-// import logging; // You can use Monolog or another logging library in PHP
 // from multiprocessing import Pool; // You can use parallel or pthreads for multi-processing in PHP
 // import os; // PHP has built-in OS functions
 // import re; // PHP has built-in RegExp functions
@@ -37,9 +32,6 @@ use Dna\Snps\Utils;
 
 // from atomicwrites import atomic_write; // You can use a library or implement atomic writes in PHP
 // import pandas as pd; // There is no direct PHP alternative to pandas; consider using array functions or a data manipulation library
-// import snps; // If this is a custom module, you can rewrite it in PHP and load it here
-
-// logger = logging.getLogger(__name__); // Replace this with your preferred logging solution in PHP
 
 class Parallelizer
 {
@@ -59,14 +51,16 @@ class Parallelizer
     public function __invoke(callable $f, array $tasks): array
     {
         if ($this->_parallelize) {
-            // Parallel execution using the parallel extension. Tasks are distributed across multiple threads.
-            // Each task is executed in a separate thread, and the results are collected and returned.
-            $runtime = new \parallel\Runtime();
-            $futures = [];
-            foreach ($tasks as $task) {
-                $futures[] = $runtime->run($f, [$task]);
-            }
-            return array_map(fn($future) => $future->value, $futures);
+            // PHP does not have built-in support for parallel processing similar to Python's multiprocessing.
+            // Consider using alternative approaches or libraries for parallel processing in PHP.
+            // This example code is commented out as it requires the "parallel" PECL extension.
+            // $runtime = new \parallel\Runtime();
+            // $futures = [];
+            // foreach ($tasks as $task) {
+            //     $futures[] = $runtime->run($f, [$task]);
+            // }
+            // return array_map(fn($future) => $future->value, $futures);
+            return array_map($f, $tasks); // Fallback to sequential processing
         } else {
             return array_map($f, $tasks);
         }
