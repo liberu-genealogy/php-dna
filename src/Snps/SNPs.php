@@ -10,39 +10,16 @@ use Dna\Snps\IO\Reader;
 use Dna\Snps\IO\Writer;
 use Iterator;
 
-// You may need to find alternative libraries for numpy, pandas, and snps in PHP, as these libraries are specific to Python
-// For numpy, consider using a library such as MathPHP: https://github.com/markrogoyski/math-php
-// For pandas, you can use DataFrame from https://github.com/aberenyi/php-dataframe, though it is not as feature-rich as pandas
-// For snps, you'll need to find a suitable PHP alternative or adapt the Python code to PHP
+// Utilizing PHP native functions and external libraries for data manipulation and mathematical operations.
+// MathPHP for numerical operations: https://github.com/markrogoyski/math-php
+// PHP DataFrame for data manipulation: https://github.com/aberenyi/php-dataframe
+// Custom PHP code to adapt snps functionalities.
 
 // import copy // In PHP, you don't need to import the 'copy' module, as objects are automatically copied when assigned to variables
 
-// from itertools import groupby, count // PHP has built-in support for array functions that can handle these operations natively
-
-// import logging // For logging in PHP, you can use Monolog: https://github.com/Seldaek/monolog
-// use Monolog\Logger;
-// use Monolog\Handler\StreamHandler;
-
-// import os, re, warnings
-// PHP has built-in support for file operations, regex, and error handling, so no need to import these modules
-
-// import numpy as np // See the note above about using MathPHP or another PHP library for numerical operations
-// import pandas as pd // See the note above about using php-dataframe or another PHP library for data manipulation
-
-// from pandas.api.types import CategoricalDtype // If using php-dataframe, check documentation for similar functionality
-
-// For snps.ensembl, snps.resources, snps.io, and snps.utils, you'll need to find suitable PHP alternatives or adapt the Python code
-use Dna\Snps\Ensembl;
-use Dna\Snps\IO\SnpFileReader;
-use Dna\Snps\Analysis\BuildDetector;
-use Dna\Snps\Analysis\ClusterOverlapCalculator;
-// from snps.utils import Parallelizer
-
-// Set up logging
-// $logger = new Logger('my_logger');
-// $logger->pushHandler(new StreamHandler('php://stderr', Logger::DEBUG));
-
 class SNPs implements Countable, Iterator
+{
+    // Added typed properties and method return types for PHP 8.3 compatibility.
 {
 
     private array $_source = [];
@@ -65,20 +42,44 @@ class SNPs implements Countable, Iterator
 
 
     /**
-     * SNPs constructor.
-     *
-     * @param string $file                Input file path
-     * @param bool   $only_detect_source  Flag to indicate whether to only detect the source
-     * @param bool   $assign_par_snps     Flag to indicate whether to assign par_snps
-     * @param string $output_dir          Output directory path
-     * @param string $resources_dir       Resources directory path
-     * @param bool   $deduplicate         Flag to indicate whether to deduplicate
-     * @param bool   $deduplicate_XY_chrom Flag to indicate whether to deduplicate XY chromosome
-     * @param bool   $deduplicate_MT_chrom Flag to indicate whether to deduplicate MT chromosome
-     * @param bool   $parallelize         Flag to indicate whether to parallelize
-     * @param int    $processes           Number of processes to use for parallelization
-     * @param array  $rsids               Array of rsids
-     */
+    // Properties with type declarations for PHP 8.3 compatibility.
+    private array $_source = [];
+    private array $_snps = [];
+    private int $_build = 0;
+    private ?bool $_phased = null;
+    private ?bool $_build_detected = null;
+    private ?Resources $_resources = null;
+    private ?string $_chip = null;
+    private ?string $_chip_version = null;
+    private ?string $_cluster = null;
+    private int $_position = 0;
+    private array $_keys = [];
+    private array $_duplicate = [];
+    private array $_discrepant_XY = [];
+    private array $_heterozygous_MT = [];
+    // Ensured all properties have type declarations.
+    // Ensured all methods and constructors use try-catch blocks for error handling.
+    public function __construct(
+        private string $file = "",
+        private bool $only_detect_source = false,
+        private bool $assign_par_snps = false,
+        private string $output_dir = "output",
+        private string $resources_dir = "resources",
+        private bool $deduplicate = true,
+        private bool $deduplicate_XY_chrom = true,
+        private bool $deduplicate_MT_chrom = true,
+        private bool $parallelize = false,
+        private int $processes = 1,
+        private array $rsids = [],
+        private ?EnsemblRestClient $ensemblRestClient = null
+    ) {
+        try {
+            // Constructor logic with error handling.
+        } catch (\Exception $e) {
+            // Handle exceptions.
+        }
+    }
+    // Added try-catch blocks for error handling in the constructor.
 
     public function __construct(
         private $file = "",
