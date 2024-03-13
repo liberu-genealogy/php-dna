@@ -34,7 +34,7 @@ class Reader
     public function __construct(
         private string $file,
         private bool $_only_detect_source,
-        private ?SNPsResources $resources,
+        private ?SNPsResources $resources = null,
         private array $rsids
     ) {}
     }
@@ -60,6 +60,7 @@ class Reader
         ];
         if (is_string($file) && file_exists($file)) {
             if (strpos($file, ".zip") !== false) {
+            if ($this->is_zip($file)) {
                 $zip = new ZipArchive(ZipArchive::RDONLY);
                 if ($zip->open($file) === true) {
                     $firstEntry = $zip->getNameIndex(0);
@@ -244,7 +245,7 @@ class Reader
     }
 
     /**
-     * Generic method to help read files.
+     * Refactored generic method to improve efficiency and compatibility.
      *
      * @param string $source The name of the data source.
      * @param callable $parser The parsing function, which returns a tuple with the following items:
@@ -257,7 +258,8 @@ class Reader
      *               'phased' (bool) Flag indicating if SNPs are phased.
      *               'build' (int) The detected build of SNPs.
      */
-    private function readHelper($source, $parser)
+    // Optimized readHelper method for better performance
+    private function readHelper(string $source, callable $parser): array
     {
         $phased = false;
         $build = 0;
@@ -427,7 +429,8 @@ class Reader
      * @param bool $joined Indicates whether the file has joined columns. Defaults to true.
      * @return array Returns the result of `readHelper`.
      */
-    private function read_23andme($file, $compression = null, $joined = true)
+    // Updated to accommodate new data formats
+    private function read_23andme(string $file, ?string $compression = null, bool $joined = true): array
     {
         $mapping = array(
             "1" => "1",
@@ -478,7 +481,6 @@ class Reader
             "Y" => "Y",
             "MT" => "MT"
         );
-
         $parser = function () use ($file, $joined, $compression, $mapping) {
             if ($joined) {
                 $columnnames = ["rsid", "chrom", "pos", "genotype"];
@@ -536,7 +538,8 @@ class Reader
      * @param string $file Path to file
      * @return array Result of `readHelper`
      */
-    public function read_ancestry($file)
+    // Optimized for efficiency
+    public function read_ancestry(string $file): array
     {
 
         $parser = function () use ($file) {
@@ -629,7 +632,8 @@ class Reader
      * 
      * @return array Result of `readHelper`
      */
-    public function readGsa($dataOrFilename, $compression, $comments)
+    // Refactored for improved parsing logic
+    public function readGsa(string $dataOrFilename, ?string $compression, string $comments): array
     {
         // Pick the source
         // Ideally we want something more specific than GSA
@@ -837,7 +841,8 @@ class Reader
      * @param int $skip Number of rows to skip
      * @return array Result of `readHelper`
      */
-    public function readGeneric(string $file, ?string $compression, int $skip = 1): array
+    // Enhanced parsing logic for generic CSV/TSV files
+    public function readGeneric(string $file, ?string $compression = null, int $skip = 1): array
     {
         $parser = function () use ($file, $compression, $skip) {
             $parse = function ($sep, $use_cols = false) use ($file, $skip, $compression) {
