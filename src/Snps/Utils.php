@@ -3,12 +3,14 @@
 /**
  * php-dna.
  *
- * Utility functions.
+ * Utility functions for php-dna project.
+ *
+ * This file contains the Utils class which provides various utility functions
+ * for file manipulation, parallel processing, and other common tasks.
  *
  * @author          Devmanateam <devmanateam@outlook.com>
  * @copyright       Copyright (c) 2020-2023, Devmanateam
  * @license         MIT
- *
  * @link            http://github.com/familytree365/php-dna
  */
 
@@ -16,17 +18,21 @@ namespace Dna\Snps;
 
 use Exception;
 use ZipArchive;
-
-/**
- * The Singleton class defines the `GetInstance` method that serves as an
- * alternative to constructor and lets clients access the same instance of this
- * class over and over.
- */
-
-// import datetime; // PHP has built-in date functions
-// import gzip; // PHP has built-in gzip functions
-// import io; // PHP has built-in I/O functions
-// import logging; // You can use Monolog or another logging library in PHP
+use parallel\Runtime;
+use function shell_exec;
+use function fopen;
+use function fclose;
+use function fread;
+use function fwrite;
+use function gzopen;
+use function gzwrite;
+use function gzclose;
+use function file_exists;
+use function mkdir;
+use function gmdate;
+use function fputcsv;
+use function preg_replace;
+use function basename;
 // from multiprocessing import Pool; // You can use parallel or pthreads for multi-processing in PHP
 // import os; // PHP has built-in OS functions
 // import re; // PHP has built-in RegExp functions
