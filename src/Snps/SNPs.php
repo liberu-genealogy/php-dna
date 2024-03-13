@@ -45,23 +45,20 @@ use Dna\Snps\Analysis\ClusterOverlapCalculator;
 class SNPs implements Countable, Iterator
 {
 
-    private array $_source = [];
-    private array $_snps = [];
-    private int $_build = 0;
-    private ?bool $_phased = null;
-    private ?bool $_build_detected = null;
-    private ?Resources $_resources = null;
-    private ?string $_chip = null;
-    private ?string $_chip_version = null;
-    private ?string $_cluster = null;
-    private int $_position = 0;
-    private array $_keys = [];
-    private array $_duplicate;
-    private array $_discrepant_XY;
-    private array $_heterozygous_MT;
-    private $_chip;
-    private $_chip_version;
-    private $_cluster;
+    private PythonToPhpSNPConverter $snpConverter;
+    private Utilities $utilities;
+    private ?string $file = "";
+    private bool $only_detect_source = False;
+    private bool $assign_par_snps = False;
+    private string $output_dir = "output";
+    private string $resources_dir = "resources";
+    private bool $deduplicate = True;
+    private bool $deduplicate_XY_chrom = True;
+    private bool $deduplicate_MT_chrom = True;
+    private bool $parallelize = False;
+    private int $processes = 1; // cpu count
+    private array $rsids = [];
+    private ?EnsemblRestClient $ensemblRestClient = null;
 
 
     /**
@@ -131,6 +128,13 @@ class SNPs implements Countable, Iterator
 
     public function current(): SNPs
     {
+        $this->snpConverter = new PythonToPhpSNPConverter($this->file);
+        $this->utilities = new Utilities();
+        if (!empty($this->file)) {
+            $this->_snps = $this->snpConverter->readSNPData();
+            $this->_build = $this->utilities->detectBuildFromSNPs($this->_snps);
+            $this->_source = $this->snpConverter->getSource();
+        }
         return $this->_snps[$this->_position];
     }
 
