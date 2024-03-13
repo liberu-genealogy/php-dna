@@ -16,6 +16,7 @@ namespace Dna\Snps;
 
 use Exception;
 use ZipArchive;
+use Dna\Snps\Utils;
 
 /**
  * The Singleton class defines the `GetInstance` method that serves as an
