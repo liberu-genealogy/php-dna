@@ -10,10 +10,8 @@ use Dna\Snps\IO\Reader;
 use Dna\Snps\IO\Writer;
 use Iterator;
 
-// You may need to find alternative libraries for numpy, pandas, and snps in PHP, as these libraries are specific to Python
-// For numpy, consider using a library such as MathPHP: https://github.com/markrogoyski/math-php
-// For pandas, you can use DataFrame from https://github.com/aberenyi/php-dataframe, though it is not as feature-rich as pandas
-// For snps, you'll need to find a suitable PHP alternative or adapt the Python code to PHP
+// This class has been refactored to use the PythonDependencyAdapter and Utils for operations previously based on Python libraries.
+// Operations such as matrix multiplication, CSV reading/writing, and statistical calculations now utilize these adapters.
 
 // import copy // In PHP, you don't need to import the 'copy' module, as objects are automatically copied when assigned to variables
 
@@ -36,13 +34,6 @@ use Dna\Snps\Ensembl;
 use Dna\Snps\IO\SnpFileReader;
 use Dna\Snps\Analysis\BuildDetector;
 use Dna\Snps\Analysis\ClusterOverlapCalculator;
-// from snps.utils import Parallelizer
-
-// Set up logging
-// $logger = new Logger('my_logger');
-// $logger->pushHandler(new StreamHandler('php://stderr', Logger::DEBUG));
-
-class SNPs implements Countable, Iterator
 {
 
     private array $_source = [];
@@ -66,18 +57,20 @@ class SNPs implements Countable, Iterator
 
     /**
      * SNPs constructor.
-     *
-     * @param string $file                Input file path
-     * @param bool   $only_detect_source  Flag to indicate whether to only detect the source
-     * @param bool   $assign_par_snps     Flag to indicate whether to assign par_snps
-     * @param string $output_dir          Output directory path
-     * @param string $resources_dir       Resources directory path
-     * @param bool   $deduplicate         Flag to indicate whether to deduplicate
-     * @param bool   $deduplicate_XY_chrom Flag to indicate whether to deduplicate XY chromosome
-     * @param bool   $deduplicate_MT_chrom Flag to indicate whether to deduplicate MT chromosome
-     * @param bool   $parallelize         Flag to indicate whether to parallelize
-     * @param int    $processes           Number of processes to use for parallelization
-     * @param array  $rsids               Array of rsids
+     * Initializes a new instance of the SNPs class with various configuration options.
+     * 
+     * @param string $file Input file path.
+     * @param bool $only_detect_source Flag to indicate whether to only detect the source.
+     * @param bool $assign_par_snps Flag to indicate whether to assign pseudoautosomal region (PAR) SNPs.
+     * @param string $output_dir Output directory path.
+     * @param string $resources_dir Resources directory path.
+     * @param bool $deduplicate Flag to indicate whether to deduplicate SNPs.
+     * @param bool $deduplicate_XY_chrom Flag to indicate whether to deduplicate XY chromosome SNPs.
+     * @param bool $deduplicate_MT_chrom Flag to indicate whether to deduplicate mitochondrial (MT) chromosome SNPs.
+     * @param bool $parallelize Flag to indicate whether to parallelize operations.
+     * @param int $processes Number of processes to use for parallelization.
+     * @param array $rsids Array of rsids to specifically include or process.
+     * @param EnsemblRestClient|null $ensemblRestClient Optional Ensembl REST client for fetching SNP data.
      */
 
     public function __construct(
