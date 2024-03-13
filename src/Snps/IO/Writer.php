@@ -105,21 +105,19 @@ class Writer
          *
          * @return string Path to file in the output directory if SNPs were saved, else an empty string
          */
-        // Prepare CSV writer
-        $csvWriter = CsvWriter::createFromPath($this->filename, 'w+');
-        $csvWriter->setOutputBOM(CsvWriter::BOM_UTF8);
-
-        // Set headers if specified
-        if (!empty($this->kwargs['header'])) {
-            try {
-                $csvWriter->insertOne($this->kwargs['header']);
-            } catch (CannotInsertRecord $e) {
-                throw new Exception("Failed to insert header: " . $e->getMessage());
-            }
-        }
-
-        // Insert data
+        // Utilize PythonDependencyAdapter for writing CSV files
+        $adapter = new \Dna\Snps\PythonDependencyAdapter();
         try {
+            // Set headers if specified and prepare data
+            $data = $this->snps->toArray();
+            if (!empty($this->kwargs['header'])) {
+                array_unshift($data, $this->kwargs['header']);
+            }
+            // Write data to CSV
+            $adapter->writeCsv($this->filename, $data);
+        } catch (\Exception $e) {
+            throw new Exception("Failed to write CSV data: " . $e->getMessage());
+        }
             $csvWriter->insertAll($this->snps->toArray());
         } catch (CannotInsertRecord $e) {
             throw new Exception("Failed to write CSV data: " . $e->getMessage());
