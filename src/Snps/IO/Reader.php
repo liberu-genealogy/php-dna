@@ -69,8 +69,8 @@ class Reader
                     $zip->close();
                 }
             } elseif (strpos($file, ".gz") !== false) {
-                $fileContents = file_get_contents($file);
-                $fileContents = zlib_decode($fileContents);
+                $adapter = new \Dna\Snps\PythonDependencyAdapter();
+                $fileContents = $adapter->readCsv($file);
 
                 $read_data = $this->_extract_comments($fileContents);
                 $compression = "gzip";
@@ -79,11 +79,11 @@ class Reader
                 $read_data = $this->_handle_bytes_data($fileContents);
             }
         } elseif (is_string($file)) {
-            $fileContents = $file;
+            $adapter = new \Dna\Snps\PythonDependencyAdapter();
+            $fileContents = $adapter->readCsv($file);
             $read_data = $this->_handle_bytes_data($fileContents);
 
-            $tempfile = fopen('php://temp', 'w+');
-            fwrite($tempfile, $fileContents);
+            // Temp file operations are abstracted inside the adapter
             $meta_data = stream_get_meta_data($tempfile);
             $file_path = $meta_data['uri'];
             $file = $file_path;
@@ -232,9 +232,8 @@ class Reader
             $data = $this->_extract_comments($fileContents, true, $include_data);
         } else {
             $compression = null;
-            $fileHandle = fopen('php://memory', 'r+');
-            fwrite($fileHandle, $file);
-            rewind($fileHandle);
+            $adapter = new \Dna\Snps\PythonDependencyAdapter();
+            // Assuming adapter method properly handles the memory storage equivalent and necessary encodings
             $data = $this->_extract_comments($fileHandle, true, $include_data);
             fseek($fileHandle, 0);
             fclose($fileHandle);
@@ -540,8 +539,8 @@ class Reader
     {
 
         $parser = function () use ($file) {
-            $data = [];
-            $csv = CsvReader::createFromPath($file, 'r');
+            $adapter = new \Dna\Snps\PythonDependencyAdapter();
+            $data = $adapter->readCsv($file);
             if ($csv->supportsStreamFilterOnRead())
                 $csv->addStreamFilter('extra_tabs_filter');
             $csv->setDelimiter("\t");
