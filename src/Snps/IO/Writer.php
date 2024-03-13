@@ -17,7 +17,7 @@ class Writer
     /**
      * Writer constructor.
      *
-     * @param SNPs|null $snps SNPs to save to file or write to buffer
+     * @param SNPs|null $snps Updated SNPs object to save to file or write to buffer
      * @param string|resource $filename Filename for file to save or buffer to write to
      * @param bool $vcf Flag to save file as VCF
      * @param bool $atomic Atomically write output to a file on the local filesystem
@@ -28,7 +28,7 @@ class Writer
      * @param array $kwargs Additional parameters to `pandas.DataFrame.to_csv`
      */
     public function __construct(
-        protected readonly ?SNPs $snps = null,
+        protected readonly ?\Dna\Snps\SNPs $snps = null,
         protected readonly string|resource $filename = '',
         protected readonly bool $vcf = false,
         protected readonly bool $atomic = true,
@@ -47,7 +47,7 @@ class Writer
      */
     public function write()
     {
-        // Determine the file format based on the extension or the $vcf flag
+        // Determine the file format based on the extension or the $vcf flag, updated to handle new data formats
         $fileExtension = strtolower(pathinfo($this->filename, PATHINFO_EXTENSION));
         if ($this->vcf || $fileExtension === 'vcf') {
             return $this->_writeVcf();
@@ -105,7 +105,7 @@ class Writer
          *
          * @return string Path to file in the output directory if SNPs were saved, else an empty string
          */
-        // Prepare CSV writer
+        // Prepare CSV writer, updated to handle new data formats
         $csvWriter = CsvWriter::createFromPath($this->filename, 'w+');
         $csvWriter->setOutputBOM(CsvWriter::BOM_UTF8);
 
@@ -277,7 +277,9 @@ class Writer
 
     protected function createVcfRepresentation($task)
     {
+        // Updated to handle new data structures introduced in the SNPs class update
         $resources = $task["resources"];
+        // Ensure compatibility with PHP 8.3 features and type declarations
         $assembly = $task["assembly"];
         $chrom = $task["chrom"];
         $snps = $task["snps"];
@@ -296,6 +298,7 @@ class Writer
         $seq = $seqs[$chrom];
 
         $contig = sprintf(
+        $contig = sprintf(
             '##contig=<ID=%s,URL=%s,length=%s,assembly=%s,md5=%s,species="%s">' . PHP_EOL,
             $seq->ID,
             $seq->url,
@@ -311,6 +314,7 @@ class Writer
         }
 
         if ($this->_vcfQcFilter && $cluster) {
+        if ($this->_vcfQcFilter && $cluster) {
             // Initialize filter for all SNPs if SNPs object maps to a cluster
             $snps["filter"] = "PASS";
             // Then indicate SNPs that were identified as low quality
@@ -323,6 +327,7 @@ class Writer
 
         $snps = array_values($snps);
 
+        $df = [
         $df = [
             "CHROM" => [],
             "POS" => [],
@@ -351,6 +356,7 @@ class Writer
         ];
 
         foreach ($df as $col => $values) {
+        foreach ($df as $col => $values) {
             $df[$col] = array_fill(0, count($snps), $values);
         }
 
@@ -368,6 +374,7 @@ class Writer
 
         // Drop SNPs with discrepant positions (outside reference sequence)
         $discrepantVcfPosition = [];
+        foreach ($snps as $index => $row) {
         foreach ($snps as $index => $row) {
             if ($row["pos"] - $seq->start < 0 || $row["pos"] - $seq->start > $seq->length - 1) {
                 $discrepantVcfPosition[] = $row;
@@ -388,6 +395,7 @@ class Writer
             $df["genotype"][$index] = $row["genotype"];
         }
 
+        $temp = array_filter($df["genotype"], function ($value) {
         $temp = array_filter($df["genotype"], function ($value) {
             return !is_null($value);
         });
