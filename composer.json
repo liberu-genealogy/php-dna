@@ -1,5 +1,5 @@
 {
-	"name": "familytree365/php-dna",
+	"name": "liberu-genealogy/php-dna",
 	"description": "lineage for PHP 8.3+",
 	"type": "library",
 	"keywords": ["dna","genotype"],
