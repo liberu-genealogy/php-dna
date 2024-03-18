@@ -26,7 +26,7 @@ To install php-dna in your project using composer, simply add the following requ
 
     {
         "require": {
-            "laravel-liberu/php-dna": "1.0.*"
+            "liberu-genealogy/php-dna": "1.0.*"
         }
     }
 
