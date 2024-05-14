@@ -3,30 +3,53 @@
 require_once 'SNPs.php';
 require_once 'Visualization.php';
 
-class MatchKits {
-    private $kitsData = [];
-    private $matchedData;
+/**
+ * Matches SNP data between DNA kits
+ */
+class MatchKits
+{
+    /**
+     * @var SNPs[] The DNA kit data to match
+     */
+    private array $kitsData = [];
+    
+    /**
+     * @var array The matched SNP data
+     */
+    private array $matchedData = [];
 
-    public function loadKitsData($kitPaths) {
-        foreach ($kitPaths as $path) {
-            $this->kitsData[] = new Dna\Snps\SNPs($path);
-        }
-    }
-
-    public function matchKits() {
-        $this->matchedData = []; // Initialize matched data array
-        foreach ($this->kit1Data->getSnps() as $snp1) {
-            foreach ($this->kit2Data->getSnps() as $snp2) {
-                if ($snp1['pos'] == $snp2['pos'] && $snp1['genotype'] == $snp2['genotype']) {
-                    $this->matchedData[] = $snp1; // Add matching SNP to matched data
+    /**
+     * Match the loaded DNA kits
+     */
+    public function matchKits(): void
+    {
+        $this->matchedData = []; // Reset matched data
+        
+        foreach ($this->kitsData[0]->getSnps() as $snp1) {
+            foreach ($this->kitsData[1]->getSnps() as $snp2) {
+                if ($snp1['pos'] === $snp2['pos'] && $snp1['genotype'] === $snp2['genotype']) {
+                    $this->matchedData[] = $snp1;
                 }
             }
         }
     }
-
-    public function visualizeMatchedData($format) {
-        $visualization = new Visualization();
-        $visualization->plot_chromosomes($this->matchedData, "matched_data." . $format, "Matched SNP Data", "Build", $format);
+    
+    /**
+     * @return array The matched SNP data
+     */
+    public function getMatchedData(): array 
+    {
+        return $this->matchedData;
+    }
+    
+    /**
+     * Load DNA kit data
+     *
+     * @param SNPs[] $kitsData The kit data to load
+     */
+    public function setKitsData(array $kitsData): void
+    {
+        $this->kitsData = $kitsData;
     }
 }
 
