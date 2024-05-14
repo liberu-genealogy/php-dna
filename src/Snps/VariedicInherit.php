@@ -1,39 +1,51 @@
 <?php
+
 declare(strict_types=1);
+
 namespace Php8\Migration;
+
 use Exception;
 use InvalidArgumentException;
 
 class VariadicInherit
 {
-    const ERR_MAGIC_SIGNATURE = 'WARNING: magic method signature for %s does not appear to match required signature';
-    const ERR_REMOVED         = 'WARNING: the following function has been removed: %s.  Use this instead: %s';
-    const ERR_IS_RESOURCE     = 'WARNING: this function no longer produces a resource: %s.  Usage of "is_resource($item)" should be replaced with "!empty($item)';
-    const ERR_MISSING_KEY     = 'ERROR: missing configuration key %s';
-    const ERR_INVALID_KEY     = 'ERROR: this configuration key is either missing or not callable: ';
-    const ERR_FILE_NOT_FOUND  = 'ERROR: file not found: %s';
-    const WARN_BC_BREAKS      = 'WARNING: the code in this file might not be compatible with PHP 8';
-    const NO_BC_BREAKS        = 'SUCCESS: the code scanned in this file is potentially compatible with PHP 8';
-    const MAGIC_METHODS       = 'The following magic methods were detected:';
-    const OK_PASSED           = 'PASSED this scan: %s';
-    const TOTAL_BREAKS        = 'Total potential BC breaks: %d' . PHP_EOL;
-    const KEY_REMOVED         = 'removed';
-    const KEY_CALLBACK        = 'callbacks';
-    const KEY_MAGIC           = 'magic';
-    const KEY_RESOURCE        = 'resource';
+    public const ERR_MAGIC_SIGNATURE = 'WARNING: magic method signature for %s does not appear to match required signature';
+    public const ERR_REMOVED = 'WARNING: the following function has been removed: %s.  Use this instead: %s';
+    public const ERR_IS_RESOURCE = 'WARNING: this function no longer produces a resource: %s.  Usage of "is_resource($item)" should be replaced with "!empty($item)';
+    public const ERR_MISSING_KEY = 'ERROR: missing configuration key %s';
+    public const ERR_INVALID_KEY = 'ERROR: this configuration key is either missing or not callable: ';
+    public const ERR_FILE_NOT_FOUND = 'ERROR: file not found: %s';
+    public const WARN_BC_BREAKS = 'WARNING: the code in this file might not be compatible with PHP 8';
+    public const NO_BC_BREAKS = 'SUCCESS: the code scanned in this file is potentially compatible with PHP 8';
+    public const MAGIC_METHODS = 'The following magic methods were detected:';
+    public const OK_PASSED = 'PASSED this scan: %s';
+    public const TOTAL_BREAKS = 'Total potential BC breaks: %d' . PHP_EOL;
+    public const KEY_REMOVED = 'removed';
+    public const KEY_CALLBACK = 'callbacks';
+    public const KEY_MAGIC = 'magic';
+    public const KEY_RESOURCE = 'resource';
 
-    public $config = [];
-    public $contents = '';
-    public $messages = [];
-    public $magic = [];
+    public array $config = [];
+    public string $contents = '';
+    public array $messages = [];
+    public array $magic = [];
     
     /**
-     * @param array $config : scan config
+     * VariadicInherit constructor.
+     *
+     * @param array $config Scan configuration
+     * @throws InvalidArgumentException If a required configuration key is missing
      */
     public function __construct(array $config)
     {
         $this->config = $config;
-        $required = [self::KEY_CALLBACK, self::KEY_REMOVED, self::KEY_MAGIC, self::KEY_RESOURCE];
+        $required = [
+            self::KEY_CALLBACK,
+            self::KEY_REMOVED,
+            self::KEY_MAGIC,
+            self::KEY_RESOURCE,
+        ];
+
         foreach ($required as $key) {
             if (!isset($this->config[$key])) {
                 $message = sprintf(self::ERR_MISSING_KEY, $key);
@@ -43,22 +55,25 @@ class VariadicInherit
     }
 
     /**
-     * Grabs contents
-     * Initializes messages to []
-     * Converts "\r" and "\n" to ' '
+     * Get the contents of a file.
      *
-     * @param string $fn    : name of file to scan
-     * @return string $name : classnames
+     * @param string $filePath Path to the file to scan
+     * @return string The file contents with line breaks replaced by spaces
+     * @throws InvalidArgumentException If the file is not found
      */
-    public function getFileContents(string $fn) : string
+    public function getFileContents(string $filePath): string
     {
-        if (!file_exists($fn)) {
-            $this->contents  = '';
-            throw new InvalidArgumentException(sprintf(self::ERR_FILE_NOT_FOUND, $fn));
+        if (!file_exists($filePath)) {
+            $this->contents = '';
+            throw new InvalidArgumentException(
+                sprintf(self::ERR_FILE_NOT_FOUND, $filePath)
+            );
         }
+
         $this->clearMessages();
-        $this->contents = file_get_contents($fn);
-        $this->contents = str_replace(["\r","\n"],['', ' '], $this->contents);
+        $this->contents = file_get_contents($filePath);
+        $this->contents = str_replace(["\r", "\n"], ['', ' '], $this->contents);
+
         return $this->contents;
     }
 
@@ -70,19 +85,33 @@ class VariadicInherit
      * @param string $delim : ending delimiter
      * @return string $name : classnames
      */
-    public static function getKeyValue(string $contents, string $key, string $delim)
-    {
-        $pos = strpos($contents, $key);
-        if ($pos === FALSE) return '';
-        $end = strpos($contents, $delim, $pos + strlen($key) + 1);
-        $key = substr($contents, $pos + strlen($key), $end - $pos - strlen($key));
-        if (is_string($key)) {
-            $key = trim($key);
-        } else {
-            $key = '';
+    /**
+     * Get the value of a key from a string.
+     *
+     * @param string $contents The string to search
+     * @param string $key The key to search for
+     * @param string $delimiter The delimiter to use
+     * @return string The value of the key, or an empty string if not found
+     */
+    public static function getKeyValue(
+        string $contents,
+        string $key,
+        string $delimiter
+    ): string {
+        $position = strpos($contents, $key);
+
+        if ($position === false) {
+            return '';
         }
-        $key = trim($key);
-        return $key;
+
+        $end = strpos($contents, $delimiter, $position + strlen($key) + 1);
+        $value = substr(
+            $contents,
+            $position + strlen($key),
+            $end - $position - strlen($key)
+        );
+
+        return is_string($value) ? trim($value) : '';
     }
 
     /**
@@ -259,183 +288,237 @@ class VariadicInherit
         return $found;
     }
 
-    public function homozygous_snps(string $chrom = "")
+    /**
+     * Get homozygous SNPs for a given chromosome.
+     *
+     * @param string $chromosome The chromosome to get homozygous SNPs for
+     * @return mixed The result of the homozygous() method
+     * @deprecated Use the homozygous() method instead
+     */
+    public function homozygous_snps(string $chromosome = '')
     {
-        trigger_error("This method has been renamed to `homozygous`.", E_USER_DEPRECATED);
-        return $this->homozygous($chrom);
+        trigger_error(
+            'This method has been renamed to `homozygous`.',
+            E_USER_DEPRECATED
+        );
+
+        return $this->homozygous($chromosome);
     }
 
-    public function is_valid()
+    /**
+     * Check if the object is valid.
+     *
+     * @return bool The value of the "valid" property
+     * @deprecated Use the "valid" property instead
+     */
+    public function is_valid(): bool
     {
-        trigger_error("This method has been renamed to `valid` and is now a property.", E_USER_DEPRECATED);
+        trigger_error(
+            'This method has been renamed to `valid` and is now a property.',
+            E_USER_DEPRECATED
+        );
+
         return $this->valid;
     }
 
+    /**
+     * Predict ancestry using the ezancestry package.
+     *
+     * @param string|null $outputDirectory The output directory for predictions
+     * @param bool $writePredictions Whether to write the predictions to files
+     * @param string|null $modelsDirectory The directory containing the models
+     * @param string|null $aisnpsDirectory The directory containing the AIsnps
+     * @param int|null $nComponents The number of components for the model
+     * @param int|null $k The number of nearest neighbors to use
+     * @param string|null $thousandGenomesDirectory The directory containing the 1000 Genomes data
+     * @param string|null $samplesDirectory The directory containing the samples
+     * @param string|null $algorithm The algorithm to use for prediction
+     * @param string|null $aisnpsSet The set of AIsnps to use
+     * @return array The predicted ancestry values
+     * @throws Exception If the ezancestry package is not installed
+     */
     public function predict_ancestry(
-        ?string $output_directory = null,
-        bool $write_predictions = false,
-        ?string $models_directory = null,
-        ?string $aisnps_directory = null,
-        ?int $n_components = null,
+        ?string $outputDirectory = null,
+        bool $writePredictions = false,
+        ?string $modelsDirectory = null,
+        ?string $aisnpsDirectory = null,
+        ?int $nComponents = null,
         ?int $k = null,
-        ?string $thousand_genomes_directory = null,
-        ?string $samples_directory = null,
+        ?string $thousandGenomesDirectory = null,
+        ?string $samplesDirectory = null,
         ?string $algorithm = null,
-        ?string $aisnps_set = null
-    ) {
-        // Method implementation goes here  
+        ?string $aisnpsSet = null
+    ): array {
+        return $this->getPredictions(
+            $outputDirectory,
+            $writePredictions,
+            $modelsDirectory,
+            $aisnpsDirectory,
+            $nComponents,
+            $k,
+            $thousandGenomesDirectory,
+            $samplesDirectory,
+            $algorithm,
+            $aisnpsSet
+        );
     }
+
+    /**
+     * Get ancestry predictions using the ezancestry package.
+     *
+     * @param string|null $outputDirectory The output directory for predictions
+     * @param bool $writePredictions Whether to write the predictions to files
+     * @param string|null $modelsDirectory The directory containing the models
+     * @param string|null $aisnpsDirectory The directory containing the AIsnps
+     * @param int|null $nComponents The number of components for the model
+     * @param int|null $k The number of nearest neighbors to use
+     * @param string|null $thousandGenomesDirectory The directory containing the 1000 Genomes data
+     * @param string|null $samplesDirectory The directory containing the samples
+     * @param string|null $algorithm The algorithm to use for prediction
+     * @param string|null $aisnpsSet The set of AIsnps to use
+     * @return array The predicted ancestry values
+     * @throws Exception If the ezancestry package is not installed or the object is not valid
+     */
     public function getPredictions(
-        $output_directory,
-        $write_predictions,
-        $models_directory,
-        $aisnps_directory,
-        $n_components,
-        $k,
-        $thousand_genomes_directory,
-        $samples_directory,
-        $algorithm,
-        $aisnps_set
-    ) {
+        ?string $outputDirectory = null,
+        bool $writePredictions = false,
+        ?string $modelsDirectory = null,
+        ?string $aisnpsDirectory = null,
+        ?int $nComponents = null,
+        ?int $k = null,
+        ?string $thousandGenomesDirectory = null,
+        ?string $samplesDirectory = null,
+        ?string $algorithm = null,
+        ?string $aisnpsSet = null
+    ): array {
         if (!$this->valid) {
-            // If the object is not valid, return an empty array
             return [];
         }
 
-        // Check if ezancestry package is installed
         if (!class_exists('ezancestry\commands\Predict')) {
-            // Throw an exception if the ezancestry package is not installed
-            throw new Exception('Ancestry prediction requires the ezancestry package; please install it');
+            throw new Exception(
+                'Ancestry prediction requires the ezancestry package; please install it'
+            );
         }
 
         $predict = new ezancestry\commands\Predict();
 
-        // Call the predict method of the ezancestry\commands\Predict class
         $predictions = $predict->predict(
             $this->snps,
-            $output_directory,
-            $write_predictions,
-            $models_directory,
-            $aisnps_directory,
-            $n_components,
+            $outputDirectory,
+            $writePredictions,
+            $modelsDirectory,
+            $aisnpsDirectory,
+            $nComponents,
             $k,
-            $thousand_genomes_directory,
-            $samples_directory,
+            $thousandGenomesDirectory,
+            $samplesDirectory,
             $algorithm,
-            $aisnps_set
+            $aisnpsSet
         );
 
-        // Get the maxPop values from the first prediction
         $maxPopValues = $this->maxPop($predictions[0]);
-
-        // Add the predictions to the maxPopValues array
         $maxPopValues['ezancestry_df'] = $predictions;
 
-        // Return the maxPopValues array
-        return $maxPopValues;        
+        return $maxPopValues;
     }
-    
-    private function maxPop($row)
-    {
-        // Extract the values from the $row array
-        $popcode = $row['predicted_population_population'];
-        $popdesc = $row['population_description'];
-        $poppct = $row[$popcode];
-        $superpopcode = $row['predicted_population_superpopulation'];
-        $superpopdesc = $row['superpopulation_name'];
-        $superpoppct = $row[$superpopcode];
 
-        // Return an array with the extracted values
+    /**
+     * Get the maximum population values from a prediction row.
+     *
+     * @param array $row The prediction row
+     * @return array The maximum population values
+     */
+    private function maxPop(array $row): array
+    {
+        $populationCode = $row['predicted_population_population'];
+        $populationDescription = $row['population_description'];
+        $populationPercent = $row[$populationCode];
+        $superpopulationCode = $row['predicted_population_superpopulation'];
+        $superpopulationDescription = $row['superpopulation_name'];
+        $superpopulationPercent = $row[$superpopulationCode];
+
         return [
-            'population_code' => $popcode,
-            'population_description' => $popdesc,
-            '_percent' => $poppct,
-            'superpopulation_code' => $superpopcode,
-            'superpopulation_description' => $superpopdesc,
-            'population_percent' => $superpoppct,
+            'population_code' => $populationCode,
+            'population_description' => $populationDescription,
+            '_percent' => $populationPercent,
+            'superpopulation_code' => $superpopulationCode,
+            'superpopulation_description' => $superpopulationDescription,
+            'population_percent' => $superpopulationPercent,
         ];
     }
     
     /**
-     * Computes cluster overlap based on given threshold.
+     * Compute cluster overlap based on a given threshold.
      *
-     * @param float $cluster_overlap_threshold The threshold for cluster overlap.
-     * @return DataFrame The computed cluster overlap DataFrame.
+     * @param float $clusterOverlapThreshold The threshold for cluster overlap
+     * @return DataFrame The computed cluster overlap DataFrame
      */
-    public function compute_cluster_overlap($cluster_overlap_threshold = 0.95) {
-        // Sample data for cluster overlap computation
+    public function computeClusterOverlap(float $clusterOverlapThreshold = 0.95): DataFrame
+    {
         $data = [
-            "cluster_id" => ["c1", "c3", "c4", "c5", "v5"],
-            "company_composition" => [
-                "23andMe-v4",
-                "AncestryDNA-v1, FTDNA, MyHeritage",
-                "23andMe-v3",
-                "AncestryDNA-v2",
-                "23andMe-v5, LivingDNA",
+            'cluster_id' => ['c1', 'c3', 'c4', 'c5', 'v5'],
+            'company_composition' => [
+                '23andMe-v4',
+                'AncestryDNA-v1, FTDNA, MyHeritage',
+                '23andMe-v3',
+                'AncestryDNA-v2',
+                '23andMe-v5, LivingDNA',
             ],
-            "chip_base_deduced" => [
-                "HTS iSelect HD",
-                "OmniExpress",
-                "OmniExpress plus",
-                "OmniExpress plus",
-                "Illumina GSAs",
+            'chip_base_deduced' => [
+                'HTS iSelect HD',
+                'OmniExpress',
+                'OmniExpress plus',
+                'OmniExpress plus',
+                'Illumina GSAs',
             ],
-            "snps_in_cluster" => array_fill(0, 5, 0),
-            "snps_in_common" => array_fill(0, 5, 0),
+            'snps_in_cluster' => array_fill(0, 5, 0),
+            'snps_in_common' => array_fill(0, 5, 0),
         ];
 
-        // Create a DataFrame from the data and set "cluster_id" as the index
         $df = new DataFrame($data);
-        $df->setIndex("cluster_id");
+        $df->setIndex('cluster_id');
 
-        $to_remap = null;
-        if ($this->build != 37) {
-            // Create a clone of the current object for remapping
-            $to_remap = clone $this;
-            $to_remap->remap(37); // clusters are relative to Build 37
-            $self_snps = $to_remap->snps()->select(["chrom", "pos"])->dropDuplicates();
+        $toRemap = null;
+
+        if ($this->build !== 37) {
+            $toRemap = clone $this;
+            $toRemap->remap(37);
+            $selfSnps = $toRemap->snps()->select(['chrom', 'pos'])->dropDuplicates();
         } else {
-            $self_snps = $this->snps()->select(["chrom", "pos"])->dropDuplicates();
+            $selfSnps = $this->snps()->select(['chrom', 'pos'])->dropDuplicates();
         }
 
-        // Retrieve chip clusters from resources
-        $chip_clusters = $this->resources->get_chip_clusters();
+        $chipClusters = $this->resources->getChipClusters();
 
-        // Iterate over each cluster in the DataFrame
         foreach ($df->indexValues() as $cluster) {
-            // Filter chip clusters based on the current cluster
-            $cluster_snps = $chip_clusters->filter(function ($row) use ($cluster) {
-                return strpos($row["clusters"], $cluster) !== false;
-            })->select(["chrom", "pos"]);
+            $clusterSnps = $chipClusters->filter(
+                function ($row) use ($cluster) {
+                    return strpos($row['clusters'], $cluster) !== false;
+                }
+            )->select(['chrom', 'pos']);
 
-            // Update the DataFrame with the number of SNPs in the cluster and in common with the current object
-            $df->loc[$cluster]["snps_in_cluster"] = count($cluster_snps);
-            $df->loc[$cluster]["snps_in_common"] = count($self_snps->merge($cluster_snps, "inner"));
+            $df->loc[$cluster]['snps_in_cluster'] = count($clusterSnps);
+            $df->loc[$cluster]['snps_in_common'] = count($selfSnps->merge($clusterSnps, 'inner'));
 
-            // Calculate overlap ratios for cluster and self
-            $df["overlap_with_cluster"] = $df["snps_in_common"] / $df["snps_in_cluster"];
-            $df["overlap_with_self"] = $df["snps_in_common"] / count($self_snps);
+            $df['overlap_with_cluster'] = $df['snps_in_common'] / $df['snps_in_cluster'];
+            $df['overlap_with_self'] = $df['snps_in_common'] / count($selfSnps);
 
-            // Find the cluster with the maximum overlap
-            $max_overlap = array_keys($df["overlap_with_cluster"], max($df["overlap_with_cluster"]))[0];
+            $maxOverlap = array_keys($df['overlap_with_cluster'], max($df['overlap_with_cluster']))[0];
 
-            // Check if the maximum overlap exceeds the threshold for both cluster and self
             if (
-                $df["overlap_with_cluster"][$max_overlap] > $cluster_overlap_threshold &&
-                $df["overlap_with_self"][$max_overlap] > $cluster_overlap_threshold
+                $df['overlap_with_cluster'][$maxOverlap] > $clusterOverlapThreshold
+                && $df['overlap_with_self'][$maxOverlap] > $clusterOverlapThreshold
             ) {
-                // Update the current object's cluster and chip based on the maximum overlap
-                $this->cluster = $max_overlap;
-                $this->chip = $df["chip_base_deduced"][$max_overlap];
+                $this->cluster = $maxOverlap;
+                $this->chip = $df['chip_base_deduced'][$maxOverlap];
 
-                $company_composition = $df["company_composition"][$max_overlap];
+                $companyComposition = $df['company_composition'][$maxOverlap];
 
-                // Check if the current object's source is present in the company composition
-                if (strpos($company_composition, $this->source) !== false) {
-                    if ($this->source === "23andMe" || $this->source === "AncestryDNA") {
-                        // Extract the chip version from the company composition
-                        $i = strpos($company_composition, "v");
-                        $this->chip_version = substr($company_composition, $i, $i + 2);
+                if (strpos($companyComposition, $this->source) !== false) {
+                    if ($this->source === '23andMe' || $this->source === 'AncestryDNA') {
+                        $i = strpos($companyComposition, 'v');
+                        $this->chip_version = substr($companyComposition, $i, $i + 2);
                     }
                 } else {
                     // Log a warning about the SNPs data source not found
@@ -443,7 +526,6 @@ class VariadicInherit
             }
         }
 
-        // Return the computed cluster overlap DataFrame
         return $df;
     }
 }
