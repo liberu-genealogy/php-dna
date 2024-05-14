@@ -15,72 +15,80 @@ class Individual extends SNPs
      * ``Individual`` inherits from ``snps.SNPs``.
      */
     
-    private string $_name;
+    private string $name;
 
-    public function __construct(string $name, mixed $raw_data = [], array $kwargs = [])
+    /**
+     * Initialize an Individual object
+     *
+     * @param string $name Name of the individual
+     * @param mixed $rawData Path(s) to file(s), bytes, or SNPs object(s) with raw genotype data
+     * @param array $kwargs Parameters to snps.SNPs and/or snps.SNPs.merge
+     */
+    public function __construct(string $name, mixed $rawData = [], array $kwargs = [])
     {
-        /**
-         * Initialize an ``Individual`` object.
-         *
-         * Parameters
-         * ----------
-         * name : str
-         *     name of the individual
-         * raw_data : str, bytes, ``SNPs`` (or list or tuple thereof)
-         *     path(s) to file(s), bytes, or ``SNPs`` object(s) with raw genotype data
-         * kwargs : array
-         *     parameters to ``snps.SNPs`` and/or ``snps.SNPs.merge``
-         */
-        $this->_name = $name;
+        $this->name = $name;
 
-        $init_args = $this->_get_defined_kwargs(new ReflectionMethod(SNPs::class, '__construct'), $kwargs);
-        $merge_args = $this->_get_defined_kwargs(new ReflectionMethod(SNPs::class, ''), $kwargs);
+        $snpsConstructorArgs = $this->getDefinedKwargs(new ReflectionMethod(SNPs::class, '__construct'), $kwargs);
+        $snpsMergeArgs = $this->getDefinedKwargs(new ReflectionMethod(SNPs::class, 'merge'), $kwargs);
 
-        parent::__construct(...array_values($init_args));
+        parent::__construct(...array_values($snpsConstructorArgs));
 
-        if (!is_array($raw_data)) {
-            $raw_data = [$raw_data];
-        }
+        $rawDataArray = is_array($rawData) ? $rawData : [$rawData];
 
-        foreach ($raw_data as $file) {
-            $s = $file instanceof SNPs ? $file : new SNPs($file, ...array_values($init_args));
-            $this->merge([$s], ...array_values($merge_args));
+        foreach ($rawDataArray as $data) {
+            $snps = $this->createSnpsObject($data, $snpsConstructorArgs);
+            $this->merge([$snps], ...array_values($snpsMergeArgs));
         }
     }
 
-    private function _get_defined_kwargs(ReflectionMethod $callable, array $kwargs): array
+    /**
+     * Get defined keyword arguments for a method
+     *
+     * @param ReflectionMethod $method The method to get arguments for
+     * @param array $kwargs The keyword arguments to filter
+     * @return array The defined keyword arguments
+     */
+    private function getDefinedKwargs(ReflectionMethod $method, array $kwargs): array
     {
-        $parameters = $callable->getParameters();
-        $defined_kwargs = [];
+        $parameters = $method->getParameters();
+        $definedKwargs = [];
         foreach ($parameters as $parameter) {
             $name = $parameter->getName();
             if (array_key_exists($name, $kwargs)) {
-                $defined_kwargs[$name] = $kwargs[$name];
+                $definedKwargs[$name] = $kwargs[$name];
             }
         }
 
-        return $defined_kwargs;
+        return $definedKwargs;
     }
 
+    /**
+     * Get the string representation of the Individual
+     *
+     * @return string The string representation
+     */
     public function __toString(): string
     {
-        return sprintf("Individual('%s')", $this->_name);
+        return sprintf("Individual('%s')", $this->name);
     }
 
+    /**
+     * Get the Individual's name
+     *
+     * @return string The name
+     */
     public function getName(): string
     {
-        /**
-         * Get this ``Individual``'s name.
-         *
-         * Returns
-         * -------
-         * str
-         */
-        return $this->_name;
+        return $this->name;
     }
 
+    /**
+     * Get a variable-safe version of the Individual's name
+     *
+     * @return string The variable-safe name
+     */
     public function getVarName(): string
     {
-        return clean_str($this->_name);
+        return clean_str($this->name);
     }
 }
