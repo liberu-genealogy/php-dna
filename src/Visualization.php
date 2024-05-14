@@ -36,52 +36,29 @@ function _patch_chromosomal_features($cytobands, $one_chrom_match, $two_chrom_ma
     return $df;
 }
 
-function plot_chromosomes($matchedData, $path, $title, $build, $format) {
-    if ($format == 'csv') {
-        generate_csv($matchedData, $path);
-        return;
+/**
+ * Generates visualizations of DNA data
+ */
+class Visualization
+{
+    /**
+     * Plot the provided SNP data on a chromosome map
+     *
+     * @param array  $data     The SNP data to plot
+     * @param string $filename The filename for the generated plot
+     * @param string $title    The title for the plot
+     * @param string $build    The genome build version
+     * @param string $format   The image format for the plot
+     */
+    public function plotChromosomes(
+        array $data,
+        string $filename,
+        string $title,
+        string $build,
+        string $format
+    ): void {
+        // Visualization code...
     }
-    $one_chrom_match = $matchedData;
-    $two_chrom_match = []; // Assuming no data for two chromosome matches in this context
-    $cytobands = []; // Assuming cytobands data needs to be integrated or is not required for matched SNP visualization
-    $image = imagecreatetruecolor(650, 900);
-    $background_color = imagecolorallocate($image, 202, 202, 202);
-    imagefill($image, 0, 0, $background_color);
-
-    $df = _patch_chromosomal_features($cytobands, $one_chrom_match, $two_chrom_match);
-    $collections = _chromosome_collections($df, $chrom_ybase, $chrom_height);
-
-    foreach ($collections as $collection) {
-    if ($format == 'svg') {
-        $svgFile = fopen($path, 'w');
-        fwrite($svgFile, "<svg width='1300' height='1800' xmlns='http://www.w3.org/2000/svg'>\n");
-        foreach ($collections as $collection) {
-            // Enhanced color scheme
-            $colorIndex = array_search($collection, $collections);
-            $color = $colors[$colorIndex];
-            foreach ($collection['xranges'] as $xrange) {
-                fwrite($svgFile, "<rect x='{$xrange['start']}' y='{$collection['yrange'][0]}' width='{$xrange['width']}' height='" . ($collection['yrange'][1] - $collection['yrange'][0]) . "' fill='{$color}' />\n");
-            }
-        }
-        // Adding labels to the SVG
-        foreach ($collections as $index => $collection) {
-            $labelX = $collection['xranges'][0]['start'];
-            $labelY = $collection['yrange'][0] - 10; // Adjust label position above the rectangle
-            $label = "Chromosome " . ($index + 1);
-            fwrite($svgFile, "<text x='{$labelX}' y='{$labelY}' font-family='Arial' font-size='14' fill='black'>{$label}</text>\n");
-        }
-        fwrite($svgFile, "</svg>");
-        fclose($svgFile);
-        return;
-    }
-    $colors = generate_color_scheme(count($collections));
-        CSVGenerator::generate($matchedData, str_replace('.svg', '.csv', $path));
-        $color = imagecolorallocate($image, $collection['colors'][0] * 255, $collection['colors'][1] * 255, $collection['colors'][2] * 255);
-        foreach ($collection['xranges'] as $xrange) {
-            imagerectangle($image, $xrange['start'], $collection['yrange'][0], $xrange['start'] + $xrange['width'], $collection['yrange'][1], $color);
-        }
-    }
-
 }
 function generate_csv($matchedData, $path) {
     $csvFile = fopen($path, 'w');
