@@ -3,13 +3,13 @@
 /**
  * php-dna.
  *
- * tools for genetic genealogy and the analysis of consumer DNA test results
+ * Tools for genetic genealogy and the analysis of consumer DNA test results.
  *
- * @author          Liberu Software Ltd <support@laravel-liberu.com>
- * @copyright       Copyright (c) 2020-2023, Liberu Software Ltd
- * @license         MIT
+ * @author    Liberu Software Ltd <support@laravel-liberu.com>
+ * @copyright Copyright (c) 2020-2023, Liberu Software Ltd
+ * @license   MIT
  *
- * @link            http://github.com/laravel-liberu/php-dna
+ * @link      http://github.com/laravel-liberu/php-dna
  */
 
 namespace Dna;
@@ -19,34 +19,33 @@ namespace Dna;
  */
 class Dna
 {
-  /**
-   * Stores name / path of output directory.
-   *
-   * @var string
-   */
-  protected $_output_dir;
+    /**
+     * The directory where output files will be written.
+     *
+     * @var string
+     */
+    protected string $_outputDir;
 
-  /**
-   * Stores name / path of resources directory
-   *
-   * @var string
-   */
-  protected $_resources_dir;
+    /**
+     * The directory containing resource files used for DNA analysis.
+     *
+     * @var string
+     */
+    protected string $_resourcesDir;
 
-  /**
-   * Stores sources
-   *
-   * @var \Dna\Resources
-   */
-  protected $_resources;
+    /**
+     * Provides access to DNA resource files.
+     *
+     * @var \Dna\Resources
+     */
+    protected Resources $_resources;
 
-  public function __construct(
-    $output_dir = 'output',
-    $resources_dir = 'resources',
-  )
-    {
-      $this->_output_dir = $output_dir;
-      $this->_resources_dir = $resources_dir;
-      $this->_resources = Resources::getInstance();
+    public function __construct(
+        string $outputDirectory = 'output',
+        string $resourcesDirectory = 'resources'
+    ) {
+        $this->_outputDir = $outputDirectory;
+        $this->_resourcesDir = $resourcesDirectory;
+        $this->_resources = Resources::getInstance();
     }
 }
