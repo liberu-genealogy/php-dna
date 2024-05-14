@@ -25,28 +25,99 @@ use Dna\Snps\Analysis\ClusterOverlapCalculator;
 
 class SNPs implements Countable, Iterator
 
-class SNPs implements Countable, Iterator
+/**
+ * Snps class represents a collection of SNPs (Single Nucleotide Polymorphisms).
+ * It provides methods to manipulate and analyze the SNPs data.
+ */
+class Snps implements Countable, Iterator
 {
-    private array $_source = [];
-    private array $_snps = [];
-    private int $_build = 0;
-    private ?bool $_phased = null;
-    private ?bool $_build_detected = null;
-    private ?Resources $_resources = null;
-    private ?string $_chip = null;
-    private ?string $_chip_version = null;
-    private ?string $_cluster = null;
-    private int $_position = 0;
-    private array $_keys = [];
-    private array $_duplicate = [];
-    private array $_discrepant_XY = [];
-    private array $_heterozygous_MT = [];
+    /**
+     * @var array $source The source of the SNPs data.
+     */
+    private array $source = [];
+
+    /**
+     * @var array $snps The array of SNPs.
+     */
+    private array $snps = [];
+
+    /**
+     * @var int $build The build version of the SNPs data.
+     */
+    private int $build = 0;
+
+    /**
+     * @var bool|null $phased Indicates if the SNPs are phased.
+     */
+    private ?bool $phased = null;
+
+    /**
+     * @var bool|null $buildDetected Indicates if the build version is detected.
+     */
+    private ?bool $buildDetected = null;
+
+    /**
+     * @var Resources|null $resources The resources associated with the SNPs.
+     */
+    private ?Resources $resources = null;
+
+    /**
+     * @var string|null $chip The chip used for genotyping.
+     */
+    private ?string $chip = null;
+
+    /**
+     * @var string|null $chipVersion The version of the chip used for genotyping.
+     */
+    private ?string $chipVersion = null;
+
+    /**
+     * @var string|null $cluster The cluster associated with the SNPs.
+     */
+    private ?string $cluster = null;
+
+    /**
+     * @var int $position The current position in the SNPs array.
+     */
+    private int $position = 0;
+
+    /**
+     * @var array $keys The keys of the SNPs array.
+     */
+    private array $keys = [];
+
+    /**
+     * @var array $duplicate The duplicate SNPs.
+     */
+    private array $duplicate = [];
+
+    /**
+     * @var array $discrepantXY The discrepant SNPs on the X and Y chromosomes.
+     */
+    private array $discrepantXY = [];
+
+    /**
+     * @var array $heterozygousMT The heterozygous SNPs on the mitochondrial DNA.
+     */
+    private array $heterozygousMT = [];
+
+    /**
+     * @var DataFrame $dataFrame The DataFrame object for data manipulation.
+     */
     private DataFrame $dataFrame;
-    private SNPAnalysis $snpAnalysis;
+
+    /**
+     * @var SnpAnalysis $snpAnalysis The SnpAnalysis object for SNP analysis.
+     */
+    private SnpAnalysis $snpAnalysis;
+
+    /**
+     * @var MathOperations $mathOperations The MathOperations object for mathematical operations.
+     */
     private MathOperations $mathOperations;
     
     /**
-     * SNPs constructor.
+     * Snps constructor.
      *
      * @param string $file                Input file path
      * @param bool   $only_detect_source  Flag to indicate whether to only detect the source
@@ -62,46 +133,42 @@ class SNPs implements Countable, Iterator
      */
 
     public function __construct(
-        private $file = "",
-        private bool $only_detect_source = False,
-        private bool $assign_par_snps = False,
-        private string $output_dir = "output",
-        private string $resources_dir = "resources",
-        private bool $deduplicate = True,
-        private bool $deduplicate_XY_chrom = True,
-        private bool $deduplicate_MT_chrom = True,
-        private bool $parallelize = False,
-        private int $processes = 1, // cpu count
+        private string $file = "",
+        private bool $onlyDetectSource = false,
+        private bool $assignParSnps = false,
+        private string $outputDir = "output",
+        private string $resourcesDir = "resources",
+        private bool $deduplicate = true,
+        private bool $deduplicateXYChrom = true,
+        private bool $deduplicateMTChrom = true,
+        private bool $parallelize = false,
+        private int $processes = 1,
         private array $rsids = [],
-        private $ensemblRestClient = null,
-            ) //, $only_detect_source, $output_dir, $resources_dir, $parallelize, $processes)
-            {
-                // $this->_only_detect_source = $only_detect_source;
-        $this->snpFileReader = new SnpFileReader($this->_resources, $this->ensemblRestClient);
-        $this->buildDetector = new BuildDetector();
-        $this->clusterOverlapCalculator = new ClusterOverlapCalculator($this->_resources);
-        $this->_source = [];
-        $this->_phased = null;
-        $this->_build = 0;
-        $this->_build_detected = null;
-        $this->_cluster = "";
-        $this->_chip = "";
-        $this->_chip_version = "";
-                $this->_source = [];
-                // $this->_phased = false;
-                $this->_build = 0;
-                $this->_build_detected = false;
-                // $this->_output_dir = $output_dir;
-                $this->_resources = new Resources($resources_dir);
-                // $this->_parallelizer = new Parallelizer($parallelize, $processes);
-                $this->_cluster = "";
-                $this->_chip = "";
-        $this->dataFrame = new DataFrame();
-        $this->snpAnalysis = new SNPAnalysis();
-        $this->mathOperations = new MathOperations();
-                $this->_chip_version = "";
+        private ?EnsemblRestClient $ensemblRestClient = null,
+        private ?SnpFileReader $snpFileReader = null,
+        private ?BuildDetector $buildDetector = null,
+        private ?ClusterOverlapCalculator $clusterOverlapCalculator = null,
+        private ?Resources $resources = null,
+        private ?DataFrame $dataFrame = null,
+        private ?SnpAnalysis $snpAnalysis = null,
+        private ?MathOperations $mathOperations = null
+    ) {
+        $this->source = [];
+        $this->phased = null;
+        $this->build = 0;
+        $this->buildDetected = null;
+        $this->cluster = "";
+        $this->chip = "";
+        $this->chipVersion = "";
         
-                $this->ensemblRestClient = $ensemblRestClient ?? new Ensembl("https://api.ncbi.nlm.nih.gov", 1);
+        $this->resources = $resources ?? new Resources($resourcesDir);
+        $this->ensemblRestClient = $ensemblRestClient ?? new EnsemblRestClient("https://api.ncbi.nlm.nih.gov", 1);
+        $this->snpFileReader = $snpFileReader ?? new SnpFileReader($this->resources, $this->ensemblRestClient);
+        $this->buildDetector = $buildDetector ?? new BuildDetector();
+        $this->clusterOverlapCalculator = $clusterOverlapCalculator ?? new ClusterOverlapCalculator($this->resources);
+        $this->dataFrame = $dataFrame ?? new DataFrame();
+        $this->snpAnalysis = $snpAnalysis ?? new SnpAnalysis();
+        $this->mathOperations = $mathOperations ?? new MathOperations();
 
         if (!empty($file)) {
             $this->readFile();
@@ -1285,99 +1352,108 @@ class SNPs implements Countable, Iterator
      *
      * @throws Exception If invalid target assembly is provided
      */
-    public function remap($target_assembly, $complement_bases = true)
+    public function remapSnps(string $targetAssembly, bool $complementBases = true): array
     {
-        $chromosomes_remapped = [];
-        $chromosomes_not_remapped = [];
+        $remappedChromosomes = [];
+        $notRemappedChromosomes = [];
 
-        $snps = $this->_snps;
+        $snps = $this->snps;
 
         if (empty($snps)) {
             // Logger::warning("No SNPs to remap");
-            return [$chromosomes_remapped, $chromosomes_not_remapped];
-        } else {
-            $chromosomes = array_unique(array_column($snps, 'chrom'));
-            $chromosomes_not_remapped = $chromosomes;
+            return [$remappedChromosomes, $notRemappedChromosomes];
         }
 
-        $valid_assemblies = ["NCBI36", "GRCh37", "GRCh38", 36, 37, 38];
+        $chromosomes = array_unique(array_column($snps, 'chrom'));
+        $notRemappedChromosomes = $chromosomes;
 
-        if (!in_array($target_assembly, $valid_assemblies)) {
+        $validAssemblies = ["NCBI36", "GRCh37", "GRCh38", 36, 37, 38];
+
+        if (!in_array($targetAssembly, $validAssemblies)) {
             // Logger::warning("Invalid target assembly");
-            return [$chromosomes_remapped, $chromosomes_not_remapped];
+            return [$remappedChromosomes, $notRemappedChromosomes];
         }
 
-        if (is_int($target_assembly)) {
-            if ($target_assembly == 36) {
-                $target_assembly = "NCBI36";
-            } else {
-                $target_assembly = "GRCh" . strval($target_assembly);
-            }
+        $targetAssembly = $this->normalizeAssemblyName($targetAssembly);
+        $sourceAssembly = $this->getSourceAssembly();
+
+        if ($sourceAssembly === $targetAssembly) {
+            return [$remappedChromosomes, $notRemappedChromosomes];
         }
 
-        if ($this->_build == 36) {
-            $source_assembly = "NCBI36";
-        } else {
-            $source_assembly = "GRCh" . strval($this->_build);
+        $assemblyMappingData = $this->resources->getAssemblyMappingData($sourceAssembly, $targetAssembly);
+
+        if (empty($assemblyMappingData)) {
+            return [$remappedChromosomes, $notRemappedChromosomes];
         }
 
-        if ($source_assembly == $target_assembly) {
-            return [$chromosomes_remapped, $chromosomes_not_remapped];
+        $remapTasks = $this->createRemapTasks($chromosomes, $assemblyMappingData, $snps, $complementBases);
+
+        $remappedSnps = $this->executeRemapTasks($remapTasks);
+
+        $this->updateSnpPositionsAndGenotypes($remappedSnps);
+
+        $this->setSnps($snps);
+        $this->sortSnps();
+        $this->build = (int)substr($targetAssembly, -2);
+
+        return [$remappedChromosomes, $notRemappedChromosomes];
+    }
+
+    private function normalizeAssemblyName(string|int $assembly): string
+    {
+        if (is_int($assembly)) {
+            return $assembly === 36 ? "NCBI36" : "GRCh" . strval($assembly);
         }
 
-        $assembly_mapping_data = $this->_resources->getAssemblyMappingData(
-            $source_assembly,
-            $target_assembly
-        );
+        return $assembly;
+    }
 
-        if (empty($assembly_mapping_data)) {
-            return [$chromosomes_remapped, $chromosomes_not_remapped];
-        }
+    private function getSourceAssembly(): string
+    {
+        return $this->build === 36 ? "NCBI36" : "GRCh" . strval($this->build);
+    }
 
+    private function createRemapTasks(array $chromosomes, array $assemblyMappingData, array $snps, bool $complementBases): array
+    {
         $tasks = [];
 
         foreach ($chromosomes as $chrom) {
-            if (array_key_exists($chrom, $assembly_mapping_data)) {
-                $chromosomes_remapped[] = $chrom;
-                $chromosomes_not_remapped = array_diff($chromosomes_not_remapped, [$chrom]);
-                $mappings = $assembly_mapping_data[$chrom];
+            if (array_key_exists($chrom, $assemblyMappingData)) {
+                $remappedChromosomes[] = $chrom;
+                $notRemappedChromosomes = array_diff($notRemappedChromosomes, [$chrom]);
+                $mappings = $assemblyMappingData[$chrom];
                 $tasks[] = [
-                    "snps" => array_filter($snps, function ($snp) use ($chrom) {
-                        return $snp['chrom'] === $chrom;
-                    }),
+                    "snps" => array_filter($snps, fn($snp) => $snp['chrom'] === $chrom),
                     "mappings" => $mappings,
-                    "complement_bases" => $complement_bases,
+                    "complement_bases" => $complementBases,
                 ];
             } else {
-                // Logger::warning(
-                //     "Chromosome $chrom not remapped; removing chromosome from SNPs for consistency"
-                // );
-                $snps = array_filter($snps, function ($snp) use ($chrom) {
-                    return $snp['chrom'] !== $chrom;
-                });
+                // Logger::warning("Chromosome $chrom not remapped; removing chromosome from SNPs for consistency");
+                $snps = array_filter($snps, fn($snp) => $snp['chrom'] !== $chrom);
             }
         }
 
-        // remap SNPs
-        $remapped_snps = array_map([$this, '_remapper'], $tasks);
-        $remapped_snps = array_merge(...$remapped_snps);
+        return $tasks;
+    }
 
-        // update SNP positions and genotypes
-        foreach ($remapped_snps as $snp) {
+    private function executeRemapTasks(array $tasks): array
+    {
+        $remappedSnps = array_map([$this, 'remapSnpsTask'], $tasks);
+        return array_merge(...$remappedSnps);
+    }
+
+    private function updateSnpPositionsAndGenotypes(array $remappedSnps): void
+    {
+        foreach ($remappedSnps as $snp) {
             $rsid = $snp['rsid'];
-            $this->_snps[$rsid]['pos'] = $snp['pos'];
-            $this->_snps[$rsid]['genotype'] = $snp['genotype'];
+            $this->snps[$rsid]['pos'] = $snp['pos'];
+            $this->snps[$rsid]['genotype'] = $snp['genotype'];
         }
 
-        foreach ($snps as &$snp) {
+        foreach ($this->snps as &$snp) {
             $snp['pos'] = (int)$snp['pos'];
         }
-
-        $this->setSNPs($snps);
-        $this->sort();
-        $this->_build = (int)substr($target_assembly, -2);
-
-        return [$chromosomes_remapped, $chromosomes_not_remapped];
     }
 
     /**
@@ -1394,42 +1470,41 @@ class SNPs implements Countable, Iterator
      *
      * @return string
      */
-    public function save(
-        $filename = "",
-        $vcf = false,
-        $atomic = true,
-        $vcf_alt_unavailable = ".",
-        $vcf_chrom_prefix = "",
-        $vcf_qc_only = false,
-        $vcf_qc_filter = false,
-        $kwargs = []
-    ) {
+    public function saveSnps(
+        string $filename = "",
+        bool $vcf = false,
+        bool $atomic = true,
+        string $vcfAltUnavailable = ".",
+        string $vcfChromPrefix = "",
+        bool $vcfQcOnly = false,
+        bool $vcfQcFilter = false,
+        array $kwargs = []
+    ): string {
         if (!array_key_exists("sep", $kwargs)) {
             $kwargs["sep"] = "\t";
         }
 
-        $w = new Writer(
+        $writer = new Writer(
             [
                 'snps' => $this,
                 'filename' => $filename,
                 'vcf' => $vcf,
                 'atomic' => $atomic,
-                'vcf_alt_unavailable' => $vcf_alt_unavailable,
-                'vcf_chrom_prefix' => $vcf_chrom_prefix,
-                'vcf_qc_only' => $vcf_qc_only,
-                'vcf_qc_filter' => $vcf_qc_filter
+                'vcf_alt_unavailable' => $vcfAltUnavailable,
+                'vcf_chrom_prefix' => $vcfChromPrefix,
+                'vcf_qc_only' => $vcfQcOnly,
+                'vcf_qc_filter' => $vcfQcFilter
             ],
             $kwargs
         );
 
-        $result = $w->write();
-        [$path, $extra] = $result;
+        [$path, $extra] = $writer->write();
 
-        if (count($extra) == 1 && !$extra[0]->isEmpty()) {
-            $this->_discrepant_vcf_position = $extra[0];
-            $this->_discrepant_vcf_position->setIndex("rsid");
+        if (count($extra) === 1 && !$extra[0]->isEmpty()) {
+            $this->discrepantVcfPosition = $extra[0];
+            $this->discrepantVcfPosition->setIndex("rsid");
             // logger::warning(
-            //     count($this->discrepant_vcf_position) . " SNP positions were found to be discrepant when saving VCF"
+            //     count($this->discrepantVcfPosition) . " SNP positions were found to be discrepant when saving VCF"
             // );
         }
 
@@ -2980,8 +3055,25 @@ class SNPs implements Countable, Iterator
      * @param float $cluster_overlap_threshold The threshold for cluster overlap.
      * @return array The computed cluster overlap DataFrame.
      */
-    public function computeClusterOverlap($cluster_overlap_threshold = 0.95): array {
-        // Sample data for cluster overlap computation
+    public function computeClusterOverlap($clusterOverlapThreshold = 0.95): array
+    {
+        $df = $this->createClusterOverlapDataFrame();
+        $selfSnps = $this->getSelfSnps();
+        $chipClusters = $this->resources->getChipClusters();
+
+        foreach ($df->indexValues() as $cluster) {
+            $clusterSnps = $this->filterChipClustersByCluster($chipClusters, $cluster);
+            $this->updateDataFrameWithClusterInfo($df, $cluster, $clusterSnps, $selfSnps);
+            $this->calculateOverlapRatios($df, $selfSnps);
+            $maxOverlap = $this->findMaxOverlapCluster($df);
+            $this->updateClusterAndChipInfo($df, $maxOverlap, $clusterOverlapThreshold);
+        }
+
+        return $df;
+    }
+
+    private function createClusterOverlapDataFrame(): DataFrame
+    {
         $data = [
             "cluster_id" => ["c1", "c3", "c4", "c5", "v5"],
             "company_composition" => [
@@ -3002,65 +3094,65 @@ class SNPs implements Countable, Iterator
             "snps_in_common" => array_fill(0, 5, 0),
         ];
 
-        // Create a DataFrame from the data and set "cluster_id" as the index
         $df = new DataFrame($data);
         $df->setIndex("cluster_id");
 
-        $to_remap = null;
+        return $df;
+    }
+
+    private function getSelfSnps(): DataFrame
+    {
         if ($this->build != 37) {
-            // Create a clone of the current object for remapping
-            $to_remap = clone $this;
-            $to_remap->remap(37); // clusters are relative to Build 37
-            $self_snps = $to_remap->snps()->select(["chrom", "pos"])->dropDuplicates();
-        } else {
-            $self_snps = $this->snps()->select(["chrom", "pos"])->dropDuplicates();
+            $toRemap = clone $this;
+            $toRemap->remap(37);
+            return $toRemap->snps()->select(["chrom", "pos"])->dropDuplicates();
         }
 
-        // Retrieve chip clusters from resources
-        $chip_clusters = $this->resources->get_chip_clusters();
+        return $this->snps()->select(["chrom", "pos"])->dropDuplicates();
+    }
 
-        // Iterate over each cluster in the DataFrame
-        foreach ($df->indexValues() as $cluster) {
-            // Filter chip clusters based on the current cluster
-            $cluster_snps = $chip_clusters->filter(function ($row) use ($cluster) {
-                return strpos($row["clusters"], $cluster) !== false;
-            })->select(["chrom", "pos"]);
+    private function filterChipClustersByCluster(DataFrame $chipClusters, string $cluster): DataFrame
+    {
+        return $chipClusters->filter(function ($row) use ($cluster) {
+            return strpos($row["clusters"], $cluster) !== false;
+        })->select(["chrom", "pos"]);
+    }
 
-            // Update the DataFrame with the number of SNPs in the cluster and in common with the current object
-            $df->loc[$cluster]["snps_in_cluster"] = count($cluster_snps);
-            $df->loc[$cluster]["snps_in_common"] = count($self_snps->merge($cluster_snps, "inner"));
+    private function updateDataFrameWithClusterInfo(DataFrame $df, string $cluster, DataFrame $clusterSnps, DataFrame $selfSnps): void
+    {
+        $df->loc[$cluster]["snps_in_cluster"] = count($clusterSnps);
+        $df->loc[$cluster]["snps_in_common"] = count($selfSnps->merge($clusterSnps, "inner"));
+    }
 
-            // Calculate overlap ratios for cluster and self
-            $df["overlap_with_cluster"] = $df["snps_in_common"] / $df["snps_in_cluster"];
-            $df["overlap_with_self"] = $df["snps_in_common"] / count($self_snps);
+    private function calculateOverlapRatios(DataFrame $df, DataFrame $selfSnps): void
+    {
+        $df["overlap_with_cluster"] = $df["snps_in_common"] / $df["snps_in_cluster"];
+        $df["overlap_with_self"] = $df["snps_in_common"] / count($selfSnps);
+    }
 
-            // Find the cluster with the maximum overlap
-            $max_overlap = array_keys($df["overlap_with_cluster"], max($df["overlap_with_cluster"]))[0];
+    private function findMaxOverlapCluster(DataFrame $df): string
+    {
+        return array_keys($df["overlap_with_cluster"], max($df["overlap_with_cluster"]))[0];
+    }
 
-            // Check if the maximum overlap exceeds the threshold for both cluster and self
-            if (
-                $df["overlap_with_cluster"][$max_overlap] > $cluster_overlap_threshold &&
-                $df["overlap_with_self"][$max_overlap] > $cluster_overlap_threshold
-            ) {
-                // Update the current object's cluster and chip based on the maximum overlap
-                $this->cluster = $max_overlap;
-                $this->chip = $df["chip_base_deduced"][$max_overlap];
+    private function updateClusterAndChipInfo(DataFrame $df, string $maxOverlap, float $clusterOverlapThreshold): void
+    {
+        if (
+            $df["overlap_with_cluster"][$maxOverlap] > $clusterOverlapThreshold &&
+            $df["overlap_with_self"][$maxOverlap] > $clusterOverlapThreshold
+        ) {
+            $this->cluster = $maxOverlap;
+            $this->chip = $df["chip_base_deduced"][$maxOverlap];
 
-                $company_composition = $df["company_composition"][$max_overlap];
+            $companyComposition = $df["company_composition"][$maxOverlap];
 
-                // Check if the current object's source is present in the company composition
-                if (strpos($company_composition, $this->source) !== false) {
-                    if ($this->source === "23andMe" || $this->source === "AncestryDNA") {
-                        // Extract the chip version from the company composition
-                        $i = strpos($company_composition, "v");
-                        $this->chip_version = substr($company_composition, $i, $i + 2);
-                    }
-                } else {
-                    // Log a warning about the SNPs data source not found
+            if (strpos($companyComposition, $this->source) !== false) {
+                if ($this->source === "23andMe" || $this->source === "AncestryDNA") {
+                    $i = strpos($companyComposition, "v");
+                    $this->chipVersion = substr($companyComposition, $i, $i + 2);
                 }
+            } else {
+                // Log a warning about the SNPs data source not found
             }
         }
-
-        // Return the computed cluster overlap DataFrame
-        return $df;
     }
