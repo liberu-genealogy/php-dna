@@ -32,71 +32,7 @@ class Resources extends \Dna\Snps\SNPsResources {
         parent::__construct($resources_dir = $resources_dir);
     }
 
-    // public function get_all_resources() 
-    // {
-    //     $resources = array( );
-    //     $resources[
-    //         "genetic_map_HapMapII_GRCh37"
-    //     ] = $this->get_genetic_map_HapMapII_GRCh37();
-    //     $resources["cytoBand_hg19"] = $this->get_cytoBand_hg19();
-    //     $resources["knownGene_hg19"] = $this->get_knownGene_hg19();
-    //     $resources["kgXref_hg19"] = $this->get_kgXref_hg19();
-    //     return $resources;
-    // }
-    // /**
-    //  * Function to get a genetic map based on the given map name
-    //  *
-    //  * @param string $genetic_map - Name of the genetic map to retrieve
-    //  * @return array - Returns an array containing the genetic map
-    //  */
-    // public function get_genetic_map(string $genetic_map): array
-    // {
-    //     // Define an array of valid genetic map names
-    //     $valid_genetic_maps = [
-    //         "HapMap2",
-    //         "ACB",
-    //         "ASW",
-    //         "CDX",
-    //         "CEU",
-    //         "CHB",
-    //         "CHS",
-    //         "CLM",
-    //         "FIN",
-    //         "GBR",
-    //         "GIH",
-    //         "IBS",
-    //         "JPT",
-    //         "KHV",
-    //         "LWK",
-    //         "MKK",
-    //         "MXL",
-    //         "PEL",
-    //         "PUR",
-    //         "TSI",
-    //         "YRI",
-    //     ];
-        
-    //     // Check if the given genetic map is valid
-    //     if (!in_array($genetic_map, $valid_genetic_maps, true)) {
-    //         error_log("Invalid genetic map");
-    //         return [];
-    //     }
 
-    //     // If given genetic map is "HapMap2", retrieve the genetic map using another function
-    //     if ($genetic_map === "HapMap2") {
-    //         return $this->get_genetic_map_HapMapII_GRCh37();
-    //     }
-        
-    //     // If given genetic map is not "HapMap2", retrieve the genetic map using another function
-    //     return $this->get_genetic_map_1000G_GRCh37($genetic_map);
-    // }
-
-    // /**
-    //  * Function to get the HapMap2 genetic map in GRCh37 format
-    //  *
-    //  * @return array - Returns an array containing the HapMap2 genetic map in GRCh37 format
-    //  */
-    // public function get_genetic_map_HapMapII_GRCh37(): array
     // {  
     //     // Check if the current genetic map is already HapMap2
     //     if ($this->_genetic_map_name !== "HapMap2") {
@@ -133,22 +69,21 @@ class Resources extends \Dna\Snps\SNPsResources {
     //     return $this->_genetic_map;
     // }
 
-    // /**
-    //  * Returns the cytogenetic banding information for the hg19 reference genome.
-    //  *
-    //  * @return array The cytogenetic banding information for hg19.
-    //  */
-    // public function get_cytoBand_hg19(): array
-    // {
-    //     // Check if the cytogenetic banding information for hg19 is already loaded
-    //     if (empty($this->_cytoBand_hg19)) {
-    //         // If not, load the cytogenetic banding information from file
-    //         $this->_cytoBand_hg19 = $this->_loadCytoBand(path: $this->_getPathCytoBandHg19());
-    //     }
+    /**
+     * Returns the cytogenetic banding information for the hg19 reference genome.
+     *
+     * @return array The cytogenetic banding information for hg19.
+     */
+    public function getCytoBandHg19(): array
+    {
+        // Check if the cytogenetic banding information for hg19 is already loaded
+        if (empty($this->_cytoBand_hg19)) {
+            // If not, load the cytogenetic banding information from file
+            $this->_cytoBand_hg19 = $this->loadCytoBand($this->getPathCytoBandHg19());
+        }
 
-    //     // Return the loaded cytogenetic banding information for hg19
-    //     return $this->_cytoBand_hg19;
-    // }
+        return $this->_cytoBand_hg19;
+    }
     
     // /**
     //  * Returns the knownGene_hg19 data.
@@ -167,22 +102,23 @@ class Resources extends \Dna\Snps\SNPsResources {
     //     return $this->_knownGene_hg19;
     // }
 
-    // /**
-    //  * Returns the kgXref_hg19 data.
-    //  *
-    //  * @return array The kgXref_hg19 data.
-    //  */
-    // public function get_kgXref_hg19() {
-    //     // Check if the _kgXref_hg19 property is empty.
-    //     if ($this->_kgXref_hg19->empty()) {
-    //         // If it is empty, load the kgXref_hg19 data from the file path.
-    //         $this->_kgXref_hg19 = $this->_load_kgXref(
-    //             $this->_get_path_kgXref_hg19()
-    //         );
-    //     }
-    //     // Return the kgXref_hg19 data.
-    //     return $this->_kgXref_hg19;
-    // }    
+    /**
+     * Returns the kgXref data for the hg19 reference genome.
+     *
+     * @return array The kgXref data for hg19.
+     */
+    public function getKgXrefHg19(): array
+    {
+        // Check if the _kgXref_hg19 property is empty.
+        if (empty($this->_kgXref_hg19)) {
+            // If it is empty, load the kgXref_hg19 data from the file path.
+            $this->_kgXref_hg19 = $this->loadKgXref(
+                $this->getPathKgXrefHg19()
+            );
+        }
+
+        return $this->_kgXref_hg19;
+    }
 
     // public function _load_genetic_map_HapMapII_GRCh37($filename) 
     // {
@@ -212,45 +148,59 @@ class Resources extends \Dna\Snps\SNPsResources {
     //     return $genetic_map;
     // }
 
-    // /**
-    //  * Loads a genetic map from a file in the 1000 Genomes Project format (GRCh37).
-    //  *
-    //  * @param string $filename The path to the file to load.
-    //  * @return array An associative array of genetic maps, keyed by chromosome.
-    //  */
-    // function _load_genetic_map_1000G_GRCh37($filename) {
-    //     $genetic_map = []; // Initialize an empty array to hold the genetic maps.
+    /**
+     * Loads a genetic map from a file in the 1000 Genomes Project format (GRCh37).
+     *
+     * @param string $filename The path to the file to load.
+     * @return array An associative array of genetic maps, keyed by chromosome.
+     */
+    function loadGeneticMap1000GGRCh37($filename) 
+    {
+        $geneticMap = []; // Initialize an empty array to hold the genetic maps.
 
-    //     $phar = new PharData($filename); // Create a new PharData object from the file.
+        $phar = new PharData($filename); // Create a new PharData object from the file.
 
-    //     foreach ($phar as $member) { // Loop through each file in the Phar archive.
-    //         $filepath = $member->getPathname(); // Get the path to the file.
+        foreach ($phar as $member) { // Loop through each file in the Phar archive.
+            $filepath = $member->getPathname(); // Get the path to the file.
+            $geneticMap = $this->processGeneticMapFile($filepath, $geneticMap);
+        }
 
-    //         $file = gzopen($filepath, 'r'); // Open the file for reading.
-    //         $header = fgetcsv($file, 0, "\t"); // Read the header row of the CSV file.
+        return $geneticMap; // Return the $geneticMap array.
+    }
 
-    //         $tempFile = []; // Initialize an empty array to hold the data rows.
-    //         while (($data = fgetcsv($file, 0, "\t")) !== false) { // Loop through each row of the CSV file.
-    //             if (count($data) == count($header)) { // Check that the row has the same number of columns as the header.
-    //                 $tempFile[] = array_combine($header, $data); // Combine the header and data rows into an associative array.
-    //             }
-    //         }
+    /**
+     * Processes a single genetic map file and adds the data to the $geneticMap array.
+     *
+     * @param string $filepath The path to the genetic map file.
+     * @param array $geneticMap The array to add the genetic map data to.
+     * @return array The updated $geneticMap array.
+     */
+    function processGeneticMapFile($filepath, $geneticMap)
+    {
+        $file = gzopen($filepath, 'r'); // Open the file for reading.
+        $header = fgetcsv($file, 0, "\t"); // Read the header row of the CSV file.
 
-    //         $df = []; // Initialize an empty array to hold the genetic map data.
-    //         foreach ($tempFile as $row) { // Loop through each row of the data.
-    //             $df[] = [ // Add a new array to the $df array.
-    //                 "pos" => $row["Position(bp)"], // Add the position to the array.
-    //                 "rate" => $row["Rate(cM/Mb)"], // Add the rate to the array.
-    //                 "map" => $row["Map(cM)"], // Add the map to the array.
-    //             ];
-    //         }
+        $tempFile = []; // Initialize an empty array to hold the data rows.
+        while (($data = fgetcsv($file, 0, "\t")) !== false) { // Loop through each row of the CSV file.
+            if (count($data) == count($header)) { // Check that the row has the same number of columns as the header.
+                $tempFile[] = array_combine($header, $data); // Combine the header and data rows into an associative array.
+            }
+        }
 
-    //         $chrom = explode("-", $member->getFilename())[1]; // Get the chromosome number from the filename.
-    //         $genetic_map[$chrom] = $df; // Add the genetic map data to the $genetic_map array, keyed by chromosome.
-    //     }
+        $df = []; // Initialize an empty array to hold the genetic map data.
+        foreach ($tempFile as $row) { // Loop through each row of the data.
+            $df[] = [ // Add a new array to the $df array.
+                "pos" => $row["Position(bp)"], // Add the position to the array.
+                "rate" => $row["Rate(cM/Mb)"], // Add the rate to the array.
+                "map" => $row["Map(cM)"], // Add the map to the array.
+            ];
+        }
 
-    //     return $genetic_map; // Return the $genetic_map array.
-    // }    
+        $chrom = explode("-", basename($filepath))[1]; // Get the chromosome number from the filename.
+        $geneticMap[$chrom] = $df; // Add the genetic map data to the $geneticMap array, keyed by chromosome.
+
+        return $geneticMap;
+    }
 
     // // public function downloadFile($url, $filename, $compress=False, $timeout=30) 
     // // {
@@ -355,18 +305,18 @@ class Resources extends \Dna\Snps\SNPsResources {
     //     return $kgXref;
     // }
 
-    // /**
-    //  * Get local path to cytoBand file for hg19 / GRCh37 from UCSC, downloading if necessary.
-    //  *
-    //  * @return string Path to cytoBand_hg19.txt.gz
-    //  */
-    // public function getPathCytoBandHg19(): string
-    // {
-    //     return $this->downloadFile(
-    //         'ftp://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/cytoBand.txt.gz',
-    //         'cytoBand_hg19.txt.gz'
-    //     );
-    // }
+    /**
+     * Get local path to cytoBand file for hg19 / GRCh37 from UCSC, downloading if necessary.
+     *
+     * @return string Path to cytoBand_hg19.txt.gz
+     */
+    public function getPathCytoBandHg19(): string
+    {
+        return $this->downloadFile(
+            'ftp://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/cytoBand.txt.gz',
+            'cytoBand_hg19.txt.gz'
+        );
+    }
 
     // /**
     //  * Download file from a given URL if not exists and return its local path.
