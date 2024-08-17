@@ -23,114 +23,46 @@ use Dna\Snps\IO\SnpFileReader;
 use Dna\Snps\Analysis\BuildDetector;
 use Dna\Snps\Analysis\ClusterOverlapCalculator;
 
+<?php
+
+namespace Dna\Snps;
+
+use Countable;
+use Iterator;
+use Dna\Resources;
+use Dna\Snps\IO\SnpFileReader;
+use Dna\Snps\Analysis\BuildDetector;
+use Dna\Snps\Analysis\ClusterOverlapCalculator;
+use Dna\Snps\EnsemblRestClient;
+
+<?php
+
+namespace Dna\Snps;
+
+use Countable;
+use Iterator;
+use Dna\Resources;
+use Dna\Snps\IO\SnpFileReader;
+use Dna\Snps\Analysis\BuildDetector;
+use Dna\Snps\Analysis\ClusterOverlapCalculator;
+use Dna\Snps\EnsemblRestClient;
+
 class SNPs implements Countable, Iterator
-
-/**
- * Snps class represents a collection of SNPs (Single Nucleotide Polymorphisms).
- * It provides methods to manipulate and analyze the SNPs data.
- */
-class Snps implements Countable, Iterator
 {
-    /**
-     * @var array $source The source of the SNPs data.
-     */
     private array $source = [];
-
-    /**
-     * @var array $snps The array of SNPs.
-     */
-    private array $snps = [];
-
-    /**
-     * @var int $build The build version of the SNPs data.
-     */
     private int $build = 0;
-
-    /**
-     * @var bool|null $phased Indicates if the SNPs are phased.
-     */
     private ?bool $phased = null;
-
-    /**
-     * @var bool|null $buildDetected Indicates if the build version is detected.
-     */
     private ?bool $buildDetected = null;
-
-    /**
-     * @var Resources|null $resources The resources associated with the SNPs.
-     */
-    private ?Resources $resources = null;
-
-    /**
-     * @var string|null $chip The chip used for genotyping.
-     */
     private ?string $chip = null;
-
-    /**
-     * @var string|null $chipVersion The version of the chip used for genotyping.
-     */
     private ?string $chipVersion = null;
-
-    /**
-     * @var string|null $cluster The cluster associated with the SNPs.
-     */
     private ?string $cluster = null;
-
-    /**
-     * @var int $position The current position in the SNPs array.
-     */
     private int $position = 0;
-
-    /**
-     * @var array $keys The keys of the SNPs array.
-     */
-    private array $keys = [];
-
-    /**
-     * @var array $duplicate The duplicate SNPs.
-     */
     private array $duplicate = [];
-
-    /**
-     * @var array $discrepantXY The discrepant SNPs on the X and Y chromosomes.
-     */
     private array $discrepantXY = [];
-
-    /**
-     * @var array $heterozygousMT The heterozygous SNPs on the mitochondrial DNA.
-     */
     private array $heterozygousMT = [];
 
-    /**
-     * @var DataFrame $dataFrame The DataFrame object for data manipulation.
-     */
-    private DataFrame $dataFrame;
-
-    /**
-     * @var SnpAnalysis $snpAnalysis The SnpAnalysis object for SNP analysis.
-     */
-    private SnpAnalysis $snpAnalysis;
-
-    /**
-     * @var MathOperations $mathOperations The MathOperations object for mathematical operations.
-     */
-    private MathOperations $mathOperations;
-    
-    /**
-     * Snps constructor.
-     *
-     * @param string $file                Input file path
-     * @param bool   $only_detect_source  Flag to indicate whether to only detect the source
-     * @param bool   $assign_par_snps     Flag to indicate whether to assign par_snps
-     * @param string $output_dir          Output directory path
-     * @param string $resources_dir       Resources directory path
-     * @param bool   $deduplicate         Flag to indicate whether to deduplicate
-     * @param bool   $deduplicate_XY_chrom Flag to indicate whether to deduplicate XY chromosome
-     * @param bool   $deduplicate_MT_chrom Flag to indicate whether to deduplicate MT chromosome
-     * @param bool   $parallelize         Flag to indicate whether to parallelize
-     * @param int    $processes           Number of processes to use for parallelization
-     * @param array  $rsids               Array of rsids
-     */
+    private SNPData $snpData;
+    private SNPAnalyzer $snpAnalyzer;
 
     public function __construct(
         private string $file = "",
@@ -148,27 +80,16 @@ class Snps implements Countable, Iterator
         private ?SnpFileReader $snpFileReader = null,
         private ?BuildDetector $buildDetector = null,
         private ?ClusterOverlapCalculator $clusterOverlapCalculator = null,
-        private ?Resources $resources = null,
-        private ?DataFrame $dataFrame = null,
-        private ?SnpAnalysis $snpAnalysis = null,
-        private ?MathOperations $mathOperations = null
+        private ?Resources $resources = null
     ) {
-        $this->source = [];
-        $this->phased = null;
-        $this->build = 0;
-        $this->buildDetected = null;
-        $this->cluster = "";
-        $this->chip = "";
-        $this->chipVersion = "";
-        
         $this->resources = $resources ?? new Resources($resourcesDir);
         $this->ensemblRestClient = $ensemblRestClient ?? new EnsemblRestClient("https://api.ncbi.nlm.nih.gov", 1);
         $this->snpFileReader = $snpFileReader ?? new SnpFileReader($this->resources, $this->ensemblRestClient);
         $this->buildDetector = $buildDetector ?? new BuildDetector();
         $this->clusterOverlapCalculator = $clusterOverlapCalculator ?? new ClusterOverlapCalculator($this->resources);
-        $this->dataFrame = $dataFrame ?? new DataFrame();
-        $this->snpAnalysis = $snpAnalysis ?? new SnpAnalysis();
-        $this->mathOperations = $mathOperations ?? new MathOperations();
+
+        $this->snpData = new SNPData();
+        $this->snpAnalyzer = new SNPAnalyzer($this->buildDetector, $this->clusterOverlapCalculator);
 
         if (!empty($file)) {
             $this->readFile();
@@ -177,84 +98,121 @@ class Snps implements Countable, Iterator
 
     public function count(): int
     {
-        return $this->get_count();
+        return $this->snpData->count();
     }
 
-    public function current(): SNPs
+    public function current(): array
     {
-        return $this->_snps[$this->_position];
+        return $this->snpData->current();
     }
 
     public function key(): int
     {
-        return $this->_position;
+        return $this->position;
     }
 
     public function next(): void
     {
-        ++$this->_position;
+        ++$this->position;
     }
 
     public function rewind(): void
     {
-        $this->_position = 0;
+        $this->position = 0;
     }
 
     public function valid(): bool
     {
-        return isset($this->_snps[$this->_position]);
+        return $this->position < $this->snpData->count();
     }
 
-    /**
-     * Get the SNPs as a DataFrame.
-     *
-     * @return SNPs[] The SNPs array
-     */
-    public function filter(callable $callback)
+    public function filter(callable $callback): array
     {
-        return array_filter($this->_snps, $callback);
+        return $this->snpData->filter($callback);
     }
 
-
-    /**
-     * Get the value of the source property.
-     *
-     * @return string
-     *   Data source(s) for this `SNPs` object, separated by ", ".
-     */
     public function getSource(): string
     {
-        return implode(", ", $this->_source);
+        return implode(", ", $this->source);
     }
 
     public function getAllSources(): array
     {
-        return $this->_source;
+        return $this->source;
     }
 
-    /**
-     * Magic method to handle property access.
-     *
-     * @param string $name
-     *   The name of the property.
-     *
-     * @return mixed
-     *   The value of the property.
-     */
-    public function __get(string $name)
+    public function getSnps(): array
     {
-        $getter = 'get' . ucfirst($name);
-        if (method_exists($this, $getter)) {
-            return $this->$getter();
+        return $this->snpData->getSnps();
+    }
+
+    public function setSnps(array $snps): void
+    {
+        $this->snpData->setSnps($snps);
+    }
+
+    private function readFile(): void
+    {
+        $data = $this->snpFileReader->readFile($this->file);
+        $this->setSnps($data['snps']);
+        $this->source = explode(", ", $data['source']);
+        $this->phased = $data['phased'];
+        $this->build = $data['build'] ?? 0;
+        $this->buildDetected = !empty($data['build']);
+
+        if (!$this->snpData->count() === 0) {
+            $this->processSnps();
         }
-        return null; // Or throw an exception for undefined properties
     }
 
-    public function setSNPs(array $snps)
+    private function processSnps(): void
     {
-        $this->_snps = $snps;
-        $this->_keys = array_keys($snps);
+        $this->snpData->sort();
+
+        if ($this->deduplicate) {
+            $this->deduplicateRsids();
+        }
+
+        if (!$this->buildDetected) {
+            $this->detectBuild();
+        }
+
+        if ($this->assignParSnps) {
+            $this->assignParSnps();
+            $this->snpData->sort();
+        }
+
+        if ($this->deduplicateXYChrom && $this->determineSex() === "Male") {
+            $this->deduplicateXYChrom();
+        }
+
+        if ($this->deduplicateMTChrom) {
+            $this->deduplicateMTChrom();
+        }
     }
+
+    private function detectBuild(): void
+    {
+        $this->build = $this->snpAnalyzer->detectBuild($this->snpData);
+        $this->buildDetected = true;
+    }
+
+    public function determineSex(): string
+    {
+        return $this->snpAnalyzer->determineSex($this->snpData);
+    }
+
+    public function computeClusterOverlap(float $threshold = 0.95): array
+    {
+        $result = $this->snpAnalyzer->computeClusterOverlap($this->snpData, $threshold);
+        $this->cluster = $result['cluster'] ?? null;
+        $this->chip = $result['chip'] ?? null;
+        $this->chipVersion = $result['chipVersion'] ?? null;
+        return $result;
+    }
+
+    // ... (other methods to be implemented)
+}
 
     // Method readFile has been removed and its functionality is refactored with SnpFileReader class
         $this->setSNPs($d["snps"]);
