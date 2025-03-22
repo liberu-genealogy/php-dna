@@ -1,37 +1,32 @@
-&lt;?php
+declare(strict_types=1);
 
 namespace Dna\Snps;
 
 use PharData;
 use GuzzleHttp\Client;
-use Exception;
+use GuzzleHttp\Exception\GuzzleException;
 
-class AssemblyMappingManager
+final class AssemblyMappingManager
 {
-    private Client $httpClient;
-
-    public function __construct()
-    {
-        $this->httpClient = new Client();
+    public function __construct(
+        private readonly Client $httpClient = new Client(),
+        private readonly string $resourcePath = __DIR__ . "/resources"
+    ) {
+        if (!is_dir($this->resourcePath)) {
+            mkdir($this->resourcePath, 0755, true);
+        }
     }
 
+    /**
+     * @throws Exception
+     */
     public function getAssemblyMappingData(string $sourceAssembly, string $targetAssembly): string
     {
         $filename = "assembly_mapping_{$sourceAssembly}_to_{$targetAssembly}.tar.gz";
-        $filepath = __DIR__ . "/resources/{$filename}";
+        $filepath = "{$this->resourcePath}/{$filename}";
 
         if (!file_exists($filepath)) {
-            $url = "http://example.com/assembly_mapping/{$sourceAssembly}/{$targetAssembly}";
-            try {
-                $response = $this->httpClient->get($url);
-                if ($response->getStatusCode() === 200) {
-                    file_put_contents($filepath, $response->getBody()->getContents());
-                } else {
-                    throw new Exception("Failed to download assembly mapping data.");
-                }
-            } catch (Exception $e) {
-                throw new Exception("Error downloading assembly mapping data: " . $e->getMessage());
-            }
+            return $this->downloadMappingData($sourceAssembly, $targetAssembly, $filepath);
         }
 
         return $filepath;
@@ -58,5 +53,19 @@ class AssemblyMappingManager
         }
 
         return $assemblyMappingData;
+    }
+
+    /**
+     * @throws GuzzleException
+     */
+    private function downloadMappingData(string $sourceAssembly, string $targetAssembly, string $filepath): void
+    {
+        $url = "http://example.com/assembly_mapping/{$sourceAssembly}/{$targetAssembly}";
+        $response = $this->httpClient->get($url);
+        if ($response->getStatusCode() === 200) {
+            file_put_contents($filepath, $response->getBody()->getContents());
+        } else {
+            throw new GuzzleException("Failed to download assembly mapping data.");
+        }
     }
 }

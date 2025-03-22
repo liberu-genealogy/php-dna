@@ -47,35 +47,20 @@ use Dna\Snps\Analysis\BuildDetector;
 use Dna\Snps\Analysis\ClusterOverlapCalculator;
 use Dna\Snps\EnsemblRestClient;
 
-class SNPs implements Countable, Iterator
+class SNPs implements Countable, Iterator 
 {
-    private array $source = [];
-    private int $build = 0;
-    private ?bool $phased = null;
-    private ?bool $buildDetected = null;
-    private ?string $chip = null;
-    private ?string $chipVersion = null;
-    private ?string $cluster = null;
-    private int $position = 0;
-    private array $duplicate = [];
-    private array $discrepantXY = [];
-    private array $heterozygousMT = [];
-
-    private SNPData $snpData;
-    private SNPAnalyzer $snpAnalyzer;
-
     public function __construct(
-        private string $file = "",
-        private bool $onlyDetectSource = false,
-        private bool $assignParSnps = false,
-        private string $outputDir = "output",
-        private string $resourcesDir = "resources",
-        private bool $deduplicate = true,
-        private bool $deduplicateXYChrom = true,
-        private bool $deduplicateMTChrom = true,
-        private bool $parallelize = false,
-        private int $processes = 1,
-        private array $rsids = [],
+        private readonly string $file = "",
+        private readonly bool $onlyDetectSource = false,
+        private readonly bool $assignParSnps = false,
+        private readonly string $outputDir = "output",
+        private readonly string $resourcesDir = "resources",
+        private readonly bool $deduplicate = true,
+        private readonly bool $deduplicateXYChrom = true,
+        private readonly bool $deduplicateMTChrom = true,
+        private readonly bool $parallelize = false,
+        private readonly int $processes = 1,
+        private readonly array $rsids = [],
         private ?EnsemblRestClient $ensemblRestClient = null,
         private ?SnpFileReader $snpFileReader = null,
         private ?BuildDetector $buildDetector = null,
@@ -83,15 +68,17 @@ class SNPs implements Countable, Iterator
         private ?Resources $resources = null
     ) {
         $this->resources = $resources ?? new Resources($resourcesDir);
-        $this->ensemblRestClient = $ensemblRestClient ?? new EnsemblRestClient("https://api.ncbi.nlm.nih.gov", 1);
-        $this->snpFileReader = $snpFileReader ?? new SnpFileReader($this->resources, $this->ensemblRestClient);
+        $this->ensemblRestClient = $ensemblRestClient ?? new EnsemblRestClient();
+        $this->snpFileReader = $snpFileReader ?? new SnpFileReader($this->resources);
         $this->buildDetector = $buildDetector ?? new BuildDetector();
-        $this->clusterOverlapCalculator = $clusterOverlapCalculator ?? new ClusterOverlapCalculator($this->resources);
+        $this->clusterOverlapCalculator = $clusterOverlapCalculator ?? new ClusterOverlapCalculator();
+        
+        $this->initialize();
+    }
 
-        $this->snpData = new SNPData();
-        $this->snpAnalyzer = new SNPAnalyzer($this->buildDetector, $this->clusterOverlapCalculator);
-
-        if (!empty($file)) {
+    private function initialize(): void 
+    {
+        if (!empty($this->file)) {
             $this->readFile();
         }
     }

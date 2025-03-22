@@ -1,69 +1,52 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Dna\Snps;
 
-use Exception;
 use Symfony\Component\HttpClient\HttpClient;
-use Symfony\Contracts\HttpClient\Exception\ClientExceptionInterface;
-use Symfony\Contracts\HttpClient\Exception\RedirectionExceptionInterface;
-use Symfony\Contracts\HttpClient\Exception\ServerExceptionInterface;
 use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
+use Symfony\Contracts\HttpClient\ResponseInterface;
 
-class Ensembl
+final class Ensembl
 {
-    private string $server;
-    private int $reqs_per_sec;
-    private int $req_count;
-    private float $last_req;
+    private const DEFAULT_SERVER = "https://rest.ensembl.org";
+    private const DEFAULT_REQS_PER_SEC = 15;
 
-    public function __construct(string $server = "https://rest.ensembl.org", int $reqs_per_sec = 15)
-    {
-        $this->server = $server;
-        $this->reqs_per_sec = $reqs_per_sec;
-        $this->req_count = 0;
+    public function __construct(
+        private readonly string $server = self::DEFAULT_SERVER,
+        private readonly int $reqs_per_sec = self::DEFAULT_REQS_PER_SEC,
+        private int $req_count = 0,
+        private float $last_req = 0.0
+    ) {
         $this->last_req = microtime(true);
     }
 
-    public function performRestAction(string $endpoint, ?array $hdrs = null, ?array $params = null): ?array
-    {
-        if ($hdrs === null) {
-            $hdrs = [];
-        }
-
-        if (!array_key_exists("Content-Type", $hdrs)) {
-            $hdrs["Content-Type"] = "application/json";
-        }
-
-        if ($params) {
-            $endpoint .= "?" . http_build_query($params);
-        }
-
+    public function performRestAction(
+        string $endpoint,
+        array $headers = [],
+        array $params = []
+    ): ?array {
+        $headers['Content-Type'] ??= 'application/json';
+        
         $this->rateLimit();
 
-        $client = HttpClient::create();
-        $url = $this->server . $endpoint;
-        $options = [
-            'headers' => $hdrs,
-            'query' => $params,
-        ];
-
         try {
-            $response = $client->request('GET', $url, $options);
-            $statusCode = $response->getStatusCode();
-
-            if ($statusCode === 200) {
-                return $response->toArray();
-            } elseif ($statusCode == 429) {
-                $retryAfter = $response->getHeaders()['retry-after'][0] ?? 1;
-                sleep($retryAfter);
-                return $this->performRestAction($endpoint, $hdrs, $params);
-            } else {
-                throw new Exception("HTTP request failed with status code {$statusCode}.");
-            }
-        } catch (ClientExceptionInterface | RedirectionExceptionInterface | ServerExceptionInterface | TransportExceptionInterface $e) {
+            $response = $this->makeRequest($endpoint, $headers, $params);
+            return $this->handleResponse($response);
+        } catch (TransportExceptionInterface $e) {
             error_log("Request failed for {$endpoint}: " . $e->getMessage());
             return null;
         }
+    }
+
+    private function makeRequest(string $endpoint, array $headers, array $params): ResponseInterface 
+    {
+        $client = HttpClient::create();
+        return $client->request('GET', "{$this->server}{$endpoint}", [
+            'headers' => $headers,
+            'query' => $params,
+        ]);
     }
 
     private function rateLimit(): void

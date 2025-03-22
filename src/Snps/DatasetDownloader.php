@@ -1,28 +1,32 @@
-<?php
+declare(strict_types=1);
 
 namespace Dna\Snps;
 
 use GuzzleHttp\Client;
-use ZipArchive;
-use PharData;
+use GuzzleHttp\Exception\GuzzleException;
 use League\Csv\Reader;
-use League\Csv\Statement;
 
-class DatasetDownloader
+final class DatasetDownloader
 {
-    private Client $httpClient;
-
-    public function __construct()
-    {
-        $this->httpClient = new Client();
+    public function __construct(
+        private readonly Client $httpClient = new Client(),
+        private readonly string $cacheDir = __DIR__ . '/../../cache'
+    ) {
+        if (!is_dir($this->cacheDir)) {
+            mkdir($this->cacheDir, 0755, true);
+        }
     }
 
-    public function download_example_datasets(): array
+    /**
+     * @return array<string>
+     * @throws GuzzleException
+     */
+    public function downloadExampleDatasets(): array
     {
-        $paths = [];
-        $paths[] = $this->download_file("https://opensnp.org/data/662.23andme.340", "662.23andme.340.txt.gz", true);
-        $paths[] = $this->download_file("https://opensnp.org/data/662.ftdna-illumina.341", "662.ftdna-illumina.341.csv.gz", true);
-        return $paths;
+        return [
+            $this->downloadFile("https://opensnp.org/data/662.23andme.340", "662.23andme.340.txt.gz"),
+            $this->downloadFile("https://opensnp.org/data/662.ftdna-illumina.341", "662.ftdna-illumina.341.csv.gz")
+        ];
     }
 
     public function getAllResources()
