@@ -1,65 +1,35 @@
-<?php
+declare(strict_types=1);
 
-require_once 'snps.php';
-require_once 'snps/utils.php';
+namespace Dna;
 
-class Individual extends SNPs
+use Dna\Snps\SNPs;
+use ReflectionMethod;
+
+final class Individual extends SNPs
 {
-    /**
-     * Object used to represent and interact with an individual.
-     *
-     * The ``Individual`` object maintains information about an individual. The object provides
-     * methods for loading an individual's genetic data (SNPs) and normalizing it for use with the
-     * `lineage` framework.
-     *
-     * ``Individual`` inherits from ``snps.SNPs``.
-     */
-    
-    private string $name;
-
-    /**
-     * Initialize an Individual object
-     *
-     * @param string $name Name of the individual
-     * @param mixed $rawData Path(s) to file(s), bytes, or SNPs object(s) with raw genotype data
-     * @param array $kwargs Parameters to snps.SNPs and/or snps.SNPs.merge
-     */
-    public function __construct(string $name, mixed $rawData = [], array $kwargs = [])
-    {
-        $this->name = $name;
-
-        $snpsConstructorArgs = $this->getDefinedKwargs(new ReflectionMethod(SNPs::class, '__construct'), $kwargs);
-        $snpsMergeArgs = $this->getDefinedKwargs(new ReflectionMethod(SNPs::class, 'merge'), $kwargs);
+    public function __construct(
+        private readonly string $name,
+        private readonly mixed $rawData = [],
+        private readonly array $kwargs = []
+    ) {
+        $snpsConstructorArgs = $this->getDefinedKwargs(
+            new ReflectionMethod(SNPs::class, '__construct'),
+            $kwargs
+        );
 
         parent::__construct(...array_values($snpsConstructorArgs));
 
-        $rawDataArray = is_array($rawData) ? $rawData : [$rawData];
-
-        foreach ($rawDataArray as $data) {
-            $snps = $this->createSnpsObject($data, $snpsConstructorArgs);
-            $this->merge([$snps], ...array_values($snpsMergeArgs));
-        }
+        $this->processRawData();
     }
 
-    /**
-     * Get defined keyword arguments for a method
-     *
-     * @param ReflectionMethod $method The method to get arguments for
-     * @param array $kwargs The keyword arguments to filter
-     * @return array The defined keyword arguments
-     */
-    private function getDefinedKwargs(ReflectionMethod $method, array $kwargs): array
+    private function processRawData(): void
     {
-        $parameters = $method->getParameters();
-        $definedKwargs = [];
-        foreach ($parameters as $parameter) {
-            $name = $parameter->getName();
-            if (array_key_exists($name, $kwargs)) {
-                $definedKwargs[$name] = $kwargs[$name];
-            }
-        }
+        $rawDataArray = is_array($this->rawData) ? $this->rawData : [$this->rawData];
 
-        return $definedKwargs;
+        foreach ($rawDataArray as $data) {
+            $snps = $this->createSnpsObject($data);
+            $this->merge([$snps]);
+        }
     }
 
     /**

@@ -1,42 +1,15 @@
-<?php
+declare(strict_types=1);
 
 namespace Dna\Snps\IO;
 
-use Dna\Snps\EnsemblRestClient;
-use Dna\Snps\IO\FileHandler;
-use Dna\Snps\IO\DataManipulator;
-use Symfony\Component\HttpClient\HttpClient;
-use League\Csv\Writer as CsvWriter;
-use League\Csv\CannotInsertRecord;
-use ZipArchive;
-use Exception;
-
-class Writer
+final class Writer
 {
+    private const VCF_CHROM_PREFIX = 'chr';
 
-    /**
-     * Writer constructor.
-     *
-     * @param SNPs|null $snps SNPs to save to file or write to buffer
-     * @param string|resource $filename Filename for file to save or buffer to write to
-     * @param bool $vcf Flag to save file as VCF
-     * @param bool $atomic Atomically write output to a file on the local filesystem
-     * @param string $vcfAltUnavailable Representation of VCF ALT allele when ALT is not able to be determined
-     * @param string $vcfChromPrefix Prefix for chromosomes in VCF CHROM column
-     * @param bool $vcfQcOnly For VCF, output only SNPs that pass quality control
-     * @param bool $vcfQcFilter For VCF, populate VCF FILTER column based on quality control results
-     * @param array $kwargs Additional parameters to `pandas.DataFrame.to_csv`
-     */
     public function __construct(
-        protected readonly ?SNPs $snps = null,
-        protected readonly string|resource $filename = '',
-        protected readonly bool $vcf = false,
-        protected readonly bool $atomic = true,
-        protected readonly string $vcfAltUnavailable = '.',
-        protected readonly string $vcfChromPrefix = '',
-        protected readonly bool $vcfQcOnly = false,
-        protected readonly bool $vcfQcFilter = false,
-        protected readonly array $kwargs = []
+        private readonly bool $vcfQcOnly = false,
+        private readonly bool $vcfQcFilter = true,
+        private readonly string $vcfChromPrefix = self::VCF_CHROM_PREFIX
     ) {}
 
     /**
@@ -275,27 +248,48 @@ class Writer
     }
 
 
-    protected function createVcfRepresentation($task)
+    protected function createVcfRepresentation(array $task): array
     {
-        $resources = $task["resources"];
-        $assembly = $task["assembly"];
-        $chrom = $task["chrom"];
-        $snps = $task["snps"];
-        $cluster = $task["cluster"];
-        $lowQualitySnps = $task["low_quality_snps"];
+        $resources = $task['resources'];
+        $assembly = $task['assembly'];
+        $chrom = $task['chrom'];
+        $snps = $task['snps'];
 
-        if (count(array_filter($snps["genotype"]->notnull())) === 0) {
-            return [
-                "contig" => "",
-                "vcf" => [],
-                "discrepant_vcf_position" => [],
-            ];
+        if ($this->hasNoValidGenotypes($snps)) {
+            return $this->getEmptyVcfResult();
         }
 
-        $seqs = $resources->getReferenceSequences($assembly, [$chrom]);
-        $seq = $seqs[$chrom];
+        $seq = $this->getSequenceData($resources, $assembly, $chrom);
+        $contig = $this->buildContigString($seq);
 
-        $contig = sprintf(
+        $snps = $this->filterSnps($snps, $task);
+
+        return $this->buildVcfData($snps, $seq);
+    }
+
+    private function hasNoValidGenotypes(SNPs $snps): bool
+    {
+        return count(array_filter($snps['genotype']->notnull())) === 0;
+    }
+
+    private function getEmptyVcfResult(): array
+    {
+        return [
+            "contig" => "",
+            "vcf" => [],
+            "discrepant_vcf_position" => [],
+        ];
+    }
+
+    private function getSequenceData(ReferenceSequences $resources, string $assembly, string $chrom): Sequence
+    {
+        $seqs = $resources->getReferenceSequences($assembly, [$chrom]);
+        return $seqs[$chrom];
+    }
+
+    private function buildContigString(Sequence $seq): string
+    {
+        return sprintf(
             '##contig=<ID=%s,URL=%s,length=%s,assembly=%s,md5=%s,species="%s">' . PHP_EOL,
             $seq->ID,
             $seq->url,
@@ -304,6 +298,12 @@ class Writer
             $seq->md5,
             $seq->species
         );
+    }
+
+    private function filterSnps(SNPs $snps, array $task): SNPs
+    {
+        $cluster = $task['cluster'];
+        $lowQualitySnps = $task['low_quality_snps'];
 
         if ($this->_vcfQcOnly && $cluster) {
             // Drop low quality SNPs if SNPs object maps to a cluster
@@ -312,15 +312,20 @@ class Writer
 
         if ($this->_vcfQcFilter && $cluster) {
             // Initialize filter for all SNPs if SNPs object maps to a cluster
-            $snps["filter"] = "PASS";
+            $snps['filter'] = "PASS";
             // Then indicate SNPs that were identified as low quality
             foreach ($lowQualitySnps->index as $index) {
                 if (isset($snps[$index])) {
-                    $snps[$index]["filter"] = "lq";
+                    $snps[$index]['filter'] = "lq";
                 }
             }
         }
 
+        return $snps;
+    }
+
+    private function buildVcfData(SNPs $snps, Sequence $seq): array
+    {
         $snps = array_values($snps);
 
         $df = [
