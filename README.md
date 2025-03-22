@@ -15,6 +15,7 @@ After entering the file paths, the script will process the data and generate a m
 ## Requirements
 
 * php-dna 1.0+ requires PHP 8.3 (or later).
+* php-dna 2.0+ requires PHP 8.4 (or later).
 
 ## Installation
 
