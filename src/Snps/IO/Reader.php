@@ -37,7 +37,6 @@ class Reader
         private ?SNPsResources $resources,
         private array $rsids
     ) {}
-    }
 
     /**
      * Read and parse a raw data / genotype file.

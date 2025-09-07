@@ -59,6 +59,31 @@ final class Individual extends SNPs
      */
     public function getVarName(): string
     {
-        return clean_str($this->name);
+        return $this->clean_str($this->name);
+    }
+
+    /**
+     * Clean a string to make it variable-safe
+     *
+     * @param string $str The string to clean
+     * @return string The cleaned string
+     */
+    private function clean_str(string $str): string
+    {
+        // Remove special characters and replace with underscores
+        $cleaned = preg_replace('/[^a-zA-Z0-9_]/', '_', $str);
+
+        // Remove multiple consecutive underscores
+        $cleaned = preg_replace('/_+/', '_', $cleaned);
+
+        // Remove leading/trailing underscores
+        $cleaned = trim($cleaned, '_');
+
+        // Ensure it doesn't start with a number
+        if (is_numeric(substr($cleaned, 0, 1))) {
+            $cleaned = 'var_' . $cleaned;
+        }
+
+        return $cleaned ?: 'unnamed';
     }
 }

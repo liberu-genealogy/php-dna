@@ -5,50 +5,29 @@ declare(strict_types=1);
 namespace Dna\Snps;
 
 use Countable;
+use Iterator;
 use Dna\Resources;
-use Dna\Snps\IO\IO;
 use Dna\Snps\IO\Reader;
 use Dna\Snps\IO\Writer;
-use Iterator;
-
-// You may need to find alternative libraries for numpy, pandas, and snps in PHP, as these libraries are specific to Python
-// For numpy, consider using a library such as MathPHP: https://github.com/markrogoyski/math-php
-// For pandas, you can use DataFrame from https://github.com/aberenyi/php-dataframe, though it is not as feature-rich as pandas
-// For snps, you'll need to find a suitable PHP alternative or adapt the Python code to PHP
-
-// import copy // In PHP, you don't need to import the 'copy' module, as objects are automatically copied when assigned to variables
-
-use Dna\Snps\Ensembl;
-use Dna\Snps\IO\SnpFileReader;
-use Dna\Snps\Analysis\BuildDetector;
-use Dna\Snps\Analysis\ClusterOverlapCalculator;
-
-<?php
-
-namespace Dna\Snps;
-
-use Countable;
-use Iterator;
-use Dna\Resources;
-use Dna\Snps\IO\SnpFileReader;
-use Dna\Snps\Analysis\BuildDetector;
-use Dna\Snps\Analysis\ClusterOverlapCalculator;
-use Dna\Snps\EnsemblRestClient;
-
-<?php
-
-namespace Dna\Snps;
-
-use Countable;
-use Iterator;
-use Dna\Resources;
-use Dna\Snps\IO\SnpFileReader;
-use Dna\Snps\Analysis\BuildDetector;
-use Dna\Snps\Analysis\ClusterOverlapCalculator;
 use Dna\Snps\EnsemblRestClient;
 
 class SNPs implements Countable, Iterator 
 {
+    private array $_snps = [];
+    private array $_source = [];
+    private bool $_phased = false;
+    private int $_build = 0;
+    private bool $_build_detected = false;
+    private string $_cluster = "";
+    private string $_chip = "";
+    private string $_chip_version = "";
+    private array $_duplicate = [];
+    private array $_discrepant_XY = [];
+    private array $_heterozygous_MT = [];
+    private int $position = 0;
+    private ?Resources $resources = null;
+    private ?EnsemblRestClient $ensemblRestClient = null;
+
     public function __construct(
         private readonly string $file = "",
         private readonly bool $onlyDetectSource = false,
@@ -60,19 +39,11 @@ class SNPs implements Countable, Iterator
         private readonly bool $deduplicateMTChrom = true,
         private readonly bool $parallelize = false,
         private readonly int $processes = 1,
-        private readonly array $rsids = [],
-        private ?EnsemblRestClient $ensemblRestClient = null,
-        private ?SnpFileReader $snpFileReader = null,
-        private ?BuildDetector $buildDetector = null,
-        private ?ClusterOverlapCalculator $clusterOverlapCalculator = null,
-        private ?Resources $resources = null
+        private readonly array $rsids = []
     ) {
-        $this->resources = $resources ?? new Resources($resourcesDir);
-        $this->ensemblRestClient = $ensemblRestClient ?? new EnsemblRestClient();
-        $this->snpFileReader = $snpFileReader ?? new SnpFileReader($this->resources);
-        $this->buildDetector = $buildDetector ?? new BuildDetector();
-        $this->clusterOverlapCalculator = $clusterOverlapCalculator ?? new ClusterOverlapCalculator();
-        
+        $this->resources = new Resources($resourcesDir);
+        $this->ensemblRestClient = new EnsemblRestClient();
+
         $this->initialize();
     }
 
@@ -85,202 +56,257 @@ class SNPs implements Countable, Iterator
 
     public function count(): int
     {
-        return $this->snpData->count();
+        return count($this->_snps);
     }
 
-    public function current(): array
+    public function current(): mixed
     {
-        return $this->snpData->current();
+        return current($this->_snps);
     }
 
-    public function key(): int
+    public function key(): mixed
     {
-        return $this->position;
+        return key($this->_snps);
     }
 
     public function next(): void
     {
-        ++$this->position;
+        next($this->_snps);
     }
 
     public function rewind(): void
     {
-        $this->position = 0;
+        reset($this->_snps);
     }
 
     public function valid(): bool
     {
-        return $this->position < $this->snpData->count();
+        return key($this->_snps) !== null;
     }
 
     public function filter(callable $callback): array
     {
-        return $this->snpData->filter($callback);
+        return array_filter($this->_snps, $callback);
     }
 
     public function getSource(): string
     {
-        return implode(", ", $this->source);
+        return implode(", ", $this->_source);
     }
 
     public function getAllSources(): array
     {
-        return $this->source;
+        return $this->_source;
     }
 
     public function getSnps(): array
     {
-        return $this->snpData->getSnps();
+        return $this->_snps;
     }
 
     public function setSnps(array $snps): void
     {
-        $this->snpData->setSnps($snps);
+        $this->_snps = $snps;
+    }
+
+    public function setSNPs(array $snps): void
+    {
+        $this->_snps = $snps;
     }
 
     private function readFile(): void
     {
-        $data = $this->snpFileReader->readFile($this->file);
-        $this->setSnps($data['snps']);
-        $this->source = explode(", ", $data['source']);
-        $this->phased = $data['phased'];
-        $this->build = $data['build'] ?? 0;
-        $this->buildDetected = !empty($data['build']);
+        $reader = new Reader($this->file, $this->onlyDetectSource, $this->resources, $this->rsids);
+        $data = $reader->read();
 
-        if (!$this->snpData->count() === 0) {
+        $this->setSnps($data['snps']);
+        $this->_source = explode(", ", $data['source']);
+        $this->_phased = $data['phased'];
+        $this->_build = $data['build'] ?? 0;
+        $this->_build_detected = !empty($data['build']);
+
+        if (count($this->_snps) > 0) {
             $this->processSnps();
         }
     }
 
     private function processSnps(): void
     {
-        $this->snpData->sort();
+        $this->sort();
 
         if ($this->deduplicate) {
-            $this->deduplicateRsids();
+            $this->_deduplicate_rsids();
         }
 
-        if (!$this->buildDetected) {
-            $this->detectBuild();
+        if (!$this->_build_detected) {
+            $this->_build = $this->detect_build();
+            $this->_build_detected = $this->_build ? true : false;
+
+            if (!$this->_build) {
+                $this->_build = 37; // assume Build 37 / GRCh37 if not detected
+            } else {
+                $this->_build_detected = true;
+            }
         }
 
         if ($this->assignParSnps) {
             $this->assignParSnps();
-            $this->snpData->sort();
+            $this->sort();
         }
 
-        if ($this->deduplicateXYChrom && $this->determineSex() === "Male") {
-            $this->deduplicateXYChrom();
+        if ($this->deduplicateXYChrom && $this->determine_sex() === "Male") {
+            $this->deduplicate_XY_chrom();
         }
 
         if ($this->deduplicateMTChrom) {
-            $this->deduplicateMTChrom();
+            $this->deduplicate_MT_chrom();
         }
-    }
-
-    private function detectBuild(): void
-    {
-        $this->build = $this->snpAnalyzer->detectBuild($this->snpData);
-        $this->buildDetected = true;
-    }
-
-    public function determineSex(): string
-    {
-        return $this->snpAnalyzer->determineSex($this->snpData);
-    }
-
-    public function computeClusterOverlap(float $threshold = 0.95): array
-    {
-        $result = $this->snpAnalyzer->computeClusterOverlap($this->snpData, $threshold);
-        $this->cluster = $result['cluster'] ?? null;
-        $this->chip = $result['chip'] ?? null;
-        $this->chipVersion = $result['chipVersion'] ?? null;
-        return $result;
-    }
-
-    // ... (other methods to be implemented)
-}
-
-    // Method readFile has been removed and its functionality is refactored with SnpFileReader class
-        $this->setSNPs($d["snps"]);
-        $this->_source = (strpos($d["source"], ", ") !== false) ? explode(", ", $d["source"]) : [$d["source"]];
-        $this->_phased = $d["phased"];
-        $this->_build = $d["build"] ?? null;
-        $this->_build_detected = !empty($d["build"]);
-
-        // echo "HERE\n";
-        // var_dump($d["build"]);
-        // var_dump($this->_build_detected);
-        // $this->_cluster = $d["cluster"];
-
-        // if not self._snps.empty:
-        //     self.sort()
-
-        //     if deduplicate:
-        //         self._deduplicate_rsids()
-
-        //     # use build detected from `read` method or comments, if any
-        //     # otherwise use SNP positions to detect build
-        //     if not self._build_detected:
-        //         self._build = self.detect_build()
-        //         self._build_detected = True if self._build else False
-
-        //         if not self._build:
-        //             self._build = 37  # assume Build 37 / GRCh37 if not detected
-        //         else:
-        //             self._build_detected = True
-
-        if (!empty($this->_snps)) {
-            $this->sort();
-
-            if ($this->deduplicate)
-                $this->_deduplicate_rsids();
-
-            // use build detected from `read` method or comments, if any
-            // otherwise use SNP positions to detect build
-            if (!$this->_build_detected) {
-                $this->_build = $this->detect_build();
-                $this->_build_detected = $this->_build ? true : false;
-
-                if (!$this->_build) {
-                    $this->_build = 37; // assume Build 37 / GRCh37 if not detected
-                } else {
-                    $this->_build_detected = true;
-                }
-            }
-
-            // if ($this->assign_par_snps) {
-            //     $this->assignParSnps();
-            //     $this->sort();
-            // }
-
-            // if ($this->deduplicate_XY_chrom) {
-            //     if (
-            //         ($this->deduplicate_XY_chrom === true && $this->determine_sex() == "Male")
-            //         || ($this->determine_sex(chrom: $this->deduplicate_XY_chrom) == "Male")
-            //     ) {
-            //         $this->deduplicate_XY_chrom();
-            //     }
-            // }
-
-            // if ($this->deduplicate_MT_chrom) {
-            //     echo "deduping yo...\n";                
-            //     $this->deduplicate_MT_chrom();
-            // }
-        }
-    }
-
-    // Method readRawData has been removed and its functionality is refactored with SnpFileReader class
     }
 
     /**
-     * Get the SNPs as an array.
-     *
-     * @return array The SNPs array
+     * Sort SNPs by chromosome and position.
      */
-    public function getSnps(): array
+    public function sort(): void
     {
-        return $this->_snps;
+        if (empty($this->_snps)) {
+            return;
+        }
+
+        // Sort by chromosome first, then by position
+        uasort($this->_snps, function ($a, $b) {
+            // Compare chromosomes
+            $chromCompare = $this->compareChromosomes($a['chrom'], $b['chrom']);
+            if ($chromCompare !== 0) {
+                return $chromCompare;
+            }
+
+            // If chromosomes are the same, compare positions
+            return $a['pos'] <=> $b['pos'];
+        });
+    }
+
+    /**
+     * Compare two chromosome values for sorting.
+     */
+    private function compareChromosomes($chrom1, $chrom2): int
+    {
+        // Handle numeric chromosomes
+        if (is_numeric($chrom1) && is_numeric($chrom2)) {
+            return (int)$chrom1 <=> (int)$chrom2;
+        }
+
+        // Handle mixed numeric and non-numeric
+        if (is_numeric($chrom1) && !is_numeric($chrom2)) {
+            return -1; // Numeric comes first
+        }
+        if (!is_numeric($chrom1) && is_numeric($chrom2)) {
+            return 1; // Numeric comes first
+        }
+
+        // Handle special chromosomes (X, Y, MT, PAR)
+        $order = ['X' => 23, 'Y' => 24, 'MT' => 25, 'PAR' => 26];
+
+        $val1 = $order[$chrom1] ?? 999;
+        $val2 = $order[$chrom2] ?? 999;
+
+        if ($val1 !== 999 || $val2 !== 999) {
+            return $val1 <=> $val2;
+        }
+
+        // Default string comparison
+        return strcmp($chrom1, $chrom2);
+    }
+
+    /**
+     * Deduplicate RSIDs, keeping the first occurrence.
+     */
+    private function _deduplicate_rsids(): void
+    {
+        $seen = [];
+        $duplicates = [];
+
+        foreach ($this->_snps as $key => $snp) {
+            $rsid = $snp['rsid'];
+            if (isset($seen[$rsid])) {
+                $duplicates[] = $key;
+                $this->_duplicate[] = $snp;
+            } else {
+                $seen[$rsid] = true;
+            }
+        }
+
+        // Remove duplicates
+        foreach ($duplicates as $key) {
+            unset($this->_snps[$key]);
+        }
+    }
+
+    /**
+     * Detect build of SNPs.
+     */
+    public function detect_build(): int
+    {
+        $rsids = [
+            "rs3094315",
+            "rs11928389", 
+            "rs2500347",
+            "rs964481",
+            "rs2341354",
+            "rs3850290",
+            "rs1329546",
+        ];
+
+        $df = [
+            "rs3094315" => [36 => 742429, 37 => 752566, 38 => 817186],
+            "rs11928389" => [36 => 50908372, 37 => 50927009, 38 => 50889578],
+            "rs2500347" => [36 => 143649677, 37 => 144938320, 38 => 148946169],
+            "rs964481" => [36 => 27566744, 37 => 27656823, 38 => 27638706],
+            "rs2341354" => [36 => 908436, 37 => 918573, 38 => 983193],
+            "rs3850290" => [36 => 22315141, 37 => 23245301, 38 => 22776092],
+            "rs1329546" => [36 => 135302086, 37 => 135474420, 38 => 136392261]
+        ];
+
+        $build = 0;
+        foreach ($this->_snps as $snp) {
+            if (in_array($snp['rsid'], $rsids)) {
+                $build = $this->lookup_build_with_snp_pos($snp['pos'], $df[$snp['rsid']]);
+                if ($build) {
+                    break;
+                }
+            }
+        }
+
+        return $build;
+    }
+
+    private function lookup_build_with_snp_pos(int $pos, array $builds): int
+    {
+        foreach ($builds as $build => $expected_pos) {
+            if ($pos == $expected_pos) {
+                return $build;
+            }
+        }
+        return 0;
+    }
+
+    /**
+     * Get the build number associated with the data.
+     *
+     * @return int The build number
+     */
+    public function getBuild(): int
+    {
+        return $this->_build;
+    }
+
+    /**
+     * Set the build number.
+     *
+     * @param int $build The build number to set
+     */
+    public function setBuild(int $build): void
+    {
+        $this->_build = $build;
     }
 
     /**
@@ -293,20 +319,7 @@ class SNPs implements Countable, Iterator
         return $this->_build_detected;
     }
 
-    /**
-     * Get the build number associated with the data.
-     *
-     * @return mixed The build number
-     */
-    public function getBuild()
-    {
-        return $this->_build;
-    }
 
-    public function setBuild($build)
-    {
-        $this->_build = $build;
-    }
 
     /**
      * Detected deduced genotype / chip array, if any, per computeClusterOverlap.
@@ -367,8 +380,22 @@ class SNPs implements Countable, Iterator
      *   Biotechnology Journal, Volume 19, 2021, Pages 3747-3754, ISSN
      *   2001-0370.
      */
-    // Method computeClusterOverlap has been removed and its functionality is refactored with ClusterOverlapCalculator class
+    /**
+     * Compute overlap with chip clusters.
+     */
+    public function computeClusterOverlap(float $clusterOverlapThreshold = 0.95): array
+    {
+        // This is a simplified implementation
+        // In a full implementation, this would use chip cluster data
+        return [
+            'companyComposition' => '',
+            'chipBaseDeduced' => '',
+            'snpsInCluster' => 0,
+            'snpsInCommon' => 0,
+            'overlapWithCluster' => 0.0,
+            'overlapWithSelf' => 0.0
         ];
+    }
 
 
         $keys = array_keys($data);
@@ -1521,6 +1548,61 @@ class SNPs implements Countable, Iterator
                 'vcf_qc_filter' => $qc_filter,
             ] + $kwargs
         );
+    }
+
+    /**
+     * Merge SNPs from another SNPs object or array.
+     */
+    public function merge(array $snpsObjects): void
+    {
+        foreach ($snpsObjects as $snpsObj) {
+            if ($snpsObj instanceof SNPs) {
+                $this->_snps = array_merge($this->_snps, $snpsObj->getSnps());
+            } elseif (is_array($snpsObj)) {
+                $this->_snps = array_merge($this->_snps, $snpsObj);
+            }
+        }
+
+        // Re-process after merge
+        if (!empty($this->_snps)) {
+            $this->processSnps();
+        }
+    }
+
+    /**
+     * Create a new SNPs object from data.
+     */
+    private function createSnpsObject($data): SNPs
+    {
+        if (is_string($data)) {
+            // If data is a file path
+            return new SNPs($data);
+        } elseif (is_array($data)) {
+            // If data is an array of SNPs
+            $snps = new SNPs();
+            $snps->setSnps($data);
+            return $snps;
+        }
+
+        return new SNPs();
+    }
+
+    /**
+     * Get defined keyword arguments for a method.
+     */
+    private function getDefinedKwargs(\ReflectionMethod $method, array $kwargs): array
+    {
+        $parameters = $method->getParameters();
+        $defined = [];
+
+        foreach ($parameters as $param) {
+            $name = $param->getName();
+            if (array_key_exists($name, $kwargs)) {
+                $defined[$name] = $kwargs[$name];
+            }
+        }
+
+        return $defined;
     }
 }
 

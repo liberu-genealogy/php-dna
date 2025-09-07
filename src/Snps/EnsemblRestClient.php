@@ -1,81 +1,110 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Dna\Snps;
 
-use Exception;
+use GuzzleHttp\Client;
+use GuzzleHttp\Exception\GuzzleException;
 
+/**
+ * REST client for accessing Ensembl and NCBI APIs
+ */
 class EnsemblRestClient
 {
+    private Client $client;
     private string $server;
-    private int $reqs_per_sec;
-    private int $req_count;
-    private float $last_req;
+    private float $reqsPerSec;
+    private float $lastRequestTime = 0;
 
-    public function __construct(string $server = "https://rest.ensembl.org", int $reqs_per_sec = 15)
-    {
+    public function __construct(
+        string $server = 'https://api.ncbi.nlm.nih.gov',
+        float $reqsPerSec = 1.0
+    ) {
         $this->server = $server;
-        $this->reqs_per_sec = $reqs_per_sec;
-        $this->req_count = 0;
-        $this->last_req = 0;
+        $this->reqsPerSec = $reqsPerSec;
+        $this->client = new Client([
+            'base_uri' => $server,
+            'timeout' => 30,
+            'headers' => [
+                'Content-Type' => 'application/json',
+                'Accept' => 'application/json'
+            ]
+        ]);
     }
 
-    public function perform_rest_action(string $endpoint, ?array $hdrs = null, ?array $params = null): ?array
+    /**
+     * Perform a REST API action with rate limiting
+     *
+     * @param string $endpoint The API endpoint to call
+     * @param array $params Query parameters
+     * @return array|null The decoded JSON response or null on error
+     */
+    public function perform_rest_action(string $endpoint, array $params = []): ?array
     {
-        if ($hdrs === null) {
-            $hdrs = [];
-        }
-
-        if (!array_key_exists("Content-Type", $hdrs)) {
-            $hdrs["Content-Type"] = "application/json";
-        }
-
-        if ($params) {
-            $endpoint .= "?" . http_build_query($params);
-        }
-
-        $data = null;
-
-        // check if we need to rate limit ourselves
-        if ($this->req_count >= $this->reqs_per_sec) {
-            $delta = microtime(true) - $this->last_req;
-            if ($delta < 1) {
-                usleep((1 - $delta) * 1000000);
-            }
-
-            $this->last_req = microtime(true);
-            $this->req_count = 0;
-        }
-
-        $client = new \Symfony\Component\HttpClient\HttpClient();
-        $url = $this->server . $endpoint;
-        $options = [
-            'headers' => $hdrs,
-            'query' => $params,
-        ];
+        $this->rateLimit();
 
         try {
-            $response = $client->request('GET', $url, $options);
-            $statusCode = $response->getStatusCode();
+            $response = $this->client->get($endpoint, [
+                'query' => $params
+            ]);
 
-            if ($statusCode === 200) {
-                $data = $response->toArray();
-            } else {
-                throw new Exception("HTTP request failed with status code {$statusCode}.");
+            if ($response->getStatusCode() === 200) {
+                $body = $response->getBody()->getContents();
+                return json_decode($body, true);
             }
-
-            $this->req_count++;
-        } catch (Exception $e) {
-            if ($statusCode == 429) {
-                $retryAfter = $response->getHeaders()['retry-after'][0] ?? 0;
-                sleep($retryAfter);
-                return $this->perform_rest_action($endpoint, $hdrs, $params);
-            } else {
-                error_log("Request failed for {$endpoint}: Status code: {$statusCode} Reason: {$e->getMessage()}\n");
-            }
+        } catch (GuzzleException $e) {
+            error_log("REST API error: " . $e->getMessage());
         }
 
-        return $data;
+        return null;
+    }
+
+    /**
+     * Rate limiting to respect API limits
+     */
+    private function rateLimit(): void
+    {
+        $currentTime = microtime(true);
+        $timeSinceLastRequest = $currentTime - $this->lastRequestTime;
+        $minInterval = 1.0 / $this->reqsPerSec;
+
+        if ($timeSinceLastRequest < $minInterval) {
+            $sleepTime = $minInterval - $timeSinceLastRequest;
+            usleep((int)($sleepTime * 1000000));
+        }
+
+        $this->lastRequestTime = microtime(true);
+    }
+
+    /**
+     * Get assembly mapping data from Ensembl
+     *
+     * @param string $species Species name (e.g., 'human')
+     * @param string $fromAssembly Source assembly
+     * @param string $toAssembly Target assembly
+     * @param string $region Genomic region
+     * @return array|null Mapping data or null on error
+     */
+    public function getAssemblyMapping(
+        string $species,
+        string $fromAssembly,
+        string $toAssembly,
+        string $region
+    ): ?array {
+        $endpoint = "/map/{$species}/{$fromAssembly}/{$region}/{$toAssembly}";
+        return $this->perform_rest_action($endpoint);
+    }
+
+    /**
+     * Lookup RefSNP snapshot from NCBI
+     *
+     * @param string $rsid The rs ID (without 'rs' prefix)
+     * @return array|null RefSNP data or null on error
+     */
+    public function lookupRefsnpSnapshot(string $rsid): ?array
+    {
+        $id = str_replace("rs", "", $rsid);
+        return $this->perform_rest_action("/variation/v0/refsnp/" . $id);
     }
 }
-
-?>
