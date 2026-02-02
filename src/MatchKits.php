@@ -112,6 +112,8 @@ class MatchKits
         }
     }
 
+    
+
     /**
      * Visualize matched data
      *
@@ -197,11 +199,4 @@ if (php_sapi_name() == "cli") {
     }
 }
 ?>
-    public function triangulateKits() {
-        $this->matchedData = []; // Initialize matched data array
-        $snpsLists = array_map(function($kit) { return $kit->getSnps(); }, $this->kitsData);
-        $commonSnps = call_user_func_array('array_intersect_key', $snpsLists);
-        foreach ($commonSnps as $snp) {
-            $this->matchedData[] = $snp; // Add common SNP to matched data
-        }
-    }
+
