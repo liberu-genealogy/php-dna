@@ -35,14 +35,15 @@ class CsvReader
     }
 
     public function setColumnTypes($columnTypes)
+    {
+        $this->columnTypes = $columnTypes;
+    }
+
     private $enclosure;
 
     public function setEnclosure($enclosure)
     {
         $this->enclosure = $enclosure;
-    }
-    {
-        $this->columnTypes = $columnTypes;
     }
 
     public function read()
