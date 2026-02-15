@@ -1246,18 +1246,30 @@ class SNPs implements Countable, Iterator
             $mapped_range_len = $mapped_end - $mapped_start;
 
             // if this would change chromosome, skip
-            // TODO allow within normal chromosomes
-            // TODO flatten patches
+            // Allow remapping within normal chromosomes (e.g., PAR regions between X and Y)
+            // Flatten patches by allowing mapping to main chromosomes
             if ($orig_region != $mapped_region) {
-                // Logger::warning(
-                //     "discrepant chroms for " . count($snp_indices) . " SNPs from $orig_region to $mapped_region"
-                // );
-                continue;
+                // Allow PAR region remapping between X and Y chromosomes
+                $isPARRemap = (($orig_region === 'X' || $orig_region === 'Y') && 
+                              ($mapped_region === 'X' || $mapped_region === 'Y'));
+                
+                // Allow patch chromosomes to remap to main chromosomes (e.g., CHR_*_PATCH -> chr)
+                $isPatchFlatten = (strpos($orig_region, '_PATCH') !== false || 
+                                  strpos($orig_region, '_ALT') !== false ||
+                                  strpos($mapped_region, '_PATCH') !== false ||
+                                  strpos($mapped_region, '_ALT') !== false);
+                
+                if (!$isPARRemap && !$isPatchFlatten) {
+                    // Logger::warning(
+                    //     "discrepant chroms for " . count($snp_indices) . " SNPs from $orig_region to $mapped_region"
+                    // );
+                    continue;
+                }
             }
 
             // if there is any stretching or squashing of the region
             // observed when mapping NCBI36 -> GRCh38
-            // TODO disallow skipping a version when remapping
+            // Disallow skipping a version when remapping (e.g., NCBI36 -> GRCh38 should go through GRCh37)
             if ($orig_range_len != $mapped_range_len) {
                 // Logger::warning(
                 //     "discrepant coords for " . count($snp_indices) . " SNPs from $orig_region:$orig_start-$orig_end to $mapped_region:$mapped_start-$mapped_end"
@@ -1353,6 +1365,14 @@ class SNPs implements Countable, Iterator
             return [$remappedChromosomes, $notRemappedChromosomes];
         }
 
+        // Validate that we're not skipping a version when remapping
+        // e.g., NCBI36 -> GRCh38 should go through GRCh37 first
+        if (!$this->isValidAssemblyTransition($sourceAssembly, $targetAssembly)) {
+            // Logger::warning("Invalid assembly transition: cannot skip versions from $sourceAssembly to $targetAssembly");
+            // Logger::warning("Please remap to intermediate version first (e.g., NCBI36 -> GRCh37 -> GRCh38)");
+            return [$remappedChromosomes, $notRemappedChromosomes];
+        }
+
         $assemblyMappingData = $this->resources->getAssemblyMappingData($sourceAssembly, $targetAssembly);
 
         if (empty($assemblyMappingData)) {
@@ -1384,6 +1404,26 @@ class SNPs implements Countable, Iterator
     private function getSourceAssembly(): string
     {
         return $this->build === 36 ? "NCBI36" : "GRCh" . strval($this->build);
+    }
+
+    /**
+     * Validate that assembly transition doesn't skip versions
+     * Only allows single-step transitions: NCBI36 -> GRCh37, GRCh37 -> GRCh38, or GRCh38 -> GRCh37, GRCh37 -> NCBI36
+     * 
+     * @param string $sourceAssembly Source genome assembly
+     * @param string $targetAssembly Target genome assembly
+     * @return bool True if transition is valid, false otherwise
+     */
+    private function isValidAssemblyTransition(string $sourceAssembly, string $targetAssembly): bool
+    {
+        // Extract version numbers
+        $sourceVersion = $sourceAssembly === "NCBI36" ? 36 : (int)substr($sourceAssembly, -2);
+        $targetVersion = $targetAssembly === "NCBI36" ? 36 : (int)substr($targetAssembly, -2);
+        
+        // Allow only single-step transitions (difference of 1 version)
+        $versionDifference = abs($targetVersion - $sourceVersion);
+        
+        return $versionDifference === 1;
     }
 
     private function createRemapTasks(array $chromosomes, array $assemblyMappingData, array $snps, bool $complementBases): array
