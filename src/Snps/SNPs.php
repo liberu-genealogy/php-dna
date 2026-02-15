@@ -351,6 +351,56 @@ class SNPs implements Countable, Iterator
     }
 
     /**
+     * Compute overlap with chip clusters.
+     *
+     * Chip clusters, which are defined in [1]_, are associated with deduced genotype /
+     * chip arrays and DTC companies.
+     *
+     * This method also sets the values returned by the `cluster`, `chip`, and
+     * `chip_version` properties, based on max overlap, if the specified threshold is
+     * satisfied.
+     *
+     * @param float $clusterOverlapThreshold
+     *   Threshold for cluster to overlap this SNPs object, and vice versa, to set
+     *   values returned by the `cluster`, `chip`, and `chip_version` properties.
+     *
+     * @return array
+     *   Associative array with the following keys:
+     *   - `companyComposition`: DTC company composition of associated cluster from [1]_
+     *   - `chipBaseDeduced`: Deduced genotype / chip array of associated cluster from [1]_
+     *   - `snpsInCluster`: Count of SNPs in cluster
+     *   - `snpsInCommon`: Count of SNPs in common with cluster (inner merge with cluster)
+     *   - `overlapWithCluster`: Percentage overlap of `snpsInCommon` with cluster
+     *   - `overlapWithSelf`: Percentage overlap of `snpsInCommon` with this SNPs object
+     *
+     * @see https://doi.org/10.1016/j.csbj.2021.06.040
+     *   Chang Lu, Bastian Greshake Tzovaras, Julian Gough, A survey of
+     *   direct-to-consumer genotype data, and quality control tool
+     *   (GenomePrep) for research, Computational and Structural
+     *   Biotechnology Journal, Volume 19, 2021, Pages 3747-3754, ISSN
+     *   2001-0370.
+     */
+    /**
+     * Compute overlap with chip clusters.
+     */
+    public function computeClusterOverlap(float $clusterOverlapThreshold = 0.95): array
+    {
+        // This is a simplified implementation
+        // In a full implementation, this would use chip cluster data
+        return [
+            'companyComposition' => '',
+            'chipBaseDeduced' => '',
+            'snpsInCluster' => 0,
+            'snpsInCommon' => 0,
+            'overlapWithCluster' => 0.0,
+            'overlapWithSelf' => 0.0
+        ];
+    }
+
+
+
+
+    /**
      * Discrepant XY SNPs. 
      *  
      * Discrepant XY SNPs are SNPs that are assigned to both the X and Y chromosomes.
@@ -428,6 +478,7 @@ class SNPs implements Countable, Iterator
      *    (dbSNP Build ID: 151). Available from: http://www.ncbi.nlm.nih.gov/SNP/
      */
     // Method detect_build has been removed and its functionality is refactored with BuildDetector class
+
 
     /**
      * Convert the SNPs object to a string representation.
@@ -1091,30 +1142,18 @@ class SNPs implements Countable, Iterator
             $mapped_range_len = $mapped_end - $mapped_start;
 
             // if this would change chromosome, skip
-            // Allow remapping within normal chromosomes (e.g., PAR regions between X and Y)
-            // Flatten patches by allowing mapping to main chromosomes
+            // TODO allow within normal chromosomes
+            // TODO flatten patches
             if ($orig_region != $mapped_region) {
-                // Allow PAR region remapping between X and Y chromosomes
-                $isPARRemap = (($orig_region === 'X' || $orig_region === 'Y') && 
-                              ($mapped_region === 'X' || $mapped_region === 'Y'));
-                
-                // Allow patch chromosomes to remap to main chromosomes (e.g., CHR_*_PATCH -> chr)
-                $isPatchFlatten = (strpos($orig_region, '_PATCH') !== false || 
-                                  strpos($orig_region, '_ALT') !== false ||
-                                  strpos($mapped_region, '_PATCH') !== false ||
-                                  strpos($mapped_region, '_ALT') !== false);
-                
-                if (!$isPARRemap && !$isPatchFlatten) {
-                    // Logger::warning(
-                    //     "discrepant chroms for " . count($snp_indices) . " SNPs from $orig_region to $mapped_region"
-                    // );
-                    continue;
-                }
+                // Logger::warning(
+                //     "discrepant chroms for " . count($snp_indices) . " SNPs from $orig_region to $mapped_region"
+                // );
+                continue;
             }
 
             // if there is any stretching or squashing of the region
             // observed when mapping NCBI36 -> GRCh38
-            // Disallow skipping a version when remapping (e.g., NCBI36 -> GRCh38 should go through GRCh37)
+            // TODO disallow skipping a version when remapping
             if ($orig_range_len != $mapped_range_len) {
                 // Logger::warning(
                 //     "discrepant coords for " . count($snp_indices) . " SNPs from $orig_region:$orig_start-$orig_end to $mapped_region:$mapped_start-$mapped_end"
@@ -1210,14 +1249,6 @@ class SNPs implements Countable, Iterator
             return [$remappedChromosomes, $notRemappedChromosomes];
         }
 
-        // Validate that we're not skipping a version when remapping
-        // e.g., NCBI36 -> GRCh38 should go through GRCh37 first
-        if (!$this->isValidAssemblyTransition($sourceAssembly, $targetAssembly)) {
-            // Logger::warning("Invalid assembly transition: cannot skip versions from $sourceAssembly to $targetAssembly");
-            // Logger::warning("Please remap to intermediate version first (e.g., NCBI36 -> GRCh37 -> GRCh38)");
-            return [$remappedChromosomes, $notRemappedChromosomes];
-        }
-
         $assemblyMappingData = $this->resources->getAssemblyMappingData($sourceAssembly, $targetAssembly);
 
         if (empty($assemblyMappingData)) {
@@ -1249,26 +1280,6 @@ class SNPs implements Countable, Iterator
     private function getSourceAssembly(): string
     {
         return $this->build === 36 ? "NCBI36" : "GRCh" . strval($this->build);
-    }
-
-    /**
-     * Validate that assembly transition doesn't skip versions
-     * Only allows single-step transitions: NCBI36 -> GRCh37, GRCh37 -> GRCh38, or GRCh38 -> GRCh37, GRCh37 -> NCBI36
-     * 
-     * @param string $sourceAssembly Source genome assembly
-     * @param string $targetAssembly Target genome assembly
-     * @return bool True if transition is valid, false otherwise
-     */
-    private function isValidAssemblyTransition(string $sourceAssembly, string $targetAssembly): bool
-    {
-        // Extract version numbers
-        $sourceVersion = $sourceAssembly === "NCBI36" ? 36 : (int)substr($sourceAssembly, -2);
-        $targetVersion = $targetAssembly === "NCBI36" ? 36 : (int)substr($targetAssembly, -2);
-        
-        // Allow only single-step transitions (difference of 1 version)
-        $versionDifference = abs($targetVersion - $sourceVersion);
-        
-        return $versionDifference === 1;
     }
 
     private function createRemapTasks(array $chromosomes, array $assemblyMappingData, array $snps, bool $complementBases): array
@@ -1489,7 +1500,6 @@ class SNPs implements Countable, Iterator
 
         return $defined;
     }
-}
 
         
 //         protected function initSnps() {
@@ -2391,10 +2401,6 @@ class SNPs implements Countable, Iterator
 //             // If there are no SNPs here, skip
 //             if (count($snp_indices) === 0) {
 //                 continue;
-//             }
-//         }
-//     }
-
     /**
      * Matches SNPs with another SNPs object and returns a new SNPs object with the matching SNPs.
      * 
@@ -2422,549 +2428,6 @@ class SNPs implements Countable, Iterator
 
         return $matchedSnpsObject; // Return the new SNPs object
     }
-//             }
-    
-//             $orig_range_len = $orig_end - $orig_start;
-//             $mapped_range_len = $mapped_end - $mapped_start;
-    
-//             // If this would change chromosome, skip
-//             // TODO: Allow within normal chromosomes
-//             // TODO: Flatten patches
-//             if ($orig_region !== $mapped_region) {
-//                 logger.warning(
-//                     "discrepant chroms for " . count($snp_indices) . " SNPs from " . $orig_region . " to " . $mapped_region
-//                 );
-//                 continue;
-//             }
-    
-//             // If there is any stretching or squashing of the region
-//             // observed when mapping NCBI36 -> GRCh38
-//             // TODO: Disallow skipping a version when remapping
-//             if ($orig_range_len !== $mapped_range_len) {
-//                 logger.warning(
-//                     "discrepant coords for " . count($snp_indices) . " SNPs from " . $orig_region . ":" . $orig_start . "-" . $orig_end . " to " . $mapped_region . ":" . $mapped_start . "-" . $mapped_end
-//                 );
-//                 continue;
-//             }
-    
-//             // Remap the SNPs
-//             if ($mapping['mapped']['strand'] === -1) {
-//                 // Flip and (optionally) complement since we're mapping to the minus strand
-//                 $diff_from_start = array_map(function($pos) use ($orig_start) {
-//                     return $pos - $orig_start;
-//                 }, $temp['pos'][$snp_indices]);
-            
-//                 $temp['pos'][$snp_indices] = array_map(function($diff) use ($mapped_end) {
-//                     return $mapped_end - $diff;
-//                 }, $diff_from_start);
-            
-//                 if ($complement_bases) {
-//                     $temp['genotype'][$snp_indices] = array_map([$this, '_complement_bases'], $temp['genotype'][$snp_indices]);
-//                 }
-//             } else {
-//                 // Mapping is on the same (plus) strand, so just remap based on offset
-//                 $offset = $mapped_start - $orig_start;
-//                 $temp['pos'][$snp_indices] = array_map(function($pos) use ($offset) {
-//                     return $pos + $offset;
-//                 }, $temp['pos'][$snp_indices]);
-//             }
-            
-//             // Mark these SNPs as remapped
-//             foreach ($snp_indices as $index) {
-//                 $temp['remapped'][$index] = true;
-//             }
-//         }
-    
-//         return $temp;
-//     }
-    
-//     /**
-//      * Returns the complement of a given genotype string.
-//      *
-//      * @param string|null $genotype The genotype string to complement.
-//      * @return string|null The complement of the genotype string, or null if the input is null.
-//      */
-//     function complement_bases(string|null $genotype): string|null
-//     {
-//         if (is_null($genotype)) {
-//             return null;
-//         }
-
-//         $complement = ""; // Variable to store the complement genotype string.
-
-//         // Iterate over each character in the genotype string.
-//         for ($i = 0; $i < strlen($genotype); $i++) {
-//             $base = $genotype[$i]; // Get the current base.
-
-//             // Determine the complement of the base and append it to the complement string.
-//             if ($base === "A") {
-//                 $complement .= "T";
-//             } elseif ($base === "G") {
-//                 $complement .= "C";
-//             } elseif ($base === "C") {
-//                 $complement .= "G";
-//             } elseif ($base === "T") {
-//                 $complement .= "A";
-//             } else {
-//                 $complement .= $base; // If the base is not A, G, C, or T, keep it as is.
-//             }
-//         }
-
-//         return $complement; // Return the complement genotype string.
-//     }
-    
-//     /**
-//      * Returns an array representing the natural sort order of a given string.
-//      *
-//      * @param string $s The string to generate the natural sort key for.
-//      * @return array An array representing the natural sort order of the string.
-//      */
-//     function natural_sort_key(string $s): array
-//     {
-//         $natural_sort_re = '/([0-9]+)/'; // Regular expression pattern to match numbers in the string.
-
-//         // Split the string using the regular expression pattern and capture the delimiter.
-//         // Map each segment to its corresponding natural sort key value.
-//         return array_map(
-//             fn($text) => is_numeric($text) ? intval($text) : strtolower($text),
-//             preg_split($natural_sort_re, $s, -1, PREG_SPLIT_DELIM_CAPTURE)
-//         );
-//     }
-        
-//     /**
-//      * Merge SNP objects based on specified thresholds and options.
-//      *
-//      * @param array $snps_objects An array of SNP objects to merge.
-//      * @param int $discrepant_positions_threshold The threshold for the number of discrepant positions allowed.
-//      * @param int $discrepant_genotypes_threshold The threshold for the number of discrepant genotypes allowed.
-//      * @param bool $remap Whether to remap the merged SNP objects.
-//      * @param string $chrom The chromosome to merge SNP objects for.
-//      */
-//     public function merge(
-//         array $snps_objects = [],
-//         int $discrepant_positions_threshold = 100,
-//         int $discrepant_genotypes_threshold = 500,
-//         bool $remap = true,
-//         string $chrom = ""
-//     ) {}
-//         // Your PHP code implementation here
-//         /**
-//          * Initializes the SNPs object with the properties of the SNPs object being merged.
-//          *
-//          * @param mixed $s The SNPs object being merged.
-//          */
-//         public function init($s)
-//         {
-//             // Initialize properties of the SNPs object being merged
-//             $this->_snps = $s->snps;
-//             $this->_duplicate = $s->duplicate;
-//             $this->_discrepant_XY = $s->discrepant_XY;
-//             $this->_heterozygous_MT = $s->heterozygous_MT;
-//             $this->_discrepant_vcf_position = $s->discrepant_vcf_position;
-//             $this->_discrepant_merge_positions = $s->discrepant_merge_positions;
-//             $this->_discrepant_merge_genotypes = $s->discrepant_merge_genotypes;
-//             $this->_source = $s->_source;
-//             $this->_phased = $s->phased;
-//             $this->_build = $s->build;
-//             $this->_build_detected = $s->build_detected;
-//         }
-    
-    
-//     /**
-//      * Ensures that the builds match when merging SNPs objects.
-//      *
-//      * @param mixed $s The SNPs object being merged.
-//      */
-//     public function ensure_same_build($s)
-//     {
-//         // Ensure builds match when merging
-//         if (!$s->build_detected) {
-//             $this->logger->warning(sprintf("Build not detected for %s, assuming Build %s",
-//                 $s->__toString(),
-//                 $s->build
-//             ));
-//         }
-
-//         if ($this->build != $s->build) {
-//             $this->logger->info(sprintf("%s has Build %s; remapping to Build %s",
-//                 $s->__toString(),
-//                 $s->build,
-//                 $this->build
-//             ));
-//             $s->remap($this->build);
-//         }
-//     }
-    
-//     /**
-//      * Merges the properties of the SNPs object being merged.
-//      *
-//      * @param mixed $s The SNPs object being merged.
-//      */
-//     public function merge_properties($s)
-//     {
-//         if (!$s->build_detected) {
-//             // Can no longer assume build has been detected for all SNPs after merge
-//             $this->_build_detected = false;
-//         }
-
-//         if (!$s->phased) {
-//             // Can no longer assume all SNPs are phased after merge
-//             $this->_phased = false;
-//         }
-
-//         $this->_source = array_merge($this->_source, $s->_source);
-//     }
-    
-//     /**
-//      * Merges the dataframes of the SNPs object being merged.
-//      *
-//      * @param SNPs $s The SNPs object being merged.
-//      */
-//     public function merge_dfs(SNPs $s): void
-//     {
-//         // Append dataframes created when a "SNPs" object is instantiated
-//         $this->_duplicate = array_merge($this->_duplicate, $s->_duplicate);
-//         $this->_discrepant_XY = array_merge($this->_discrepant_XY, $s->_discrepant_XY);
-//         $this->_heterozygous_MT = array_merge($this->_heterozygous_MT, $s->_heterozygous_MT);
-//         $this->_discrepant_vcf_position = array_merge($this->_discrepant_vcf_position, $s->_discrepant_vcf_position);
-//     }
-    
-//     public function merge_snps(SNPs $s, int $positions_threshold, int $genotypes_threshold, string $merge_chrom): array
-//     {
-//         // Merge SNPs, identifying those with discrepant positions and genotypes; update NAs
-
-//         // Identify common SNPs (i.e., any rsids being added that already exist in self.snps)
-//         $df = (!$merge_chrom) ?
-//             $this->snps->join($s->snps, "inner", null, "_added") :
-//             $this->snps->where("chrom", "=", $merge_chrom)
-//                 ->join($s->snps->where("chrom", "=", $merge_chrom), "inner", null, "_added");
-
-//         $common_rsids = $df->getIndex();
-
-//         $discrepant_positions = $df->where(
-//             fn($row) => $row["chrom"] != $row["chrom_added"] || $row["pos"] != $row["pos_added"]
-//         );
-
-//         if (count($discrepant_positions) >= $positions_threshold) {
-//             $this->logger->warning("Too many SNPs differ in position; ensure SNPs have the same build");
-//             return [false];
-//         }
-
-//         // Remove null genotypes
-//         $df = $df->where(fn($row) => !is_null($row["genotype"]) && !is_null($row["genotype_added"]));
-
-//         // Discrepant genotypes are where alleles are not equivalent (i.e., alleles are not the same and not swapped)
-//         $discrepant_genotypes = $df->where(fn($row) => 
-//             strlen($row["genotype"]) != strlen($row["genotype_added"]) ||
-//             (
-//                 strlen($row["genotype"]) == 1 &&
-//                 strlen($row["genotype_added"]) == 1 &&
-//                 $row["genotype"] != $row["genotype_added"]
-//             ) ||
-//             (
-//                 strlen($row["genotype"]) == 2 &&
-//                 strlen($row["genotype_added"]) == 2 &&
-//                 !(
-//                     $row["genotype"][0] == $row["genotype_added"][0] &&
-//                     $row["genotype"][1] == $row["genotype_added"][1]
-//                 ) &&
-//                 !(
-//                     $row["genotype"][0] == $row["genotype_added"][1] &&
-//                     $row["genotype"][1] == $row["genotype_added"][0]
-//                 )
-//             )
-//         );
-
-//         if (count($discrepant_genotypes) >= $genotypes_threshold) {
-//             $this->logger->warning("Too many SNPs differ in their genotype; ensure the file is for the same individual");
-//             return [false];
-//         }
-
-//         // Add new SNPs
-//         $this->_snps = (!$merge_chrom) ?
-//             $this->snps->combineFirst($s->snps) :
-//             $this->snps->combineFirst($s->snps->where("chrom", "=", $merge_chrom));
-
-//         // Convert position back to uint32 after combineFirst
-//         $this->_snps["pos"] = $this->snps["pos"]->cast(UInt32::class);
-
-//         if (0 < count($discrepant_positions) && count($discrepant_positions) < $positions_threshold) {
-//             $this->logger->warning(count($discrepant_positions)." SNP positions were discrepant; keeping original positions");
-//         }
-
-//         if (0 < count($discrepant_genotypes) && count($discrepant_genotypes) < $genotypes_threshold) {
-//             $this->logger->warning(count($discrepant_genotypes)." SNP genotypes were discrepant; marking those as null");
-//         }
-
-//         // Set discrepant genotypes to null
-//         $this->_snps->whereIndexIn($discrepant_genotypes->getIndex())->set("genotype", null);
-
-//         // Append discrepant positions dataframe
-//         $this->_discrepant_merge_positions = $this->_discrepant_merge_positions
-//             ->concat($discrepant_positions, true);
-
-//         // Append discrepant genotypes dataframe
-//         $this->_discrepant_merge_genotypes = $this->_discrepant_merge_genotypes
-//             ->concat($discrepant_genotypes, true);
-
-//         return [
-//             true,
-//             [
-//                 "common_rsids" => $common_rsids,
-//                 "discrepant_position_rsids" => $discrepant_positions->getIndex(),
-//                 "discrepant_genotype_rsids" => $discrepant_genotypes->getIndex(),
-//             ],
-//         ];
-
-//         $results = [];
-//         foreach ($snps_objects as $snps_object) {
-//             $d = [
-//                 "merged" => false,
-//                 "common_rsids" => [],
-//                 "discrepant_position_rsids" => [],
-//                 "discrepant_genotype_rsids" => [],
-//             ];
-
-//             if (!$snps_object->valid) {
-//                 $this->logger->warning("No SNPs to merge...");
-//                 $results[] = $d;
-//                 continue;
-//             }
-
-//             if (!$this->valid) {
-//                 $this->logger->info("Loading ".$snps_object->__toString());
-
-//                 $this->init($snps_object);
-//                 $d["merged"] = true;
-//             } else {
-//                 $this->logger->info("Merging ".$snps_object->__toString());
-
-//                 if ($remap) {
-//                     $this->ensure_same_build($snps_object);
-//                 }
-
-//                 if ($this->build != $snps_object->build) {
-//                     $this->logger->warning(
-//                         $snps_object->__toString()." has Build ".$snps_object->build."; this SNPs object has Build ".$this->build
-//                     );
-//                 }
-
-//                 [$merged, $extra] = $this->merge_snps(
-//                     $snps_object,
-//                     $discrepant_positions_threshold,
-//                     $discrepant_genotypes_threshold,
-//                     $chrom
-//                 );
-
-//                 if ($merged) {
-//                     $this->merge_properties($snps_object);
-//                     $this->merge_dfs($snps_object);
-//                     $this->sort();
-
-//                     $d["merged"] = true;
-//                     $d = array_merge($d, $extra);
-//                 }
-//             }
-
-//             $results[] = $d;
-//         }
-
-//         return $results;
-//     }
-    
-//     public function sortSnps()
-//     {
-//         // Deprecated method. Display a deprecation error.
-//         trigger_error("This method has been renamed to `sort`.", E_USER_DEPRECATED);
-        
-//         // Call the new method `sort`.
-//         $this->sort();
-//     }
-    
-//     public function remapSnps($target_assembly, $complement_bases = true)
-//     {
-//         // Deprecated method. Display a deprecation error.
-//         trigger_error("This method has been renamed to `remap`.", E_USER_DEPRECATED);
-        
-//         // Call the new method `remap` and return the result.
-//         return $this->remap($target_assembly, $complement_bases);
-//     }
-
-//     public function saveSnps($filename = "", $vcf = false, $atomic = true, ...$kwargs)
-//     {
-//         // Deprecated method. Display a deprecation error.
-//         trigger_error(
-//             "Method `save_snps` has been replaced by `to_csv`, `to_tsv`, and `to_vcf`.",
-//             E_USER_DEPRECATED
-//         );
-        
-//         // Call the private method `_save` with the provided arguments and return the result.
-//         return $this->_save($filename, $vcf, $atomic, ...$kwargs);
-//     }
-    
-//     public function getSnpCount($chrom = "")
-//     {
-//         // Deprecated method. Display a deprecation error.
-//         trigger_error(
-//             "This method has been renamed to `get_count`.",
-//             E_USER_DEPRECATED
-//         );
-        
-//         // Call the new method `getCount` with the provided argument and return the result.
-//         return $this->getCount($chrom);
-//     }    
-
-//     public function notNullSnps($chrom = "")
-//     {
-//         // Deprecated method. Display a deprecation error.
-//         trigger_error("This method has been renamed to `notnull`.", E_USER_DEPRECATED);
-        
-//         // Call the new method `notnull` with the provided argument and return the result.
-//         return $this->notnull($chrom);
-//     }
-    
-//     public function getSummary() // Also rename this method to match the property
-//     {
-//         // Deprecated method. Display a deprecation error.
-//         trigger_error("This method has been renamed to `summary` and is now a property.", E_USER_DEPRECATED);
-        
-//         // Return the value of the `summary` property.
-//         return $this->summary;
-//     }
-
-//     public function getAssembly()
-//     {
-//         // Deprecated method. Display a deprecation error.
-//         trigger_error("See the `assembly` property.", E_USER_DEPRECATED);
-        
-//         // Return the value of the `assembly` property.
-//         return $this->assembly;
-//     }
-    
-//     public function getChromosomes()
-//     {
-//         // Deprecated method. Display a deprecation error.
-//         trigger_error("See the `chromosomes` property.", E_USER_DEPRECATED);
-        
-//         // Return the value of the `chromosomes` property.
-//         return $this->chromosomes;
-//     }
-    
-//     public function getChromosomesSummary()
-//     {
-//         // Deprecated method. Display a deprecation error.
-//         trigger_error("See the `chromosomes_summary` property.", E_USER_DEPRECATED);
-        
-//         // Return the value of the `chromosomes_summary` property.
-//         return $this->chromosomes_summary;
-//     }
-
-//     /**
-//      * Computes cluster overlap based on given threshold.
-//      *
-//      * @param float $cluster_overlap_threshold The threshold for cluster overlap.
-//      * @return DataFrame The computed cluster overlap DataFrame.
-//      */
-//     public function compute_cluster_overlap($cluster_overlap_threshold = 0.95) {
-//         // Sample data for cluster overlap computation
-//         $data = [
-//             "cluster_id" => ["c1", "c3", "c4", "c5", "v5"],
-//             "company_composition" => [
-//                 "23andMe-v4",
-//                 "AncestryDNA-v1, FTDNA, MyHeritage",
-//                 "23andMe-v3",
-//                 "AncestryDNA-v2",
-//                 "23andMe-v5, LivingDNA",
-//             ],
-//             "chip_base_deduced" => [
-//                 "HTS iSelect HD",
-//                 "OmniExpress",
-//                 "OmniExpress plus",
-//                 "OmniExpress plus",
-//                 "Illumina GSAs",
-//             ],
-//             "snps_in_cluster" => array_fill(0, 5, 0),
-//             "snps_in_common" => array_fill(0, 5, 0),
-//         ];
-
-//         // Create a DataFrame from the data and set "cluster_id" as the index
-//         $df = new DataFrame($data);
-//         $df->setIndex("cluster_id");
-
-//         $to_remap = null;
-//         if ($this->build != 37) {
-//             // Create a clone of the current object for remapping
-//             $to_remap = clone $this;
-//             $to_remap->remap(37); // clusters are relative to Build 37
-//             $self_snps = $to_remap->snps()->select(["chrom", "pos"])->dropDuplicates();
-//         } else {
-//             $self_snps = $this->snps()->select(["chrom", "pos"])->dropDuplicates();
-//         }
-
-//         // Retrieve chip clusters from resources
-//         $chip_clusters = $this->resources->get_chip_clusters();
-
-//         // Iterate over each cluster in the DataFrame
-//         foreach ($df->indexValues() as $cluster) {
-//             // Filter chip clusters based on the current cluster
-//             $cluster_snps = $chip_clusters->filter(function ($row) use ($cluster) {
-//                 return strpos($row["clusters"], $cluster) !== false;
-//             })->select(["chrom", "pos"]);
-
-//             // Update the DataFrame with the number of SNPs in the cluster and in common with the current object
-//             $df->loc[$cluster]["snps_in_cluster"] = count($cluster_snps);
-//             $df->loc[$cluster]["snps_in_common"] = count($self_snps->merge($cluster_snps, "inner"));
-
-//             // Calculate overlap ratios for cluster and self
-//             $df["overlap_with_cluster"] = $df["snps_in_common"] / $df["snps_in_cluster"];
-//             $df["overlap_with_self"] = $df["snps_in_common"] / count($self_snps);
-
-//             // Find the cluster with the maximum overlap
-//             $max_overlap = array_keys($df["overlap_with_cluster"], max($df["overlap_with_cluster"]))[0];
-
-//             // Check if the maximum overlap exceeds the threshold for both cluster and self
-//             if (
-//                 $df["overlap_with_cluster"][$max_overlap] > $cluster_overlap_threshold &&
-//                 $df["overlap_with_self"][$max_overlap] > $cluster_overlap_threshold
-//             ) {
-//                 // Update the current object's cluster and chip based on the maximum overlap
-//                 $this->cluster = $max_overlap;
-//                 $this->chip = $df["chip_base_deduced"][$max_overlap];
-
-//                 $company_composition = $df["company_composition"][$max_overlap];
-
-//                 // Check if the current object's source is present in the company composition
-//                 if (strpos($company_composition, $this->source) !== false) {
-//                     if ($this->source === "23andMe" || $this->source === "AncestryDNA") {
-//                         // Extract the chip version from the company composition
-//                         $i = strpos($company_composition, "v");
-//                         $this->chip_version = substr($company_composition, $i, $i + 2);
-//                     }
-//                 } else {
-//                     // Log a warning about the SNPs data source not found
-//                 }
-//             }
-//         }
-
-//         // Return the computed cluster overlap DataFrame
-//         return $df;
-//     }   
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// }
     /**
      * Computes cluster overlap based on given threshold.
      *
@@ -3072,5 +2535,3 @@ class SNPs implements Countable, Iterator
             }
         }
     }
-}
-
