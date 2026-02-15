@@ -70,22 +70,30 @@ class Triangulation {
      * @return array Filtered common SNPs
      */
     private static function filterNonCommonSnps(array $commonSnps, array $kitsData): array {
-        return array_filter($commonSnps, function($snp) use ($kitsData) {
-            return self::isSnpCommonAcrossAllKits($snp, $kitsData);
-        });
+        return array_filter($commonSnps, function($snp, $rsid) use ($kitsData) {
+            return self::isSnpCommonAcrossAllKits($rsid, $snp, $kitsData);
+        }, ARRAY_FILTER_USE_BOTH);
     }
 
     /**
      * Check if SNP is common across all kits
      *
-     * @param array $snp SNP to check
+     * @param string $rsid The rsid of the SNP to check
+     * @param array $snp SNP data array
      * @param SNPs[] $kitsData Array of SNPs objects
      * @return bool True if SNP is common across all kits, false otherwise
      */
-    private static function isSnpCommonAcrossAllKits(array $snp, array $kitsData): bool {
-        return count(array_filter($kitsData, function(SNPs $kit) use ($snp) {
+    private static function isSnpCommonAcrossAllKits(string $rsid, array $snp, array $kitsData): bool {
+        // Check if this SNP with the same genotype exists in all kits
+        foreach ($kitsData as $kit) {
             $snps = $kit->getSnps();
-            return isset($snps[$snp['pos']]) && $snps[$snp['pos']]['genotype'] === $snp['genotype'];
-        })) === count($kitsData);
+            
+            // Check if the SNP exists and has the same genotype
+            if (!isset($snps[$rsid]) || $snps[$rsid]['genotype'] !== $snp['genotype']) {
+                return false;
+            }
+        }
+        
+        return true;
     }
 }

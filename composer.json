@@ -1,12 +1,12 @@
 {
     "name": "liberu-genealogy/php-dna",
-    "description": "DNA analysis toolkit for PHP 8.4+",
+    "description": "DNA analysis toolkit for PHP 8.3+",
     "type": "library",
     "keywords": ["dna", "genotype", "genealogy", "bioinformatics"],
     "homepage": "http://github.com/liberu-genealogy/php-dna",
     "license": "MIT",
     "require": {
-        "php": "^8.4",
+        "php": "^8.3",
         "league/csv": "^9.0",
         "guzzlehttp/guzzle": "^7.8",
         "symfony/http-client": "^7.0",
