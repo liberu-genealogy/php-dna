@@ -378,19 +378,6 @@ class SNPs implements Countable, Iterator
     /**
      * Compute overlap with chip clusters.
      */
-    public function computeClusterOverlap(float $clusterOverlapThreshold = 0.95): array
-    {
-        // This is a simplified implementation
-        // In a full implementation, this would use chip cluster data
-        return [
-            'companyComposition' => '',
-            'chipBaseDeduced' => '',
-            'snpsInCluster' => 0,
-            'snpsInCommon' => 0,
-            'overlapWithCluster' => 0.0,
-            'overlapWithSelf' => 0.0
-        ];
-    }
 
 
 
@@ -996,52 +983,9 @@ class SNPs implements Countable, Iterator
     }
 
 
-    public function sort()
-    {
 
-        $sortedList = $this->naturalSortChromosomes(array_unique(array_column($this->_snps, 'chrom')));
 
-        // Move PAR and MT to the end of the array
-        if (($key = array_search("PAR", $sortedList)) !== false) {
-            unset($sortedList[$key]);
-            $sortedList[] = "PAR";
-        }
 
-        if (($key = array_search("MT", $sortedList)) !== false) {
-            unset($sortedList[$key]);
-            $sortedList[] = "MT";
-        }
-
-        uasort($this->_snps, function ($a, $b) use ($sortedList) {
-            $cmp = $this->naturalSortKey(
-                array_search($a['chrom'], $sortedList),
-                array_search($b['chrom'], $sortedList)
-            );
-            return ($cmp === 0) ? $a['pos'] - $b['pos'] : $cmp;
-        });
-
-        $this->setSNPs($this->restoreChromObject($this->_snps));
-    }
-
-    private function naturalSortChromosomes($chromosomes)
-    {
-        natsort($chromosomes);
-        return $chromosomes;
-    }
-
-    private function naturalSortKey($a, $b)
-    {
-        return strnatcasecmp($a, $b);
-    }
-
-    private function restoreChromObject($array)
-    {
-        // Convert the 'chrom' column back to object
-        foreach ($array as &$item) {
-            $item['chrom'] = (string)$item['chrom'];
-        }
-        return $array;
-    }
 
 
     private function _complement_bases($genotype)
