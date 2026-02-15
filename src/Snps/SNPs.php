@@ -2391,6 +2391,10 @@ class SNPs implements Countable, Iterator
 //             // If there are no SNPs here, skip
 //             if (count($snp_indices) === 0) {
 //                 continue;
+//             }
+//         }
+//     }
+
     /**
      * Matches SNPs with another SNPs object and returns a new SNPs object with the matching SNPs.
      * 
@@ -3068,3 +3072,5 @@ class SNPs implements Countable, Iterator
             }
         }
     }
+}
+
