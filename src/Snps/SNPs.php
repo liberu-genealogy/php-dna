@@ -109,11 +109,6 @@ class SNPs implements Countable, Iterator
         $this->_snps = $snps;
     }
 
-    public function setSNPs(array $snps): void
-    {
-        $this->_snps = $snps;
-    }
-
     private function readFile(): void
     {
         $reader = new Reader($this->file, $this->onlyDetectSource, $this->resources, $this->rsids);
@@ -945,31 +940,6 @@ class SNPs implements Countable, Iterator
     }
 
 
-    private function _deduplicate_rsids()
-    {
-        // Keep first duplicate rsid.
-        print_r($this->_snps);
-        $rsids = array_column($this->_snps, 'rsid');
-        $duplicateRsids = array_filter(
-            $this->_snps,
-            function ($value, $key) use ($rsids) {
-                $keys = array_keys($rsids, $value['rsid']);
-                return count($keys) > 1 && in_array($key, $keys);
-            },
-            ARRAY_FILTER_USE_BOTH
-        );
-
-        // Save duplicate SNPs
-        $this->_duplicate = array_merge($this->_duplicate, $duplicateRsids);
-
-        // Deduplicate
-        echo "\nrrrrrrrrrrrrrrrrr\n";
-        print_r($duplicateRsids);
-        $this->setSNPs(array_diff_key($this->_snps, $duplicateRsids));
-
-        echo "\nddddddddddddddddddd\n";
-        print_r($this->_snps);
-    }
 
     private function _deduplicate_alleles($rsids)
     {
@@ -2535,3 +2505,4 @@ class SNPs implements Countable, Iterator
             }
         }
     }
+}
