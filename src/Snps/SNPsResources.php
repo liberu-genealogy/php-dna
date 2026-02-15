@@ -119,7 +119,7 @@ class SNPsResources extends Singleton
         $this->httpClient = $httpClient;
     }
 
-    public function setRestClient($rest_client): void
+    public function setRestClient(EnsemblRestClient $rest_client): void
     {
         $this->_ensembl_rest_client = $rest_client;
     }
@@ -183,8 +183,18 @@ class SNPsResources extends Singleton
      */
     private function referenceChromsAvailable(string $assembly, array $chroms): bool
     {
-        // TODO: Implement reference chromosome availability check
-        return false;
+        // Check if all requested chromosomes are available in the reference sequences
+        foreach ($chroms as $chrom) {
+            $path = $this->relativePathToSubdir("fasta", $assembly, "{$chrom}.fa.gz");
+            
+            // If the file doesn't exist, return false
+            if (!file_exists($path)) {
+                return false;
+            }
+        }
+        
+        // All requested chromosomes are available
+        return true;
     }
 
     /**
@@ -194,7 +204,7 @@ class SNPsResources extends Singleton
      * @param string $dictPath The path to the dictionary file
      * @return array An array of reference sequences
      */
-    protected function createReferenceSequences($assembly, $chroms, $urls, $paths)
+    protected function createReferenceSequences(string $assembly, array $chroms, array $urls, array $paths): array
     {
         // https://samtools.github.io/hts-specs/VCFv4.2.pdf
         $seqs = [];
@@ -265,7 +275,7 @@ class SNPsResources extends Singleton
      *
      * @return array Array of resources.
      */
-    public function getAllResources()
+    public function getAllResources(): array
     {
         // Get / download all resources used throughout snps.
         //
@@ -372,7 +382,7 @@ class SNPsResources extends Singleton
      *    Biotechnology Journal, Volume 19, 2021, Pages 3747-3754, ISSN
      *    2001-0370, https://doi.org/10.1016/j.csbj.2021.06.040.
      */
-    public function get_chip_clusters()
+    public function get_chip_clusters(): ?array
     {
         if ($this->_chip_clusters === null) {
             $chip_clusters_path = $this->download_file(
@@ -655,7 +665,7 @@ class SNPsResources extends Singleton
      * @param array $paths The paths of the downloaded reference sequence files.
      * @return ReferenceSequence[] An array of ReferenceSequence objects.
      */
-    public function create_reference_sequences($assembly, $chroms, $urls, $paths): array
+    public function create_reference_sequences(string $assembly, array $chroms, array $urls, array $paths): array
     {
         // Initialize an empty array to store the reference sequences.
         $seqs = [];
@@ -738,7 +748,7 @@ class SNPsResources extends Singleton
      * @param string $targetAssembly The target assembly of the assembly mapping data.
      * @param int $retries The number of times to retry downloading the assembly mapping data if it fails.
      */
-    public function downloadAssemblyMappingData($destination, $chroms, $sourceAssembly, $targetAssembly, $retries)
+    public function downloadAssemblyMappingData(string $destination, array $chroms, string $sourceAssembly, string $targetAssembly, int $retries): void
     {
         // Create a new PharData object for the destination tar file.
         $phar = new PharData($destination, 0, null, Phar::TAR | Phar::GZ);
@@ -860,7 +870,7 @@ class SNPsResources extends Singleton
         return $this->download_file("https://opensnp.org/data/zip/opensnp_datadump.current.zip", "opensnp_datadump.current.zip");
     }
 
-    public function loadOpenSNPDatadumpFile($filename)
+    public function loadOpenSNPDatadumpFile(string $filename): string
     {
         $pathOpensnpDatadump = $this->get_path_opensnp_datadump();
         if ($pathOpensnpDatadump) {
@@ -868,7 +878,7 @@ class SNPsResources extends Singleton
             if ($zip->open($pathOpensnpDatadump) === true) {
                 $fileContent = $zip->getFromName($filename);
                 $zip->close();
-                return $fileContent;
+                return $fileContent !== false ? $fileContent : "";
             }
         }
         return "";
