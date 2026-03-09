@@ -187,15 +187,20 @@ class ReferenceSequence
             return;
         }
 
-        // Read file content (handle gzip)
-        if (str_ends_with($this->path, '.gz')) {
-            $content = gzdecode(file_get_contents($this->path));
-        } else {
-            $content = file_get_contents($this->path);
+        $rawContent = file_get_contents($this->path);
+
+        if ($rawContent === false) {
+            return;
         }
 
-        if ($content === false) {
-            return;
+        // Handle gzip files - check magic bytes before attempting decompression
+        if (str_ends_with($this->path, '.gz') && substr($rawContent, 0, 2) === "\x1f\x8b") {
+            $content = gzdecode($rawContent);
+            if ($content === false) {
+                return;
+            }
+        } else {
+            $content = $rawContent;
         }
 
         // Parse FASTA format: skip header lines (starting with '>'), concatenate sequence lines

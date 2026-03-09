@@ -806,18 +806,23 @@ class SNPsResources extends Singleton
 
             $rsidPath = $this->download_file($url, $destination);
 
-            $csv = Reader::createFromPath($rsidPath, 'r');
+            $fileContents = file_get_contents($rsidPath);
+
+            if (substr($fileContents, 0, 2) === "\x1f\x8b") {
+                $fileContents = gzdecode($fileContents);
+            }
+
+            $csv = Reader::createFromString($fileContents);
             $csv->setDelimiter("\t");
             $csv->setHeaderOffset(0);
 
-            $stmt = (new Statement())->offset(0)->limit(1); // Set header offset to 0
-            $header = $stmt->process($csv)->getHeader();
-
-            $stmt = new Statement();
+            $header = $csv->getHeader();
             $rsids = [];
 
-            foreach ($stmt->process($csv) as $row) {
-                $rsids[] = array_combine($header, $row);
+            // getRecords() returns associative arrays when setHeaderOffset is used,
+            // so array_values() is needed to get numeric-indexed values for array_combine
+            foreach ($csv->getRecords() as $row) {
+                $rsids[] = array_combine($header, array_values($row));
             }
 
             $this->_gsa_rsid_map = $rsids;
