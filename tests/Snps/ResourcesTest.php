@@ -249,7 +249,7 @@ class ResourcesTest extends BaseSNPsTestCase
         $this->assertEmpty($paths);
     }
 
-    protected function runReferenceSequencesTest(callable $f, string $assembly = "GRCh37")
+    protected function runReferenceSequencesTest(callable $f, string $assembly = "GRCh37", int $responseCount = 1)
     {
         if ($this->downloads_enabled) {
             $f();
@@ -263,7 +263,8 @@ class ResourcesTest extends BaseSNPsTestCase
             $s .= "\n";
 
             $mockResponse = new Response(200, ['Content-Encoding' => 'gzip'], gzencode($s));
-            $httpClient = $this->createMockHttpClient([$mockResponse]);
+            $mockResponses = array_fill(0, $responseCount, $mockResponse);
+            $httpClient = $this->createMockHttpClient($mockResponses);
             $this->resource->setHttpClient($httpClient);
 
             $f();
@@ -417,6 +418,8 @@ class ResourcesTest extends BaseSNPsTestCase
 
     public function testGetAllReferenceSequences()
     {
+        // getAllReferenceSequences fetches sequences for 3 assemblies (NCBI36, GRCh37, GRCh38),
+        // so we need 3 mock HTTP responses.
         $this->runReferenceSequencesTest(function () {
             $seqs = $this->resource->getAllReferenceSequences(['MT']);
             $this->assertCount(3, $seqs);
@@ -438,7 +441,7 @@ class ResourcesTest extends BaseSNPsTestCase
                 $seqs['GRCh38']['MT']->getPath(),
                 $this->resource->relativePathToSubdir('fasta', 'GRCh38', 'Homo_sapiens.GRCh38.dna.chromosome.MT.fa.gz')
             );
-        });
+        }, responseCount: 3);
     }
 
     public function testGetReferenceSequencesInvalidAssembly()
