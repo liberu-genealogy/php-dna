@@ -1130,9 +1130,13 @@ class SNPs implements Countable, Iterator
     {
         $discrepantXYSnps = $this->_get_non_par_snps($chrom);
 
-        // Save discrepant XY SNPs, keyed by rsid
+        // Save discrepant XY SNPs, keyed by rsid (ensure rsid is included in value)
         foreach ($discrepantXYSnps as $rsid) {
-            $this->_discrepant_XY[$rsid] = $this->_snps[$rsid];
+            $snp = $this->_snps[$rsid];
+            if (!isset($snp['rsid'])) {
+                $snp['rsid'] = $rsid;
+            }
+            $this->_discrepant_XY[$rsid] = $snp;
         }
 
         // Drop discrepant XY SNPs since it's ambiguous for which allele to deduplicate
@@ -1618,7 +1622,7 @@ class SNPs implements Countable, Iterator
         $remap = true;
         $chromFilter = null;
         $discrepantPositionThreshold = 100.0;
-        $discrepantGenotypeThreshold = 1.0;
+        $discrepantGenotypeThreshold = 100.0;
 
         if (is_bool($options)) {
             $remap = $options;
@@ -1633,7 +1637,7 @@ class SNPs implements Countable, Iterator
                 ?? 100.0;
             $discrepantGenotypeThreshold = $options['discrepant_genotypes_threshold']
                 ?? $options['discrepant_genotype_threshold']
-                ?? 1.0;
+                ?? 100.0;
         }
 
         $results = [];
@@ -1701,10 +1705,12 @@ class SNPs implements Countable, Iterator
                 $commonCount = count($commonRsids);
                 if ($commonCount > 0) {
                     if (count($discrepantPos) / $commonCount > $discrepantPositionThreshold / 100.0) {
+                        $result["common_rsids"] = [];
                         $results[] = $result;
                         continue;
                     }
                     if (count($discrepantGeno) / $commonCount > $discrepantGenotypeThreshold / 100.0) {
+                        $result["common_rsids"] = [];
                         $results[] = $result;
                         continue;
                     }
