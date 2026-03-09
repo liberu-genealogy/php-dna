@@ -25,17 +25,9 @@ class ReferenceSequence
     ) {}
 
     /**
-     * Get the sequence ID (uppercase alias)
+     * Get the sequence ID (alias for getId(), using camelCase with uppercase ID)
      */
     public function getID(): string
-    {
-        return $this->id;
-    }
-
-    /**
-     * Get the sequence ID
-     */
-    public function getId(): string
     {
         return $this->id;
     }
