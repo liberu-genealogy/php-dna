@@ -25,7 +25,7 @@ class SNPAnalyzer
 
     public function computeClusterOverlap(SNPData $snpData, float $threshold = 0.95): array
     {
-        return $this->clusterOverlapCalculator->computeClusterOverlap($snpData->getSnps(), $threshold);
+        return $this->clusterOverlapCalculator->computeClusterOverlap($snpData->getSnps(), [], $threshold);
     }
 
     public function determineSex(SNPData $snpData): string

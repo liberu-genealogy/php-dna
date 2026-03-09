@@ -275,16 +275,8 @@ class Reader
             $phased = $result[1] ?? false;
             $build = $result[2] ?? 0;
 
-            // Re-index snps by rsid if they are numerically indexed
-            if (!empty($snps) && array_key_exists(0, $snps)) {
-                $indexed = [];
-                foreach ($snps as $snp) {
-                    if (isset($snp['rsid'])) {
-                        $indexed[$snp['rsid']] = $snp;
-                    }
-                }
-                $snps = $indexed;
-            }
+            // Keep numeric arrays as-is; processSnps() will re-index and deduplicate.
+            // Only re-index if NOT numerically indexed (already rsid-keyed).
         }
 
         return array(
@@ -358,6 +350,12 @@ class Reader
                 return 38;
             } elseif (str_starts_with($comments, "grch37")) {
                 return 37;
+            } elseif (strpos($comments, "# assembly: grch38") !== false || strpos($comments, "#assembly: grch38") !== false) {
+                return 38;
+            } elseif (strpos($comments, "# assembly: grch37") !== false || strpos($comments, "#assembly: grch37") !== false) {
+                return 37;
+            } elseif (strpos($comments, "# assembly: ncbi36") !== false || strpos($comments, "#assembly: ncbi36") !== false) {
+                return 36;
             } elseif (str_starts_with($comments, "249250621")) {
                 return 37; // Length of chromosome 1
             } elseif (str_starts_with($comments, "248956422")) {
@@ -583,7 +581,7 @@ class Reader
                 $entry = [
                     'rsid' => $record['rsid'],
                     'chrom' => $record['chromosome'],
-                    'pos' => $record['position'],
+                    'pos' => (int)$record['position'],
                     'genotype' => $record['allele1'] . $record['allele2']
                 ];
 
@@ -892,9 +890,13 @@ class Reader
                         $record = [
                             "rsid" => $record[0],
                             "chrom" => $record[1],
-                            "pos" => $record[2],
+                            "pos" => $record[2] !== null ? (int)$record[2] : null,
                             "genotype" => $record[3],
                         ];
+                    } else {
+                        if (isset($record["pos"]) && $record["pos"] !== null) {
+                            $record["pos"] = (int)$record["pos"];
+                        }
                     }
 
                     $key = explode(",", $record["rsid"], 2)[0];

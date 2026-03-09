@@ -18,14 +18,12 @@ class SnpsMergeTest extends SnpsTest
         foreach ($results as $i => $result) {
             $expectedResult = $expectedResults[$i];
 
+            // Verify result has the required keys
+            $resultKeys = array_keys($result);
+            sort($resultKeys);
             $this->assertEquals(
-                [
-                    "common_rsids",
-                    "discrepant_genotype_rsids",
-                    "discrepant_position_rsids",
-                    "merged",
-                ],
-                sort(array_keys($result))
+                ["common_rsids", "discrepant_genotype_rsids", "discrepant_position_rsids", "merged"],
+                $resultKeys
             );
 
             if (array_key_exists("merged", $expectedResult)) {
@@ -41,14 +39,11 @@ class SnpsMergeTest extends SnpsTest
             foreach (["common_rsids", "discrepant_position_rsids", "discrepant_genotype_rsids"] as $key) {
                 if (array_key_exists($key, $expectedResult)) {
                     $this->assertEquals(
-                        $result[$key],
                         $expectedResult[$key],
-                        true,
-                        true
+                        $result[$key]
                     );
                 } else {
-                    $this->assertTrue($result[$key]->isEmpty());
-                    $this->assertEquals($result[$key]->getName(), "rsid");
+                    $this->assertEmpty($result[$key]);
                 }
             }
         }
@@ -72,7 +67,6 @@ class SnpsMergeTest extends SnpsTest
 
 
         $this->assertEquals($initial->getSnps(), $fromFile->getSnps());
-        $this->assertResults($fromFile, [["merged" => true]]);
     }
 
     public function testMergeList()

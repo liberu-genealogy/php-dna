@@ -906,13 +906,17 @@ abstract class BaseSNPsTestCase extends TestCase
      */
     private function _writeAssemblyMappingTar(string $destination, array $assemblyMappingData): void
     {
-        $phar = new \PharData($destination, 0, null, \Phar::TAR | \Phar::GZ);
+        // PharData cannot create .tar.gz directly; create .tar first, then compress
+        $tarFile = substr($destination, 0, -3); // strip .gz -> get .tar path
+        $phar = new \PharData($tarFile, 0, null, \Phar::TAR);
         foreach ($assemblyMappingData as $chrom => $data) {
             $tmpFile = tempnam(sys_get_temp_dir(), 'assembly_');
             file_put_contents($tmpFile, json_encode($data));
             $phar->addFile($tmpFile, $chrom . '.json');
             unlink($tmpFile);
         }
+        $phar->compress(\Phar::GZ);
+        unlink($tarFile);
     }
 
     /**
