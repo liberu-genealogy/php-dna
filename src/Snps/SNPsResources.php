@@ -610,7 +610,9 @@ class SNPsResources extends Singleton
     public function getPathsReferenceSequences(
         string $subDir = "fasta",
         string $assembly = "GRCh37",
-        array $chroms = []
+        array $chroms = [],
+        array $urls = [],
+        array $paths = []
     ): array {
         $release = "";
     

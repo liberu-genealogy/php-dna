@@ -24,6 +24,9 @@ class SNPs implements Countable, Iterator
     private array $_duplicate = [];
     private array $_discrepant_XY = [];
     private array $_heterozygous_MT = [];
+    private array $_discrepant_merge_positions = [];
+    private array $_discrepant_merge_genotypes = [];
+    private array $_discrepant_vcf_position = [];
     private int $position = 0;
     private ?Resources $resources = null;
     private ?EnsemblRestClient $ensemblRestClient = null;
@@ -284,7 +287,7 @@ class SNPs implements Countable, Iterator
         $build = 0;
         foreach ($this->_snps as $snp) {
             if (in_array($snp['rsid'], $rsids)) {
-                $build = $this->lookup_build_with_snp_pos($snp['pos'], $df[$snp['rsid']]);
+                $build = $this->lookup_build_with_snp_pos((int)$snp['pos'], $df[$snp['rsid']]);
                 if ($build) {
                     break;
                 }
@@ -415,6 +418,16 @@ class SNPs implements Countable, Iterator
     }
 
     /**
+     * Set discrepant XY SNPs.
+     *
+     * @param array $discrepantXY Discrepant XY SNPs
+     */
+    public function setDiscrepantXY(array $discrepantXY): void
+    {
+        $this->_discrepant_XY = $discrepantXY;
+    }
+
+    /**
      * Get the duplicate SNPs.
      * 
      * A duplicate SNP has the same RSID as another SNP. The first occurrence
@@ -425,6 +438,101 @@ class SNPs implements Countable, Iterator
     public function getDuplicate()
     {
         return $this->_duplicate;
+    }
+
+    /**
+     * Set the duplicate SNPs.
+     *
+     * @param array $duplicate Duplicate SNPs
+     */
+    public function setDuplicate(array $duplicate): void
+    {
+        $this->_duplicate = $duplicate;
+    }
+
+    /**
+     * Set whether SNPs are phased.
+     *
+     * @param bool $phased True if SNPs are phased
+     */
+    public function setPhased(bool $phased): void
+    {
+        $this->_phased = $phased;
+    }
+
+    /**
+     * Check if SNPs are phased.
+     *
+     * @return bool True if SNPs are phased
+     */
+    public function isPhased(): bool
+    {
+        return $this->_phased;
+    }
+
+    /**
+     * Get discrepant merge positions.
+     *
+     * @return array SNPs with discrepant merge positions
+     */
+    public function getDiscrepantMergePositions(): array
+    {
+        return $this->_discrepant_merge_positions;
+    }
+
+    /**
+     * Get discrepant merge genotypes.
+     *
+     * @return array SNPs with discrepant merge genotypes
+     */
+    public function getDiscrepantMergeGenotypes(): array
+    {
+        return $this->_discrepant_merge_genotypes;
+    }
+
+    /**
+     * Get discrepant merge positions and genotypes combined.
+     *
+     * @return array SNPs with discrepant merge positions or genotypes
+     */
+    public function getDiscrepantMergePositionsGenotypes(): array
+    {
+        $combined = array_merge($this->_discrepant_merge_positions, $this->_discrepant_merge_genotypes);
+        // Remove duplicates by rsid
+        $seen = [];
+        $result = [];
+        foreach ($combined as $snp) {
+            $rsid = $snp['rsid'] ?? null;
+            if ($rsid !== null && !isset($seen[$rsid])) {
+                $seen[$rsid] = true;
+                $result[] = $snp;
+            }
+        }
+        return $result;
+    }
+
+    /**
+     * Get discrepant VCF positions.
+     *
+     * @return array SNPs with discrepant VCF positions
+     */
+    public function getDiscrepantVcfPosition(): array
+    {
+        return $this->_discrepant_vcf_position;
+    }
+
+    /**
+     * Set a value on a specific SNP by rsid.
+     *
+     * @param string $rsid The rsid of the SNP
+     * @param string $key The key to set
+     * @param mixed $value The value to set
+     */
+    public function setSnpsValue(string $rsid, string $key, mixed $value): void
+    {
+        if (isset($this->_snps[$rsid])) {
+            $this->_snps[$rsid][$key] = $value;
+        }
     }
 
     /**

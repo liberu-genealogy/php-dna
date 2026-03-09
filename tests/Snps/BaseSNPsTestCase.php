@@ -842,4 +842,126 @@ abstract class BaseSNPsTestCase extends TestCase
         $buildDetected ? $this->assertTrue($snps->isBuildDetected()) : $this->assertFalse($snps->isBuildDetected());
         $this->makeNormalizedArrayAssertions($snps->getSnps());
     }
+
+    /**
+     * Get generic SNPs data (camelCase public alias for generic_snps).
+     */
+    public static function genericSnps(): array
+    {
+        $rsid = [];
+        for ($i = 1; $i <= 8; $i++) {
+            $rsid[] = "rs" . $i;
+        }
+        return self::create_snp_df(
+            rsid: $rsid,
+            chrom: array_fill(0, 8, "1"),
+            pos: range(101, 109),
+            genotype: ["AA", "CC", "GG", "TT", null, "GC", "TC", "AT"],
+        );
+    }
+
+    /**
+     * Run a remap test by writing assembly mapping data to the resources directory,
+     * calling the test function, and cleaning up.
+     *
+     * @param callable $f Test function to call
+     * @param array $assemblyMappingData Assembly mapping data
+     */
+    protected function _run_remap_test(callable $f, array $assemblyMappingData): void
+    {
+        if ($this->downloads_enabled) {
+            $f();
+            return;
+        }
+
+        $resourcesDir = 'resources';
+        $combinations = [
+            'NCBI36_GRCh37', 'NCBI36_GRCh38',
+            'GRCh37_NCBI36', 'GRCh37_GRCh38',
+            'GRCh38_NCBI36', 'GRCh38_GRCh37',
+        ];
+
+        $createdFiles = [];
+        foreach ($combinations as $combo) {
+            $destination = $resourcesDir . DIRECTORY_SEPARATOR . $combo . '.tar.gz';
+            if (!file_exists($destination)) {
+                $this->_writeAssemblyMappingTar($destination, $assemblyMappingData);
+                $createdFiles[] = $destination;
+            }
+        }
+
+        try {
+            $f();
+        } finally {
+            foreach ($createdFiles as $file) {
+                if (file_exists($file)) {
+                    unlink($file);
+                }
+            }
+        }
+    }
+
+    /**
+     * Write assembly mapping data as a tar.gz file.
+     */
+    private function _writeAssemblyMappingTar(string $destination, array $assemblyMappingData): void
+    {
+        $phar = new \PharData($destination, 0, null, \Phar::TAR | \Phar::GZ);
+        foreach ($assemblyMappingData as $chrom => $data) {
+            $tmpFile = tempnam(sys_get_temp_dir(), 'assembly_');
+            file_put_contents($tmpFile, json_encode($data));
+            $phar->addFile($tmpFile, $chrom . '.json');
+            unlink($tmpFile);
+        }
+    }
+
+    /**
+     * Get test chip clusters data.
+     */
+    protected function getChipClusters(): array
+    {
+        $snps = $this->generic_snps();
+        $clusters = [];
+        foreach ($snps as $rsid => $snp) {
+            $clusters[] = [
+                'chrom' => $snp['chrom'],
+                'pos' => $snp['pos'],
+                'clusters' => 'c1',
+            ];
+        }
+        return $clusters;
+    }
+
+    /**
+     * Get test chip clusters data (alternate version with chip info).
+     */
+    protected function _getChipClusters(): array
+    {
+        $snps = $this->generic_snps();
+        $clusters = [];
+        foreach ($snps as $rsid => $snp) {
+            $clusters[] = [
+                'chrom' => $snp['chrom'],
+                'pos' => $snp['pos'],
+                'clusters' => 'c1',
+                'chip' => 'HTS iSelect HD',
+                'chip_version' => 'v4',
+            ];
+        }
+        return $clusters;
+    }
+
+    /**
+     * Run a cluster test by creating a mock resources object with chip clusters.
+     *
+     * @param callable $f Test function receiving the mock resources object
+     * @param array $chipClusters Chip cluster data
+     */
+    protected function runClusterTest(callable $f, array $chipClusters): void
+    {
+        $mock = $this->createMock(\Dna\Resources::class);
+        $mock->method('get_chip_clusters')->willReturn($chipClusters);
+        $mock->method('getChipClusters')->willReturn($chipClusters);
+        $f($mock);
+    }
 }
