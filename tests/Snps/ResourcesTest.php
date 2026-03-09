@@ -22,6 +22,7 @@ class ResourcesTest extends BaseSNPsTestCase
 {
     private Resources $resource;
     private $originalHttp = null;
+    private string $_tmpdir = '';
 
     private function _reset_resource()
     {
@@ -38,9 +39,11 @@ class ResourcesTest extends BaseSNPsTestCase
         if ($this->downloads_enabled) {
             $this->resource->setResourcesDir("./resources");
         } else {
-            // Use a temporary directory for test resource data
-            $tmpdir = sys_get_temp_dir();
-            $this->resource->setResourcesDir($tmpdir);
+            // Use a unique temporary directory for each test to avoid cross-test contamination
+            // (e.g., ReaderTest::testReadCodigo46 writes gsa_rsid_map.txt.gz to sys_get_temp_dir())
+            $this->_tmpdir = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'phptest_resources_' . uniqid('', true);
+            mkdir($this->_tmpdir, 0777, true);
+            $this->resource->setResourcesDir($this->_tmpdir);
         }
         parent::setUp();
     }
@@ -49,6 +52,14 @@ class ResourcesTest extends BaseSNPsTestCase
     {
         $this->_reset_resource();
         unset($this->resource);
+        // Clean up unique temp directory
+        if ($this->_tmpdir !== '' && is_dir($this->_tmpdir)) {
+            foreach (glob($this->_tmpdir . DIRECTORY_SEPARATOR . '*') as $file) {
+                @unlink($file);
+            }
+            @rmdir($this->_tmpdir);
+            $this->_tmpdir = '';
+        }
     }
 
     public function testGetAssemblyMappingData(): void
