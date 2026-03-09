@@ -134,7 +134,7 @@ class SNPsResources extends Singleton
         $this->_dbsnp_151_37_reverse = null;
         $this->_opensnp_datadump_filenames = [];
         $this->_chip_clusters = null;
-        $this->_low_quality_snps = null;
+        $this->_lowQualitySnps = null;
     }
 
     /**

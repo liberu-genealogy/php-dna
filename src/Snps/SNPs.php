@@ -27,6 +27,7 @@ class SNPs implements Countable, Iterator
     private array $_discrepant_merge_positions = [];
     private array $_discrepant_merge_genotypes = [];
     private array $_discrepant_vcf_position = [];
+    private array $_low_quality = [];
     private int $position = 0;
     private ?Resources $resources = null;
     private ?EnsemblRestClient $ensemblRestClient = null;
@@ -122,25 +123,40 @@ class SNPs implements Countable, Iterator
         return $this->_source;
     }
 
-    public function getSnps(): array
+    public function &getSnps(): array
     {
         return $this->_snps;
     }
 
     public function setSnps(array $snps): void
     {
-        // Re-index by rsid if any entry has a 'rsid' field but is stored under a non-rsid key
-        $needsReindex = false;
+        if (empty($snps)) {
+            $this->_snps = $snps;
+            return;
+        }
+
+        // Determine if any keys are numeric (int) with rsid fields
+        $hasNumericWithRsid = false;
+        $allNumeric = true;
         foreach ($snps as $key => $snp) {
-            if (is_array($snp) && isset($snp['rsid']) && $key !== $snp['rsid']) {
-                $needsReindex = true;
-                break;
+            if (!is_int($key)) {
+                $allNumeric = false;
+            }
+            if (is_int($key) && is_array($snp) && isset($snp['rsid'])) {
+                $hasNumericWithRsid = true;
             }
         }
-        if ($needsReindex) {
+
+        if ($allNumeric && $hasNumericWithRsid) {
+            // Pure numeric array from reader - keep as-is so processSnps can deduplicate correctly
+            $this->_snps = $snps;
+        } elseif ($hasNumericWithRsid) {
+            // Mixed array (string + numeric keys) - re-index numeric entries by rsid
             $indexed = [];
-            foreach ($snps as $snp) {
-                if (is_array($snp) && isset($snp['rsid'])) {
+            foreach ($snps as $key => $snp) {
+                if (is_string($key)) {
+                    $indexed[$key] = $snp;
+                } elseif (is_int($key) && is_array($snp) && isset($snp['rsid'])) {
                     $indexed[$snp['rsid']] = $snp;
                 }
             }
@@ -542,17 +558,7 @@ class SNPs implements Countable, Iterator
     public function getDiscrepantMergePositionsGenotypes(): array
     {
         $combined = array_merge($this->_discrepant_merge_positions, $this->_discrepant_merge_genotypes);
-        // Remove duplicates by rsid
-        $seen = [];
-        $result = [];
-        foreach ($combined as $snp) {
-            $rsid = $snp['rsid'] ?? null;
-            if ($rsid !== null && !isset($seen[$rsid])) {
-                $seen[$rsid] = true;
-                $result[] = $snp;
-            }
-        }
-        return $result;
+        return array_values(array_unique($combined));
     }
 
     /**
@@ -576,6 +582,14 @@ class SNPs implements Countable, Iterator
     {
         if (isset($this->_snps[$rsid])) {
             $this->_snps[$rsid][$key] = $value;
+        } else {
+            // Fall back to searching numeric-keyed arrays
+            foreach ($this->_snps as $idx => $snp) {
+                if (is_int($idx) && isset($snp['rsid']) && $snp['rsid'] === $rsid) {
+                    $this->_snps[$idx][$key] = $value;
+                    return;
+                }
+            }
         }
     }
 
@@ -1060,7 +1074,7 @@ class SNPs implements Countable, Iterator
     private function getNonParStartStop($chrom)
     {
         // Get non-PAR start / stop positions for chrom
-        $pr = $this->getParRegions($this->build);
+        $pr = $this->getParRegions($this->_build);
 
         $np_start = $np_stop = 0;
         // getParRegions returns column-oriented data, iterate by index
@@ -1613,8 +1627,13 @@ class SNPs implements Countable, Iterator
         } elseif (is_array($options)) {
             $remap = $options['remap'] ?? true;
             $chromFilter = $options['chrom'] ?? null;
-            $discrepantPositionThreshold = $options['discrepant_position_threshold'] ?? 100.0;
-            $discrepantGenotypeThreshold = $options['discrepant_genotype_threshold'] ?? 1.0;
+            // Support both singular and plural option key names
+            $discrepantPositionThreshold = $options['discrepant_positions_threshold']
+                ?? $options['discrepant_position_threshold']
+                ?? 100.0;
+            $discrepantGenotypeThreshold = $options['discrepant_genotypes_threshold']
+                ?? $options['discrepant_genotype_threshold']
+                ?? 1.0;
         }
 
         $results = [];
@@ -1641,15 +1660,24 @@ class SNPs implements Countable, Iterator
                 $selfSnps  = $this->_snps;
                 $otherSnps = $snpsObj->getSnps();
 
-                // Apply chromosome filter if specified
-                if ($chromFilter !== null) {
-                    $selfSnps  = array_filter($selfSnps,  fn($s) => $s['chrom'] === $chromFilter);
-                    $otherSnps = array_filter($otherSnps, fn($s) => $s['chrom'] === $chromFilter);
+                // Normalize otherSnps to rsid-keyed if numeric
+                if (!empty($otherSnps) && is_int(array_key_first($otherSnps))) {
+                    $norm = [];
+                    foreach ($otherSnps as $snp) {
+                        if (isset($snp['rsid'])) $norm[$snp['rsid']] = $snp;
+                    }
+                    $otherSnps = $norm;
                 }
 
-                // Determine common rsids (string keys only)
-                $selfKeys  = array_filter(array_keys($selfSnps),  fn($k) => is_string($k));
-                $otherKeys = array_filter(array_keys($otherSnps), fn($k) => is_string($k));
+                // Apply chromosome filter if specified
+                if ($chromFilter !== null) {
+                    $selfSnps  = array_filter($selfSnps,  fn($s) => ($s['chrom'] ?? '') === $chromFilter);
+                    $otherSnps = array_filter($otherSnps, fn($s) => ($s['chrom'] ?? '') === $chromFilter);
+                }
+
+                // Normalize selfSnps to string keys only
+                $selfKeys  = array_values(array_filter(array_keys($selfSnps),  fn($k) => is_string($k)));
+                $otherKeys = array_values(array_filter(array_keys($otherSnps), fn($k) => is_string($k)));
                 $commonRsids = array_values(array_intersect($selfKeys, $otherKeys));
                 $result["common_rsids"] = $commonRsids;
 
@@ -1662,7 +1690,9 @@ class SNPs implements Countable, Iterator
 
                     if ($a['pos'] !== $b['pos']) {
                         $discrepantPos[] = $rsid;
-                    } elseif ($a['genotype'] !== null && $b['genotype'] !== null && $a['genotype'] !== $b['genotype']) {
+                    }
+                    // Check genotype discrepancy independently of position discrepancy
+                    if ($b['genotype'] !== null && $a['genotype'] !== $b['genotype']) {
                         $discrepantGeno[] = $rsid;
                     }
                 }
@@ -1683,12 +1713,12 @@ class SNPs implements Countable, Iterator
                 $result["discrepant_position_rsids"] = $discrepantPos;
                 $result["discrepant_genotype_rsids"]  = $discrepantGeno;
 
-                // Record discrepancies
+                // Record discrepancies (store rsid strings, not full SNP arrays)
                 foreach ($discrepantPos as $rsid) {
-                    $this->_discrepant_merge_positions[] = $selfSnps[$rsid];
+                    $this->_discrepant_merge_positions[] = $rsid;
                 }
                 foreach ($discrepantGeno as $rsid) {
-                    $this->_discrepant_merge_genotypes[] = $selfSnps[$rsid];
+                    $this->_discrepant_merge_genotypes[] = $rsid;
                 }
 
                 // Set discrepant genotypes to null in this (base) object
@@ -1701,15 +1731,23 @@ class SNPs implements Countable, Iterator
 
                 // Merge: add new SNPs from other, update null genotypes from other
                 $otherAll = $snpsObj->getSnps();
+                // Normalize otherAll to rsid-keyed if numeric
+                if (!empty($otherAll) && is_int(array_key_first($otherAll))) {
+                    $normAll = [];
+                    foreach ($otherAll as $snp) {
+                        if (isset($snp['rsid'])) $normAll[$snp['rsid']] = $snp;
+                    }
+                    $otherAll = $normAll;
+                }
                 foreach ($otherAll as $rsid => $snp) {
                     if (!is_string($rsid)) continue;
                     if (!isset($this->_snps[$rsid])) {
                         // Only add if not chromosome-filtered out of scope
-                        if ($chromFilter === null || $snp['chrom'] === $chromFilter) {
+                        if ($chromFilter === null || ($snp['chrom'] ?? '') === $chromFilter) {
                             $this->_snps[$rsid] = $snp;
                         }
                     } elseif ($this->_snps[$rsid]['genotype'] === null && $snp['genotype'] !== null) {
-                        if (!in_array($rsid, $discrepantPos)) {
+                        if (!in_array($rsid, $discrepantPos) && !in_array($rsid, $discrepantGeno)) {
                             $this->_snps[$rsid]['genotype'] = $snp['genotype'];
                         }
                     }
@@ -1720,6 +1758,12 @@ class SNPs implements Countable, Iterator
                 $this->_heterozygous_MT = array_merge($this->_heterozygous_MT, $snpsObj->getHeterozygousMT());
 
                 $this->_source = array_merge($this->_source, $snpsObj->getAllSources());
+
+                // Update phased status: result is unphased if either object is unphased
+                if ($this->_phased && !$snpsObj->isPhased()) {
+                    $this->_phased = false;
+                }
+
                 $result["merged"] = true;
             } elseif (is_array($snpsObj)) {
                 $this->_snps = array_merge($this->_snps, $snpsObj);
@@ -1847,12 +1891,56 @@ class SNPs implements Countable, Iterator
     }
 
     /**
+     * Identify low quality SNPs based on resources data.
+     */
+    private function identify_low_quality_snps(): void
+    {
+        if (!empty($this->_low_quality)) {
+            return;
+        }
+
+        try {
+            $lowQualityData = $this->resources->getLowQualitySNPs();
+        } catch (\Throwable $e) {
+            return;
+        }
+
+        if (empty($lowQualityData)) {
+            return;
+        }
+
+        // Build a lookup of bad chrom:pos positions
+        $badPositions = [];
+        foreach ($lowQualityData as $entry) {
+            if (isset($entry['chrom'], $entry['pos'])) {
+                $key = $entry['chrom'] . ':' . $entry['pos'];
+                $badPositions[$key] = true;
+            }
+        }
+
+        // Flag SNPs whose chrom:pos is in the bad positions list
+        foreach ($this->_snps as $rsid => $snp) {
+            if (!is_string($rsid)) continue;
+            $key = ($snp['chrom'] ?? '') . ':' . ($snp['pos'] ?? '');
+            if (isset($badPositions[$key])) {
+                $this->_low_quality[] = $rsid;
+            }
+        }
+    }
+
+    /**
      * Get SNPs after quality control filtering.
      *
      * @return array QC-filtered SNPs
      */
     public function getSnpsQc(): array
     {
+        $this->identify_low_quality_snps();
+
+        if (!empty($this->_low_quality)) {
+            return array_diff_key($this->_snps, array_flip($this->_low_quality));
+        }
+
         return $this->_snps;
     }
 
