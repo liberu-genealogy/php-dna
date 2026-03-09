@@ -420,6 +420,16 @@ class SNPsResources extends Singleton
     }
 
     /**
+     * Get chip clusters (camelCase alias for get_chip_clusters).
+     *
+     * @return array|null The chip clusters data.
+     */
+    public function getChipClusters(): ?array
+    {
+        return $this->get_chip_clusters();
+    }
+
+    /**
      * Get the low quality SNPs data.
      *
      * @return array The low quality SNPs data.

@@ -53,7 +53,7 @@ class ReferenceSequence
      */
     public function getBuild(): string
     {
-        if (empty($this->assembly)) {
+        if (strlen($this->assembly) < 2) {
             return '';
         }
         return 'B' . substr($this->assembly, -2);

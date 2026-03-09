@@ -1546,21 +1546,55 @@ class SNPs implements Countable, Iterator
 
     /**
      * Merge SNPs from another SNPs object or array.
+     *
+     * @param array $snpsObjects Array of SNPs objects to merge
+     * @param bool|string|array $options Optional: bool (remap), string (chrom filter), or array of options
+     * @return array Array of merge result arrays, one per merged object
      */
-    public function merge(array $snpsObjects): void
+    public function merge(array $snpsObjects, bool|string|array $options = []): array
     {
+        $results = [];
+
         foreach ($snpsObjects as $snpsObj) {
+            $result = [
+                "merged" => false,
+                "common_rsids" => [],
+                "discrepant_position_rsids" => [],
+                "discrepant_genotype_rsids" => [],
+            ];
+
             if ($snpsObj instanceof SNPs) {
+                if (!$snpsObj->isValid()) {
+                    $results[] = $result;
+                    continue;
+                }
+
+                $commonRsids = array_intersect(array_keys($this->_snps), array_keys($snpsObj->getSnps()));
+                $result["common_rsids"] = array_values($commonRsids);
+
                 $this->_snps = array_merge($this->_snps, $snpsObj->getSnps());
+                $this->_duplicate = array_merge($this->_duplicate, $snpsObj->getDuplicate());
+                $this->_discrepant_XY = array_merge($this->_discrepant_XY, $snpsObj->getDiscrepantXY());
+                $this->_heterozygous_MT = array_merge($this->_heterozygous_MT, $snpsObj->getHeterozygousMT());
+                $this->_discrepant_merge_positions = array_merge($this->_discrepant_merge_positions, $snpsObj->getDiscrepantMergePositions());
+                $this->_discrepant_merge_genotypes = array_merge($this->_discrepant_merge_genotypes, $snpsObj->getDiscrepantMergeGenotypes());
+
+                $this->_source = array_merge($this->_source, $snpsObj->getAllSources());
+                $result["merged"] = true;
             } elseif (is_array($snpsObj)) {
                 $this->_snps = array_merge($this->_snps, $snpsObj);
+                $result["merged"] = true;
             }
+
+            $results[] = $result;
         }
 
         // Re-process after merge
         if (!empty($this->_snps)) {
             $this->processSnps();
         }
+
+        return $results;
     }
 
     /**

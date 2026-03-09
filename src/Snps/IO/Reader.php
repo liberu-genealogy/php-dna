@@ -81,8 +81,9 @@ class Reader
             $fileContents = $file;
             $read_data = $this->_handle_bytes_data($fileContents);
 
-            $file = tempnam(sys_get_temp_dir(), 'snps_');
-            file_put_contents($file, $fileContents);
+            $tempFile = tempnam(sys_get_temp_dir(), 'snps_');
+            file_put_contents($tempFile, $fileContents);
+            $file = $tempFile;
         } else {
             return $d;
         }
@@ -105,6 +106,9 @@ class Reader
             }
             // Something we haven't seen before and can't handle
             else {
+                if (isset($tempFile)) {
+                    unlink($tempFile);
+                }
                 return $d;
             }
         } else if (strpos($first_line, 'AncestryDNA') !== false) {
@@ -128,6 +132,10 @@ class Reader
             $d["build"] = $this->_detect_build_from_comments($comments, $d["source"]);
         }
 
+        // Clean up temporary file if one was created
+        if (isset($tempFile) && file_exists($tempFile)) {
+            unlink($tempFile);
+        }
 
         return $d;
     }
