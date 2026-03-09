@@ -2939,3 +2939,4 @@ class SNPs implements Countable, Iterator
 
         return $result;
     }
+}
