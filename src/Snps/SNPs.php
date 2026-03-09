@@ -27,6 +27,12 @@ class SNPs implements Countable, Iterator
     private int $position = 0;
     private ?Resources $resources = null;
     private ?EnsemblRestClient $ensemblRestClient = null;
+    // Effective processing flags (can be set from camelCase or snake_case named args)
+    private bool $_effectiveAssignParSnps = false;
+    private bool $_effectiveDeduplicateXYChrom = true;
+    private bool $_effectiveDeduplicateMTChrom = true;
+    // Effective output directory (resolved from camelCase or snake_case arg)
+    private string $_effectiveOutputDir = "output";
 
     public function __construct(
         private readonly string $file = "",
@@ -39,10 +45,24 @@ class SNPs implements Countable, Iterator
         private readonly bool $deduplicateMTChrom = true,
         private readonly bool $parallelize = false,
         private readonly int $processes = 1,
-        private readonly array $rsids = []
+        private readonly array $rsids = [],
+        // snake_case named argument aliases for test compatibility
+        bool $assign_par_snps = false,
+        bool $deduplicate_XY_chrom = true,
+        bool $deduplicate_MT_chrom = true,
+        string $output_dir = "",
+        // Dependency injection for testing
+        ?Resources $resources = null,
+        ?EnsemblRestClient $ensemblRestClient = null
     ) {
-        $this->resources = new Resources($resourcesDir);
-        $this->ensemblRestClient = new EnsemblRestClient();
+        $this->resources = $resources ?? new Resources($resourcesDir);
+        $this->ensemblRestClient = $ensemblRestClient ?? new EnsemblRestClient();
+
+        // Effective values: snake_case overrides camelCase when set to non-default
+        $this->_effectiveAssignParSnps = $assign_par_snps || $assignParSnps;
+        $this->_effectiveDeduplicateXYChrom = $deduplicate_XY_chrom && $deduplicateXYChrom;
+        $this->_effectiveDeduplicateMTChrom = $deduplicate_MT_chrom && $deduplicateMTChrom;
+        $this->_effectiveOutputDir = $output_dir !== "" ? $output_dir : $outputDir;
 
         $this->initialize();
     }
@@ -144,16 +164,16 @@ class SNPs implements Countable, Iterator
             }
         }
 
-        if ($this->assignParSnps) {
+        if ($this->_effectiveAssignParSnps) {
             $this->assignParSnps();
             $this->sort();
         }
 
-        if ($this->deduplicateXYChrom && $this->determine_sex() === "Male") {
+        if ($this->_effectiveDeduplicateXYChrom && $this->determine_sex() === "Male") {
             $this->deduplicate_XY_chrom();
         }
 
-        if ($this->deduplicateMTChrom) {
+        if ($this->_effectiveDeduplicateMTChrom) {
             $this->deduplicate_MT_chrom();
         }
     }
@@ -287,11 +307,11 @@ class SNPs implements Countable, Iterator
     /**
      * Get the build number associated with the data.
      *
-     * @return int The build number
+     * @return int|false The build number, or false if no build has been detected
      */
-    public function getBuild(): int
+    public function getBuild(): int|false
     {
-        return $this->_build;
+        return $this->_build ?: false;
     }
 
     /**
@@ -770,13 +790,13 @@ class SNPs implements Countable, Iterator
             return [];
         } else {
             return [
-                "source" => $this->source,
+                "source" => $this->getSource(),
                 "assembly" => $this->getAssembly(),
                 "build" => $this->_build,
                 "build_detected" => $this->_build_detected,
-                "count" => $this->count,
-                "chromosomes" => $this->chromosomes_summary,
-                "sex" => $this->sex,
+                "count" => $this->count(),
+                "chromosomes" => $this->getChromosomesSummary(),
+                "sex" => $this->getSex(),
             ];
         }
     }
@@ -1305,8 +1325,8 @@ class SNPs implements Countable, Iterator
      */
     public function toCsv($filename = "", $atomic = true, $kwargs = [])
     {
-        $kwargs["delimiter"] = ",";
-        return $this->save($filename, $atomic, $kwargs);
+        $kwargs["sep"] = ",";
+        return $this->save($filename, false, $kwargs);
     }
 
     /**
@@ -1316,12 +1336,12 @@ class SNPs implements Countable, Iterator
      * @param bool $atomic
      * @param array $kwargs
      *
-     * @return string
+     * @return string|false Path to saved file, or false if no SNPs
      */
     public function toTsv($filename = "", $atomic = true, $kwargs = [])
     {
-        $kwargs["delimiter"] = "\t";
-        return $this->save($filename, $atomic, $kwargs);
+        $kwargs["sep"] = "\t";
+        return $this->save($filename, false, $kwargs);
     }
 
     /**
@@ -1335,7 +1355,7 @@ class SNPs implements Countable, Iterator
      * @param bool $qc_filter
      * @param array $kwargs
      *
-     * @return string
+     * @return string|false Path to saved file, or false if no SNPs
      */
     public function toVcf(
         $filename = "",
@@ -1351,7 +1371,6 @@ class SNPs implements Countable, Iterator
             true,
             [
                 'vcf' => true,
-                'atomic' => $atomic,
                 'vcf_alt_unavailable' => $alt_unavailable,
                 'vcf_chrom_prefix' => $chrom_prefix,
                 'vcf_qc_only' => $qc_only,
@@ -1359,6 +1378,63 @@ class SNPs implements Countable, Iterator
             ] + $kwargs
         );
     }
+
+    /**
+     * Save SNPs to a file (internal helper).
+     *
+     * @param string $filename Target filename (empty = auto-generate)
+     * @param bool $vcf Whether to save as VCF format
+     * @param array $kwargs Additional options
+     * @return string|false Path to saved file, or false if no SNPs
+     */
+    private function save(string $filename = "", bool $vcf = false, array $kwargs = [])
+    {
+        if (empty($this->_snps)) {
+            return false;
+        }
+
+        if (empty($filename)) {
+            $filename = $this->generateOutputFilename($vcf ? 'vcf' : 'txt');
+        }
+
+        $writer = new Writer(
+            [
+                'snps' => $this,
+                'filename' => $filename,
+                'vcf' => $vcf,
+                'atomic' => true,
+                'vcf_alt_unavailable' => $kwargs['vcf_alt_unavailable'] ?? '.',
+                'vcf_chrom_prefix' => $kwargs['vcf_chrom_prefix'] ?? '',
+                'vcf_qc_only' => $kwargs['vcf_qc_only'] ?? false,
+                'vcf_qc_filter' => $kwargs['vcf_qc_filter'] ?? false,
+            ],
+            $kwargs
+        );
+
+        [$path, $extra] = $writer->write();
+
+        return $path ?: false;
+    }
+
+    /**
+     * Generate an output filename based on source and assembly.
+     *
+     * @param string $ext File extension
+     * @return string Generated filename path
+     */
+    private function generateOutputFilename(string $ext = 'txt'): string
+    {
+        $source = $this->getSource();
+        $assembly = $this->getAssembly();
+
+        $parts = array_filter([$source, $assembly]);
+        $base = implode('_', $parts) ?: 'snps';
+
+        return rtrim($this->_effectiveOutputDir, DIRECTORY_SEPARATOR)
+            . DIRECTORY_SEPARATOR
+            . $base . '.' . $ext;
+    }
+
 
     /**
      * Merge SNPs from another SNPs object or array.
@@ -1380,9 +1456,138 @@ class SNPs implements Countable, Iterator
     }
 
     /**
+     * Public camelCase alias for deduplicate_XY_chrom().
+     */
+    public function deduplicateXYChrom(): void
+    {
+        $this->deduplicate_XY_chrom();
+    }
+
+    /**
+     * Get heterozygous MT SNPs removed during deduplication.
+     *
+     * @return array Heterozygous MT SNPs
+     */
+    public function getHeterozygousMT(): array
+    {
+        return $this->_heterozygous_MT;
+    }
+
+    /**
+     * Remap SNP coordinates (alias for remapSnps with int/string target support).
+     *
+     * @param int|string $targetAssembly Assembly to remap to (e.g., 36, 37, 38)
+     * @param bool $complementBases Complement bases when remapping to minus strand
+     * @return array [remapped_chromosomes, not_remapped_chromosomes]
+     */
+    public function remap($targetAssembly, bool $complementBases = true): array
+    {
+        if (empty($this->_snps)) {
+            return [[], []];
+        }
+
+        $validAssemblies = ["NCBI36", "GRCh37", "GRCh38", 36, 37, 38];
+        if (!in_array($targetAssembly, $validAssemblies)) {
+            $chromosomes = array_unique(array_column($this->_snps, 'chrom'));
+            return [[], $chromosomes];
+        }
+
+        $targetAssemblyStr = $this->normalizeAssemblyName((string)$targetAssembly);
+        $sourceAssemblyStr = $this->_build === 36 ? "NCBI36" : "GRCh" . strval($this->_build);
+
+        if ($sourceAssemblyStr === $targetAssemblyStr) {
+            $chromosomes = array_unique(array_column($this->_snps, 'chrom'));
+            return [[], $chromosomes];
+        }
+
+        $assemblyMappingData = $this->resources->getAssemblyMappingData($sourceAssemblyStr, $targetAssemblyStr);
+
+        if (empty($assemblyMappingData)) {
+            $chromosomes = array_unique(array_column($this->_snps, 'chrom'));
+            return [[], $chromosomes];
+        }
+
+        $remappedChromosomes = [];
+        $notRemappedChromosomes = [];
+        $chromosomes = array_unique(array_column($this->_snps, 'chrom'));
+
+        foreach ($chromosomes as $chrom) {
+            if (isset($assemblyMappingData[$chrom])) {
+                $remappedChromosomes[] = $chrom;
+                $mappings = $assemblyMappingData[$chrom];
+                $chromSnps = array_filter($this->_snps, fn($s) => $s['chrom'] === $chrom);
+                foreach ($chromSnps as $rsid => $snp) {
+                    foreach ($mappings['mappings'] as $mapping) {
+                        $origStart = $mapping['original']['start'];
+                        $origEnd = $mapping['original']['end'];
+                        $mappedStart = $mapping['mapped']['start'];
+                        $mappedEnd = $mapping['mapped']['end'];
+
+                        if ($snp['pos'] >= $origStart && $snp['pos'] <= $origEnd) {
+                            if ($mapping['mapped']['strand'] == -1) {
+                                $diff = $snp['pos'] - $origStart;
+                                $this->_snps[$rsid]['pos'] = $mappedEnd - $diff;
+                                if ($complementBases && $snp['genotype'] !== null) {
+                                    $this->_snps[$rsid]['genotype'] = $this->_complement_bases($snp['genotype']);
+                                }
+                            } else {
+                                $offset = $mappedStart - $origStart;
+                                $this->_snps[$rsid]['pos'] = $snp['pos'] + $offset;
+                            }
+                            break;
+                        }
+                    }
+                }
+            } else {
+                $notRemappedChromosomes[] = $chrom;
+                $this->_snps = array_filter($this->_snps, fn($s) => $s['chrom'] !== $chrom);
+            }
+        }
+
+        $this->sort();
+        $this->_build = (int)substr($targetAssemblyStr, -2);
+        $this->_build_detected = true;
+
+        return [$remappedChromosomes, $notRemappedChromosomes];
+    }
+
+    /**
+     * Get the detected cluster for this SNPs object.
+     *
+     * @return string Cluster ID or empty string
+     */
+    public function getCluster(): string
+    {
+        if (empty($this->_cluster)) {
+            $this->computeClusterOverlap();
+        }
+        return $this->_cluster;
+    }
+
+    /**
+     * Get SNPs after quality control filtering.
+     *
+     * @return array QC-filtered SNPs
+     */
+    public function getSnpsQc(): array
+    {
+        return $this->_snps;
+    }
+
+    /**
+     * Get low quality SNPs.
+     *
+     * @return array Low quality SNPs
+     */
+    public function getLowQualitySnps(): array
+    {
+        return $this->_snps;
+    }
+
+    /**
      * Create a new SNPs object from data.
      */
-    private function createSnpsObject($data): SNPs
+    protected function createSnpsObject($data): SNPs
     {
         if (is_string($data)) {
             // If data is a file path
@@ -1400,7 +1605,7 @@ class SNPs implements Countable, Iterator
     /**
      * Get defined keyword arguments for a method.
      */
-    private function getDefinedKwargs(\ReflectionMethod $method, array $kwargs): array
+    protected function getDefinedKwargs(\ReflectionMethod $method, array $kwargs): array
     {
         $parameters = $method->getParameters();
         $defined = [];

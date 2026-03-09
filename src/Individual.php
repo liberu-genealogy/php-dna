@@ -1,3 +1,5 @@
+<?php
+
 declare(strict_types=1);
 
 namespace Dna;
@@ -24,6 +26,23 @@ final class Individual extends SNPs
 
     private function processRawData(): void
     {
+        if (empty($this->rawData)) {
+            return;
+        }
+
+        // Check if rawData is an rsid-keyed SNPs array (array of arrays with 'chrom', 'pos', 'genotype')
+        if (is_array($this->rawData)) {
+            $rawDataCopy = $this->rawData;
+            $firstValue = reset($rawDataCopy);
+            if (is_array($firstValue) && isset($firstValue['chrom'], $firstValue['pos'])) {
+                // rawData is an rsid-keyed SNPs dataset - use directly
+                $snps = $this->createSnpsObject($this->rawData);
+                $this->merge([$snps]);
+                return;
+            }
+        }
+
+        // rawData is a list of data sources (file paths, etc.)
         $rawDataArray = is_array($this->rawData) ? $this->rawData : [$this->rawData];
 
         foreach ($rawDataArray as $data) {
