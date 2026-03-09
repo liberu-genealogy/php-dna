@@ -14,7 +14,6 @@ use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\Psr7\Response;
 use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Psr7\Request;
-use PHPUnit\Framework\TestResult;
 use Psr\Http\Message\UriInterface;
 use ReflectionClass;
 use ZipArchive;
@@ -29,7 +28,7 @@ class ResourcesTest extends BaseSNPsTestCase
         $this->resource->init_resource_attributes();
     }
 
-    public function setUp($result = null): void
+    public function setUp(): void
     {
         // Set resources directory based on if downloads are being performed
         // https://stackoverflow.com/a/11180583
@@ -43,7 +42,7 @@ class ResourcesTest extends BaseSNPsTestCase
             $tmpdir = sys_get_temp_dir();
             $this->resource->setResourcesDir($tmpdir);
         }
-        parent::setUp($result);
+        parent::setUp();
     }
 
     public function tearDown(): void

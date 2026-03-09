@@ -1,3 +1,5 @@
+<?php
+
 namespace Dna\Snps\IO;
 
 class DataParser

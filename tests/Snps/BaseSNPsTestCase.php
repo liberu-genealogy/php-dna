@@ -13,6 +13,20 @@ use GuzzleHttp\HandlerStack;
 
 use GuzzleHttp\Psr7\Response;
 
+/**
+ * Compress a file using gzip.
+ *
+ * @param string $source Path to source file
+ * @param string $dest Path to destination file
+ */
+function gzip_file(string $source, string $dest): void
+{
+    $content = file_get_contents($source);
+    $gz = gzopen($dest, 'wb9');
+    gzwrite($gz, $content);
+    gzclose($gz);
+}
+
 abstract class BaseSNPsTestCase extends TestCase
 {
 
@@ -183,7 +197,7 @@ abstract class BaseSNPsTestCase extends TestCase
     ) {
         $df = [];
         foreach ($rsid as $i => $r) {
-            $df[] = [
+            $df[$r] = [
                 "rsid" => $r,
                 "chrom" => is_array($chrom) ? $chrom[$i] : $chrom,
                 "pos" => is_array($pos) ? $pos[$i] : $pos,
@@ -191,7 +205,6 @@ abstract class BaseSNPsTestCase extends TestCase
             ];
         }
 
-        // var_dump($df);
         return $df;
     }
 
@@ -404,12 +417,21 @@ abstract class BaseSNPsTestCase extends TestCase
         ];
     }
 
-    public function createMockHttpClient(array $mockResponses, bool $compress = false): Client
-    {
+    public function createMockHttpClient(
+        array $mockResponses = [],
+        bool $compress = false,
+        array $responses = [],
+        bool $mockDownload = false
+    ): Client {
+        // Support both positional and named 'responses' argument
+        if (!empty($responses)) {
+            $mockResponses = $responses;
+        }
+
         $mockHandler = new MockHandler($mockResponses);
 
         $httpClientOptions = [];
-        if ($compress) {
+        if ($compress || $mockDownload) {
             $httpClientOptions['headers'] = ['Content-Encoding' => 'gzip'];
         }
 

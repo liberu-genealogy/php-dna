@@ -1,5 +1,7 @@
 # php-dna
 
+[![Tests](https://github.com/liberu-genealogy/php-dna/actions/workflows/tests.yml/badge.svg)](https://github.com/liberu-genealogy/php-dna/actions/workflows/tests.yml)
+
 ## Running MatchKits from the Command Line
 
 To run the MatchKits script from the command line, navigate to the root directory of the php-dna project.
