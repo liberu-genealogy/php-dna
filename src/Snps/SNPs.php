@@ -129,7 +129,25 @@ class SNPs implements Countable, Iterator
 
     public function setSnps(array $snps): void
     {
-        $this->_snps = $snps;
+        // Re-index by rsid if any entry has a 'rsid' field but is stored under a non-rsid key
+        $needsReindex = false;
+        foreach ($snps as $key => $snp) {
+            if (is_array($snp) && isset($snp['rsid']) && $key !== $snp['rsid']) {
+                $needsReindex = true;
+                break;
+            }
+        }
+        if ($needsReindex) {
+            $indexed = [];
+            foreach ($snps as $snp) {
+                if (is_array($snp) && isset($snp['rsid'])) {
+                    $indexed[$snp['rsid']] = $snp;
+                }
+            }
+            $this->_snps = $indexed;
+        } else {
+            $this->_snps = $snps;
+        }
     }
 
     private function readFile(): void
@@ -150,11 +168,26 @@ class SNPs implements Countable, Iterator
 
     private function processSnps(): void
     {
-        $this->sort();
-
-        if ($this->deduplicate) {
+        // Re-index numeric arrays by rsid first (before sort)
+        $firstKey = array_key_first($this->_snps);
+        if ($firstKey !== null && is_int($firstKey)) {
+            if ($this->deduplicate) {
+                $this->_deduplicate_rsids();
+            } else {
+                // Simple re-index keeping last occurrence per rsid (no dedup tracking)
+                $indexed = [];
+                foreach ($this->_snps as $snp) {
+                    if (isset($snp['rsid'])) {
+                        $indexed[$snp['rsid']] = $snp;
+                    }
+                }
+                $this->_snps = $indexed;
+            }
+        } elseif ($this->deduplicate) {
             $this->_deduplicate_rsids();
         }
+
+        $this->sort();
 
         if (!$this->_build_detected) {
             $this->_build = $this->detect_build();
@@ -176,7 +209,7 @@ class SNPs implements Countable, Iterator
             $this->deduplicate_XY_chrom();
         }
 
-        if ($this->_effectiveDeduplicateMTChrom) {
+        if ($this->_effectiveDeduplicateMTChrom && $this->deduplicate) {
             $this->deduplicate_MT_chrom();
         }
     }
@@ -208,6 +241,11 @@ class SNPs implements Countable, Iterator
      */
     private function compareChromosomes($chrom1, $chrom2): int
     {
+        // Handle nulls
+        if ($chrom1 === null && $chrom2 === null) return 0;
+        if ($chrom1 === null) return 1;
+        if ($chrom2 === null) return -1;
+
         // Handle numeric chromosomes
         if (is_numeric($chrom1) && is_numeric($chrom2)) {
             return (int)$chrom1 <=> (int)$chrom2;
@@ -221,8 +259,8 @@ class SNPs implements Countable, Iterator
             return 1; // Numeric comes first
         }
 
-        // Handle special chromosomes (X, Y, MT, PAR)
-        $order = ['X' => 23, 'Y' => 24, 'MT' => 25, 'PAR' => 26];
+        // Handle special chromosomes (X, Y, PAR, MT) - PAR before MT
+        $order = ['X' => 23, 'Y' => 24, 'PAR' => 25, 'MT' => 26];
 
         $val1 = $order[$chrom1] ?? 999;
         $val2 = $order[$chrom2] ?? 999;
@@ -237,26 +275,32 @@ class SNPs implements Countable, Iterator
 
     /**
      * Deduplicate RSIDs, keeping the first occurrence.
+     * Stores subsequent duplicates (keyed by rsid, last duplicate wins) in _duplicate.
      */
     private function _deduplicate_rsids(): void
     {
-        $seen = [];
-        $duplicates = [];
-
-        foreach ($this->_snps as $key => $snp) {
-            $rsid = $snp['rsid'];
-            if (isset($seen[$rsid])) {
-                $duplicates[] = $key;
-                $this->_duplicate[] = $snp;
-            } else {
-                $seen[$rsid] = true;
+        // If _snps is numerically indexed (from reader), re-index while deduplicating
+        $firstKey = array_key_first($this->_snps);
+        if ($firstKey !== null && is_int($firstKey)) {
+            $indexed = [];
+            $duplicates = [];
+            foreach ($this->_snps as $snp) {
+                $rsid = $snp['rsid'] ?? null;
+                if ($rsid === null) continue;
+                if (!isset($indexed[$rsid])) {
+                    $indexed[$rsid] = $snp; // keep FIRST
+                } else {
+                    $duplicates[$rsid] = $snp; // keep LAST duplicate per rsid
+                }
             }
+            $this->_snps = $indexed;
+            foreach ($duplicates as $rsid => $snp) {
+                $this->_duplicate[$rsid] = $snp;
+            }
+            return;
         }
 
-        // Remove duplicates
-        foreach ($duplicates as $key) {
-            unset($this->_snps[$key]);
-        }
+        // Already rsid-keyed: nothing to deduplicate (re-indexing already kept one per rsid)
     }
 
     /**
@@ -937,13 +981,13 @@ class SNPs implements Countable, Iterator
         if (!empty($this->_snps)) {
             $chroms = array_unique(array_column($this->_snps, "chrom"));
 
-            $int_chroms = array_filter($chroms, 'is_numeric');
-            $str_chroms = array_filter($chroms, 'is_string');
+            $int_chroms = array_values(array_filter($chroms, 'is_numeric'));
+            $str_chroms = array_values(array_filter($chroms, fn($c) => !is_numeric($c)));
 
             $as_range = function ($iterable) {
                 $l = array_values($iterable);
                 if (count($l) > 1) {
-                    return "{$l[0]}-{$l[-1]}";
+                    return "{$l[0]}-{$l[count($l)-1]}";
                 } else {
                     return "{$l[0]}";
                 }
@@ -953,19 +997,19 @@ class SNPs implements Countable, Iterator
             $current_range = [];
             for ($i = 0; $i < count($int_chroms); $i++) {
                 $current_range[] = $int_chroms[$i];
-                if ($i == count($int_chroms) - 1 || $int_chroms[$i] + 1 != $int_chroms[$i + 1]) {
+                if ($i == count($int_chroms) - 1 || (int)$int_chroms[$i] + 1 != (int)$int_chroms[$i + 1]) {
                     $int_chroms_strs[] = $as_range($current_range);
                     $current_range = [];
                 }
             }
-            $int_chroms = implode(", ", $int_chroms_strs);
-            $str_chroms = implode(", ", $str_chroms);
+            $int_chroms_str = implode(", ", $int_chroms_strs);
+            $str_chroms_str = implode(", ", $str_chroms);
 
-            if ($int_chroms != "" && $str_chroms != "") {
-                $int_chroms .= ", ";
+            if ($int_chroms_str != "" && $str_chroms_str != "") {
+                $int_chroms_str .= ", ";
             }
 
-            return $int_chroms . $str_chroms;
+            return $int_chroms_str . $str_chroms_str;
         } else {
             return "";
         }
@@ -1019,12 +1063,14 @@ class SNPs implements Countable, Iterator
         $pr = $this->getParRegions($this->build);
 
         $np_start = $np_stop = 0;
-        foreach ($pr as $row) {
-            if ($row['chrom'] == $chrom && $row['region'] == 'PAR1') {
-                $np_start = $row['stop'];
+        // getParRegions returns column-oriented data, iterate by index
+        $count = count($pr['region'] ?? []);
+        for ($i = 0; $i < $count; $i++) {
+            if (($pr['chrom'][$i] ?? '') == $chrom && ($pr['region'][$i] ?? '') == 'PAR1') {
+                $np_start = $pr['stop'][$i];
             }
-            if ($row['chrom'] == $chrom && $row['region'] == 'PAR2') {
-                $np_stop = $row['start'];
+            if (($pr['chrom'][$i] ?? '') == $chrom && ($pr['region'][$i] ?? '') == 'PAR2') {
+                $np_stop = $pr['start'][$i];
             }
         }
 
@@ -1070,20 +1116,18 @@ class SNPs implements Countable, Iterator
     {
         $discrepantXYSnps = $this->_get_non_par_snps($chrom);
 
-        // Save discrepant XY SNPs
-        foreach ($discrepantXYSnps as $snps) {
-            $this->_discrepant_XY[] = $this->_snps[$snps];
+        // Save discrepant XY SNPs, keyed by rsid
+        foreach ($discrepantXYSnps as $rsid) {
+            $this->_discrepant_XY[$rsid] = $this->_snps[$rsid];
         }
 
         // Drop discrepant XY SNPs since it's ambiguous for which allele to deduplicate
-        foreach ($discrepantXYSnps as $snps) {
-            unset($this->_snps[$snps]);
+        foreach ($discrepantXYSnps as $rsid) {
+            unset($this->_snps[$rsid]);
         }
 
         // Get remaining non-PAR SNPs with two alleles
         $nonParSnps = $this->_get_non_par_snps($chrom, false);
-        // echo "nonParSnps\n";
-        // var_dump($nonParSnps);
         $this->_deduplicate_alleles($nonParSnps);
     }
 
@@ -1097,14 +1141,14 @@ class SNPs implements Countable, Iterator
     {
         $heterozygousMTSnps = $this->heterozygous("MT");
 
-        // Save heterozygous MT SNPs
-        foreach ($heterozygousMTSnps as $snps) {
-            $this->_heterozygous_MT[] = $snps;
+        // Save heterozygous MT SNPs, keyed by rsid
+        foreach ($heterozygousMTSnps as $rsid => $snps) {
+            $this->_heterozygous_MT[$rsid] = $snps;
         }
 
         // Drop heterozygous MT SNPs since it's ambiguous for which allele to deduplicate
-        foreach ($heterozygousMTSnps as $snps) {
-            unset($this->_snps[$snps["rsid"]]);
+        foreach ($heterozygousMTSnps as $rsid => $snps) {
+            unset($this->_snps[$rsid]);
         }
 
         $this->_deduplicate_alleles(array_column($this->homozygous("MT"), "rsid"));
@@ -1535,6 +1579,9 @@ class SNPs implements Countable, Iterator
         $source = $this->getSource();
         $assembly = $this->getAssembly();
 
+        // Replace ", " (multi-source separator) with "__" for safe filenames
+        $source = str_replace(', ', '__', $source);
+
         $parts = array_filter([$source, $assembly]);
         $base = implode('_', $parts) ?: 'snps';
 
@@ -1553,6 +1600,23 @@ class SNPs implements Countable, Iterator
      */
     public function merge(array $snpsObjects, bool|string|array $options = []): array
     {
+        // Parse options
+        $remap = true;
+        $chromFilter = null;
+        $discrepantPositionThreshold = 100.0;
+        $discrepantGenotypeThreshold = 1.0;
+
+        if (is_bool($options)) {
+            $remap = $options;
+        } elseif (is_string($options)) {
+            $chromFilter = $options;
+        } elseif (is_array($options)) {
+            $remap = $options['remap'] ?? true;
+            $chromFilter = $options['chrom'] ?? null;
+            $discrepantPositionThreshold = $options['discrepant_position_threshold'] ?? 100.0;
+            $discrepantGenotypeThreshold = $options['discrepant_genotype_threshold'] ?? 1.0;
+        }
+
         $results = [];
 
         foreach ($snpsObjects as $snpsObj) {
@@ -1569,15 +1633,91 @@ class SNPs implements Countable, Iterator
                     continue;
                 }
 
-                $commonRsids = array_intersect(array_keys($this->_snps), array_keys($snpsObj->getSnps()));
-                $result["common_rsids"] = array_values($commonRsids);
+                // Remap if builds differ
+                if ($remap && $this->_build && $snpsObj->getBuild() && $this->_build !== $snpsObj->getBuild()) {
+                    $snpsObj->remap($this->_build);
+                }
 
-                $this->_snps = array_merge($this->_snps, $snpsObj->getSnps());
+                $selfSnps  = $this->_snps;
+                $otherSnps = $snpsObj->getSnps();
+
+                // Apply chromosome filter if specified
+                if ($chromFilter !== null) {
+                    $selfSnps  = array_filter($selfSnps,  fn($s) => $s['chrom'] === $chromFilter);
+                    $otherSnps = array_filter($otherSnps, fn($s) => $s['chrom'] === $chromFilter);
+                }
+
+                // Determine common rsids (string keys only)
+                $selfKeys  = array_filter(array_keys($selfSnps),  fn($k) => is_string($k));
+                $otherKeys = array_filter(array_keys($otherSnps), fn($k) => is_string($k));
+                $commonRsids = array_values(array_intersect($selfKeys, $otherKeys));
+                $result["common_rsids"] = $commonRsids;
+
+                // Detect discrepant positions and genotypes among common SNPs
+                $discrepantPos      = [];
+                $discrepantGeno     = [];
+                foreach ($commonRsids as $rsid) {
+                    $a = $selfSnps[$rsid];
+                    $b = $otherSnps[$rsid];
+
+                    if ($a['pos'] !== $b['pos']) {
+                        $discrepantPos[] = $rsid;
+                    } elseif ($a['genotype'] !== null && $b['genotype'] !== null && $a['genotype'] !== $b['genotype']) {
+                        $discrepantGeno[] = $rsid;
+                    }
+                }
+
+                // Threshold checks (percentage of common SNPs)
+                $commonCount = count($commonRsids);
+                if ($commonCount > 0) {
+                    if (count($discrepantPos) / $commonCount > $discrepantPositionThreshold / 100.0) {
+                        $results[] = $result;
+                        continue;
+                    }
+                    if (count($discrepantGeno) / $commonCount > $discrepantGenotypeThreshold / 100.0) {
+                        $results[] = $result;
+                        continue;
+                    }
+                }
+
+                $result["discrepant_position_rsids"] = $discrepantPos;
+                $result["discrepant_genotype_rsids"]  = $discrepantGeno;
+
+                // Record discrepancies
+                foreach ($discrepantPos as $rsid) {
+                    $this->_discrepant_merge_positions[] = $selfSnps[$rsid];
+                }
+                foreach ($discrepantGeno as $rsid) {
+                    $this->_discrepant_merge_genotypes[] = $selfSnps[$rsid];
+                }
+
+                // Set discrepant genotypes to null in this (base) object
+                foreach ($discrepantPos as $rsid) {
+                    // Keep self position, discard incoming
+                }
+                foreach ($discrepantGeno as $rsid) {
+                    $this->_snps[$rsid]['genotype'] = null;
+                }
+
+                // Merge: add new SNPs from other, update null genotypes from other
+                $otherAll = $snpsObj->getSnps();
+                foreach ($otherAll as $rsid => $snp) {
+                    if (!is_string($rsid)) continue;
+                    if (!isset($this->_snps[$rsid])) {
+                        // Only add if not chromosome-filtered out of scope
+                        if ($chromFilter === null || $snp['chrom'] === $chromFilter) {
+                            $this->_snps[$rsid] = $snp;
+                        }
+                    } elseif ($this->_snps[$rsid]['genotype'] === null && $snp['genotype'] !== null) {
+                        if (!in_array($rsid, $discrepantPos)) {
+                            $this->_snps[$rsid]['genotype'] = $snp['genotype'];
+                        }
+                    }
+                }
+
                 $this->_duplicate = array_merge($this->_duplicate, $snpsObj->getDuplicate());
                 $this->_discrepant_XY = array_merge($this->_discrepant_XY, $snpsObj->getDiscrepantXY());
                 $this->_heterozygous_MT = array_merge($this->_heterozygous_MT, $snpsObj->getHeterozygousMT());
-                $this->_discrepant_merge_positions = array_merge($this->_discrepant_merge_positions, $snpsObj->getDiscrepantMergePositions());
-                $this->_discrepant_merge_genotypes = array_merge($this->_discrepant_merge_genotypes, $snpsObj->getDiscrepantMergeGenotypes());
 
                 $this->_source = array_merge($this->_source, $snpsObj->getAllSources());
                 $result["merged"] = true;
@@ -1591,7 +1731,7 @@ class SNPs implements Countable, Iterator
 
         // Re-process after merge
         if (!empty($this->_snps)) {
-            $this->processSnps();
+            $this->sort();
         }
 
         return $results;
@@ -2695,105 +2835,107 @@ class SNPs implements Countable, Iterator
      * @param float $cluster_overlap_threshold The threshold for cluster overlap.
      * @return array The computed cluster overlap DataFrame.
      */
-    public function computeClusterOverlap($clusterOverlapThreshold = 0.95): array
+    public function computeClusterOverlap(float $clusterOverlapThreshold = 0.95): array
     {
-        $df = $this->createClusterOverlapDataFrame();
-        $selfSnps = $this->getSelfSnps();
-        $chipClusters = $this->resources->getChipClusters();
-
-        foreach ($df->indexValues() as $cluster) {
-            $clusterSnps = $this->filterChipClustersByCluster($chipClusters, $cluster);
-            $this->updateDataFrameWithClusterInfo($df, $cluster, $clusterSnps, $selfSnps);
-            $this->calculateOverlapRatios($df, $selfSnps);
-            $maxOverlap = $this->findMaxOverlapCluster($df);
-            $this->updateClusterAndChipInfo($df, $maxOverlap, $clusterOverlapThreshold);
-        }
-
-        return $df;
-    }
-
-    private function createClusterOverlapDataFrame(): DataFrame
-    {
-        $data = [
-            "cluster_id" => ["c1", "c3", "c4", "c5", "v5"],
-            "company_composition" => [
-                "23andMe-v4",
-                "AncestryDNA-v1, FTDNA, MyHeritage",
-                "23andMe-v3",
-                "AncestryDNA-v2",
-                "23andMe-v5, LivingDNA",
-            ],
-            "chip_base_deduced" => [
-                "HTS iSelect HD",
-                "OmniExpress",
-                "OmniExpress plus",
-                "OmniExpress plus",
-                "Illumina GSAs",
-            ],
-            "snps_in_cluster" => array_fill(0, 5, 0),
-            "snps_in_common" => array_fill(0, 5, 0),
+        // Hardcoded cluster metadata
+        $clusterMeta = [
+            "c1" => ["company_composition" => "23andMe-v4",                         "chip_base_deduced" => "HTS iSelect HD"],
+            "c3" => ["company_composition" => "AncestryDNA-v1, FTDNA, MyHeritage",  "chip_base_deduced" => "OmniExpress"],
+            "c4" => ["company_composition" => "23andMe-v3",                          "chip_base_deduced" => "OmniExpress plus"],
+            "c5" => ["company_composition" => "AncestryDNA-v2",                      "chip_base_deduced" => "OmniExpress plus"],
+            "v5" => ["company_composition" => "23andMe-v5, LivingDNA",               "chip_base_deduced" => "Illumina GSAs"],
         ];
 
-        $df = new DataFrame($data);
-        $df->setIndex("cluster_id");
-
-        return $df;
-    }
-
-    private function getSelfSnps(): DataFrame
-    {
-        if ($this->build != 37) {
-            $toRemap = clone $this;
-            $toRemap->remap(37);
-            return $toRemap->snps()->select(["chrom", "pos"])->dropDuplicates();
+        // Get chip clusters from resources
+        $chipClusters = $this->resources->getChipClusters();
+        if (empty($chipClusters)) {
+            return [];
         }
 
-        return $this->snps()->select(["chrom", "pos"])->dropDuplicates();
-    }
-
-    private function filterChipClustersByCluster(DataFrame $chipClusters, string $cluster): DataFrame
-    {
-        return $chipClusters->filter(function ($row) use ($cluster) {
-            return strpos($row["clusters"], $cluster) !== false;
-        })->select(["chrom", "pos"]);
-    }
-
-    private function updateDataFrameWithClusterInfo(DataFrame $df, string $cluster, DataFrame $clusterSnps, DataFrame $selfSnps): void
-    {
-        $df->loc[$cluster]["snps_in_cluster"] = count($clusterSnps);
-        $df->loc[$cluster]["snps_in_common"] = count($selfSnps->merge($clusterSnps, "inner"));
-    }
-
-    private function calculateOverlapRatios(DataFrame $df, DataFrame $selfSnps): void
-    {
-        $df["overlap_with_cluster"] = $df["snps_in_common"] / $df["snps_in_cluster"];
-        $df["overlap_with_self"] = $df["snps_in_common"] / count($selfSnps);
-    }
-
-    private function findMaxOverlapCluster(DataFrame $df): string
-    {
-        return array_keys($df["overlap_with_cluster"], max($df["overlap_with_cluster"]))[0];
-    }
-
-    private function updateClusterAndChipInfo(DataFrame $df, string $maxOverlap, float $clusterOverlapThreshold): void
-    {
-        if (
-            $df["overlap_with_cluster"][$maxOverlap] > $clusterOverlapThreshold &&
-            $df["overlap_with_self"][$maxOverlap] > $clusterOverlapThreshold
-        ) {
-            $this->cluster = $maxOverlap;
-            $this->chip = $df["chip_base_deduced"][$maxOverlap];
-
-            $companyComposition = $df["company_composition"][$maxOverlap];
-
-            if (strpos($companyComposition, $this->source) !== false) {
-                if ($this->source === "23andMe" || $this->source === "AncestryDNA") {
-                    $i = strpos($companyComposition, "v");
-                    $this->chipVersion = substr($companyComposition, $i, $i + 2);
-                }
-            } else {
-                // Log a warning about the SNPs data source not found
+        // Build self SNP lookup by chrom+pos (use build 37 positions)
+        $selfSnps = $this->_snps;
+        if ($this->_build != 37) {
+            // Clone and remap to build 37 for comparison
+            $clone = clone $this;
+            $clone->remap(37);
+            $selfSnps = $clone->_snps;
+        }
+        $selfPositions = [];
+        foreach ($selfSnps as $snp) {
+            if (isset($snp['chrom'], $snp['pos'])) {
+                $selfPositions[$snp['chrom'] . ':' . $snp['pos']] = true;
             }
         }
+        $selfCount = count($selfPositions);
+
+        // Initialise result array
+        $result = [];
+        foreach ($clusterMeta as $clusterId => $meta) {
+            $result[$clusterId] = array_merge($meta, [
+                'snps_in_cluster'    => 0,
+                'snps_in_common'     => 0,
+                'overlap_with_cluster' => 0.0,
+                'overlap_with_self'  => 0.0,
+            ]);
+        }
+
+        // Group chip cluster SNPs by cluster id
+        $clusterSnps = [];
+        foreach ($chipClusters as $row) {
+            $clusterIds = preg_split('/[\s,]+/', $row['clusters'] ?? '');
+            foreach ($clusterIds as $cid) {
+                $cid = trim($cid);
+                if ($cid === '') continue;
+                if (!isset($clusterSnps[$cid])) {
+                    $clusterSnps[$cid] = [];
+                }
+                $clusterSnps[$cid][$row['chrom'] . ':' . $row['pos']] = true;
+            }
+        }
+
+        // Compute overlaps
+        foreach ($result as $clusterId => &$data) {
+            $positions = $clusterSnps[$clusterId] ?? [];
+            $inCluster = count($positions);
+            $inCommon  = count(array_intersect_key($selfPositions, $positions));
+
+            $data['snps_in_cluster']      = $inCluster;
+            $data['snps_in_common']        = $inCommon;
+            $data['overlap_with_cluster']  = $inCluster > 0 ? $inCommon / $inCluster : 0.0;
+            $data['overlap_with_self']     = $selfCount > 0  ? $inCommon / $selfCount  : 0.0;
+        }
+        unset($data);
+
+        // Find cluster with maximum overlap
+        $maxCluster = null;
+        $maxOverlap = -1.0;
+        foreach ($result as $clusterId => $data) {
+            if ($data['overlap_with_cluster'] > $maxOverlap) {
+                $maxOverlap = $data['overlap_with_cluster'];
+                $maxCluster = $clusterId;
+            }
+        }
+
+        // Update cluster/chip info if above threshold
+        if ($maxCluster !== null
+            && $result[$maxCluster]['overlap_with_cluster'] > $clusterOverlapThreshold
+            && $result[$maxCluster]['overlap_with_self']    > $clusterOverlapThreshold
+        ) {
+            $this->_cluster = $maxCluster;
+            $this->_chip    = $result[$maxCluster]['chip_base_deduced'];
+
+            $companyComposition = $result[$maxCluster]['company_composition'];
+            $source = $this->getSource();
+
+            if (strpos($companyComposition, $source) !== false) {
+                if ($source === "23andMe" || $source === "AncestryDNA") {
+                    $vPos = strpos($companyComposition, "v", strpos($companyComposition, $source));
+                    if ($vPos !== false) {
+                        $this->_chip_version = substr($companyComposition, $vPos, 2);
+                    }
+                }
+            }
+        }
+
+        return $result;
     }
-}
