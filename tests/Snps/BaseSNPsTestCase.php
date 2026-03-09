@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace DnaTest\Snps;
 
+use Dna\Resources;
 use Dna\Snps\EnsemblRestClient;
 use Dna\Snps\SNPs;
 use PHPUnit\Framework\TestCase;
@@ -861,66 +862,59 @@ abstract class BaseSNPsTestCase extends TestCase
     }
 
     /**
-     * Run a remap test by writing assembly mapping data to the resources directory,
-     * calling the test function, and cleaning up.
+     * Run a remap test using a unique temporary directory to avoid PHP's
+     * PharData global registry conflicts when tests reuse the same paths.
      *
-     * @param callable $f Test function to call
+     * @param callable $f Test function to call; receives a Resources instance
      * @param array $assemblyMappingData Assembly mapping data
      */
     protected function _run_remap_test(callable $f, array $assemblyMappingData): void
     {
         if ($this->downloads_enabled) {
-            $f();
+            $f(null);
             return;
         }
 
-        $resourcesDir = 'resources';
+        // Use a unique temp directory per test run to avoid PharData path registry conflicts.
+        // PHP's PharData extension registers opened archive paths globally within a process,
+        // so reusing the same paths across tests causes "Cannot open phar archive" errors.
+        $tmpdir = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'phptest_remap_' . uniqid('', true);
+        mkdir($tmpdir, 0777, true);
+
         $combinations = [
             'NCBI36_GRCh37', 'NCBI36_GRCh38',
             'GRCh37_NCBI36', 'GRCh37_GRCh38',
             'GRCh38_NCBI36', 'GRCh38_GRCh37',
         ];
 
-        $createdFiles = [];
         foreach ($combinations as $combo) {
-            $destination = $resourcesDir . DIRECTORY_SEPARATOR . $combo . '.tar.gz';
-            if (!file_exists($destination)) {
-                $this->_writeAssemblyMappingTar($destination, $assemblyMappingData);
-                $createdFiles[] = $destination;
-            }
+            $destination = $tmpdir . DIRECTORY_SEPARATOR . $combo . '.tar.gz';
+            $this->_writeAssemblyMappingTar($destination, $assemblyMappingData);
         }
 
+        $resources = new Resources($tmpdir);
+
         try {
-            $f();
+            $f($resources);
         } finally {
-            foreach ($createdFiles as $file) {
-                if (file_exists($file)) {
-                    unlink($file);
-                }
+            foreach (glob($tmpdir . DIRECTORY_SEPARATOR . '*') as $file) {
+                @unlink($file);
             }
+            @rmdir($tmpdir);
         }
     }
 
     /**
-     * Write assembly mapping data as a tar.gz file.
+     * Write assembly mapping data as a tar.gz file using PharData with TAR|GZ format.
+     * Uses a unique path so there are no PharData global registry conflicts.
      */
     private function _writeAssemblyMappingTar(string $destination, array $assemblyMappingData): void
     {
-        // Create .tar using addFromString (avoids temp file deletion issues with addFile)
-        $tarFile = substr($destination, 0, -3); // strip .gz -> get .tar path
-        $phar = new \PharData($tarFile, 0, null, \Phar::TAR);
+        $phar = new \PharData($destination, 0, null, \Phar::TAR | \Phar::GZ);
         foreach ($assemblyMappingData as $chrom => $data) {
             $phar->addFromString($chrom . '.json', json_encode($data));
         }
-        // Flush the tar to disk before compressing
         unset($phar);
-
-        // Manually create .tar.gz to avoid PharData::compress() issues
-        $tarContent = file_get_contents($tarFile);
-        $gz = gzopen($destination, 'wb9');
-        gzwrite($gz, $tarContent);
-        gzclose($gz);
-        unlink($tarFile);
     }
 
     /**

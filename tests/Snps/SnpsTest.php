@@ -350,8 +350,8 @@ class SnpsTest extends BaseSNPsTestCase
 
     public function testRemap36to37()
     {
-        $this->_run_remap_test(function () {
-            $s = new SNPs("tests/input/NCBI36.csv");
+        $this->_run_remap_test(function (?Resources $resources) {
+            $s = new SNPs("tests/input/NCBI36.csv", resources: $resources);
             list($chromosomes_remapped, $chromosomes_not_remapped) = $s->remap(37);
             $this->assertEquals(37, $s->getBuild());
             $this->assertEquals("GRCh37", $s->getAssembly());
@@ -363,8 +363,8 @@ class SnpsTest extends BaseSNPsTestCase
 
     public function testRemap37to36()
     {
-        $this->_run_remap_test(function () {
-            $s = new SNPs("tests/input/GRCh37.csv");
+        $this->_run_remap_test(function (?Resources $resources) {
+            $s = new SNPs("tests/input/GRCh37.csv", resources: $resources);
             list($chromosomes_remapped, $chromosomes_not_remapped) = $s->remap(36);
             $this->assertEquals(36, $s->getBuild());
             $this->assertEquals("NCBI36", $s->getAssembly());
@@ -376,8 +376,8 @@ class SnpsTest extends BaseSNPsTestCase
 
     public function testRemap37to38()
     {
-        $this->_run_remap_test(function () {
-            $s = new SNPs("tests/input/GRCh37.csv");
+        $this->_run_remap_test(function (?Resources $resources) {
+            $s = new SNPs("tests/input/GRCh37.csv", resources: $resources);
             list($chromosomes_remapped, $chromosomes_not_remapped) = $s->remap(38);
             $this->assertEquals(38, $s->getBuild());
             $this->assertEquals("GRCh38", $s->getAssembly());

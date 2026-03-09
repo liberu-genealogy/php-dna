@@ -167,9 +167,18 @@ final class ReaderTest extends BaseSNPsTestCase
     public function testReadCodigo46()
     {
         // https://codigo46.com.mx
-        static::setupGsaTest(sys_get_temp_dir());
+        $resourcesDir = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'phptest_gsa_' . uniqid('', true);
+        mkdir($resourcesDir, 0777, true);
+        static::setupGsaTest($resourcesDir);
+        // Verify resource files were created
+        $this->assertFileExists($resourcesDir . DIRECTORY_SEPARATOR . 'gsa_rsid_map.txt.gz');
         // $this->run_parse_tests("tests/input/codigo46.txt", "Codigo46");
         static::teardownGsaTest();
+        // Clean up temp resources
+        foreach (glob($resourcesDir . DIRECTORY_SEPARATOR . '*') as $file) {
+            @unlink($file);
+        }
+        @rmdir($resourcesDir);
     }
 
     // def test_read_tellmeGen(self):
