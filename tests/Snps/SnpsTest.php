@@ -528,6 +528,14 @@ class SnpsTest extends BaseSNPsTestCase
 
         $this->assertEquals(37, $snpAnalyzer->detectBuild($snpData));
         $this->assertEquals(['cluster' => 'c1'], $snpAnalyzer->computeClusterOverlap($snpData));
-        $this->assertEquals('Female', $snpAnalyzer->determineSex($snpData));
+
+        // Test sex determination with X chromosome SNPs showing female heterozygosity pattern
+        $femaleSnpData = new SNPData(self::create_snp_df(
+            rsid: ['rsX1', 'rsX2', 'rsX3', 'rsX4', 'rsX5'],
+            chrom: ['X', 'X', 'X', 'X', 'X'],
+            pos: [100, 200, 300, 400, 500],
+            genotype: ['AG', 'CT', 'GC', 'AA', 'TT']
+        ));
+        $this->assertEquals('Female', $snpAnalyzer->determineSex($femaleSnpData));
     }
 }
