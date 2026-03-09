@@ -81,11 +81,9 @@ class Reader
             $fileContents = $file;
             $read_data = $this->_handle_bytes_data($fileContents);
 
-            $tempfile = fopen('php://temp', 'w+');
-            fwrite($tempfile, $fileContents);
-            $meta_data = stream_get_meta_data($tempfile);
-            $file_path = $meta_data['uri'];
-            $file = $file_path;
+            $tempFile = tempnam(sys_get_temp_dir(), 'snps_');
+            file_put_contents($tempFile, $fileContents);
+            $file = $tempFile;
         } else {
             return $d;
         }
@@ -108,6 +106,9 @@ class Reader
             }
             // Something we haven't seen before and can't handle
             else {
+                if (isset($tempFile)) {
+                    unlink($tempFile);
+                }
                 return $d;
             }
         } else if (strpos($first_line, 'AncestryDNA') !== false) {
@@ -131,6 +132,10 @@ class Reader
             $d["build"] = $this->_detect_build_from_comments($comments, $d["source"]);
         }
 
+        // Clean up temporary file if one was created
+        if (isset($tempFile) && file_exists($tempFile)) {
+            unlink($tempFile);
+        }
 
         return $d;
     }
@@ -269,6 +274,17 @@ class Reader
             $snps = $result[0];
             $phased = $result[1] ?? false;
             $build = $result[2] ?? 0;
+
+            // Re-index snps by rsid if they are numerically indexed
+            if (!empty($snps) && array_key_exists(0, $snps)) {
+                $indexed = [];
+                foreach ($snps as $snp) {
+                    if (isset($snp['rsid'])) {
+                        $indexed[$snp['rsid']] = $snp;
+                    }
+                }
+                $snps = $indexed;
+            }
         }
 
         return array(

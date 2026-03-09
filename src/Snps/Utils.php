@@ -52,6 +52,19 @@ final class Utils
             gzclose($gzFile);
         }
     }
+
+    /**
+     * Gzip a file (snake_case alias for gzipFile).
+     *
+     * @param string $src  Path to file to gzip
+     * @param string $dest Path to output gzip file
+     *
+     * @return string Path to gzipped file
+     */
+    public static function gzip_file(string $src, string $dest): string
+    {
+        return self::gzipFile($src, $dest);
+    }
 /**
  * Creates a directory if it doesn't exist.
  *

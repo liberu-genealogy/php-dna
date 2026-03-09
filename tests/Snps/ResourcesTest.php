@@ -146,7 +146,7 @@ class ResourcesTest extends BaseSNPsTestCase
             $mock = $this->getMockBuilder(EnsemblRestClient::class)
                 ->getMock();
             $mock->method("perform_rest_action")
-                ->willReturnOnConsecutiveCalls(...array_fill(start_index: 0, count: 6, value: $effects));
+                ->willReturnOnConsecutiveCalls(...array_fill(start_index: 0, count: 6 * 25, value: $effects[0]));
 
             $this->resource->setRestClient($mock);
             return $this->resource->getAllResources();
