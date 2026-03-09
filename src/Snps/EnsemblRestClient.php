@@ -18,7 +18,7 @@ class EnsemblRestClient
     private float $lastRequestTime = 0;
 
     public function __construct(
-        string $server = 'https://api.ncbi.nlm.nih.gov',
+        string $server = 'https://rest.ensembl.org',
         float $reqsPerSec = 1.0
     ) {
         $this->server = $server;

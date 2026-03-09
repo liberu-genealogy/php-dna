@@ -59,7 +59,7 @@ class SNPs implements Countable, Iterator
         ?EnsemblRestClient $ensemblRestClient = null
     ) {
         $this->resources = $resources ?? new Resources($resourcesDir);
-        $this->ensemblRestClient = $ensemblRestClient ?? new EnsemblRestClient();
+        $this->ensemblRestClient = $ensemblRestClient ?? new EnsemblRestClient('https://api.ncbi.nlm.nih.gov');
 
         // Effective values: snake_case overrides camelCase when set to non-default
         $this->_effectiveAssignParSnps = $assign_par_snps || $assignParSnps;
@@ -1634,7 +1634,7 @@ class SNPs implements Countable, Iterator
             return [[], $chromosomes];
         }
 
-        $targetAssemblyStr = $this->normalizeAssemblyName((string)$targetAssembly);
+        $targetAssemblyStr = $this->normalizeAssemblyName($targetAssembly);
         $sourceAssemblyStr = $this->_build === 36 ? "NCBI36" : "GRCh" . strval($this->_build);
 
         if ($sourceAssemblyStr === $targetAssemblyStr) {
